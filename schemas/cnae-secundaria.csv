@@ -1,0 +1,3 @@
+field_name,field_type
+cnpj,text
+cnae,integer

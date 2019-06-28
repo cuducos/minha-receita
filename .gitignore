@@ -1,0 +1,6 @@
+*.pyc
+.env
+__pycache__/
+data/*.gz
+data/*.xlsx
+data/postgres

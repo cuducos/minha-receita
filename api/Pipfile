@@ -1,0 +1,16 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+asynctest = "*"
+pytest = "*"
+
+[packages]
+aiopg = "*"
+sanic = "*"
+python-decouple = "*"
+
+[requires]
+python_version = "3.7"

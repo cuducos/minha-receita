@@ -1,0 +1,32 @@
+version: "3"
+services:
+
+  api:
+    build:
+      context: api/
+    depends_on:
+      - postgres
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+
+  feed:
+    build:
+      context: feed/
+    env_file:
+      - .env
+    volumes:
+      - ./data:/mnt/data
+      - ./schemas:/mnt/schemas
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:11.4-alpine
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data

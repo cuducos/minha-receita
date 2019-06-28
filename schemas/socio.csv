@@ -1,0 +1,11 @@
+field_name,field_type
+cnpj,text
+identificador_de_socio,integer
+nome_socio,text
+cnpj_cpf_do_socio,text
+codigo_qualificacao_socio,integer
+percentual_capital_social,integer
+data_entrada_sociedade,date
+cpf_representante_legal,text
+nome_representante_legal,text
+codigo_qualificacao_representante_legal,integer
