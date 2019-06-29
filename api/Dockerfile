@@ -10,7 +10,7 @@ RUN apt-get update && \
     python -m pip install --upgrade pip && \
     python -m pip install --upgrade black pipenv && \
     pipenv install --deploy --dev && \
-    apt-get remove -y -y gcc python3-dev && \
+    apt-get remove -y gcc python3-dev && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
