@@ -74,12 +74,14 @@ def create_index(table, field="cnpj"):
 
 
 def main():
-    for table in ("empresa", "socio", "cnae_secundaria"):
+    tables = ("empresa", "socio", "cnae_secundaria")
+    files = ("empresa", "socio", "cnae-secundaria")
+    for table, filename in zip(tables, files):
         pgimport(
-            str(DATA_DIRECTORY / f"{table}.csv.gz"),
+            str(DATA_DIRECTORY / f"{filename}.csv.gz"),
             POSTGRES_URI,
             table,
-            schema=load_schema(str(SCHEMA_DIRECTORY / f"{table}.csv")),
+            schema=load_schema(str(SCHEMA_DIRECTORY / f"{filename}.csv")),
         )
         create_index(table)
 
