@@ -8,10 +8,13 @@ from tempfile import TemporaryDirectory
 from typing import Iterator, NamedTuple, Optional
 
 from openpyxl import load_workbook
+from rows.utils import load_schema, pgimport
 
 
-# input data from: https://cnae.ibge.gov.br/classificacoes/download-concla.html
-EXCEL_FILE = "/mnt/data/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"
+DATA_DIRECTORY = Path("/mnt/data/")
+SCHEMA_DIRECTORY = Path("/mnt/schemas/")
+CNAE_FILE = "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"
+POSTGRES_URI = environ.get("POSTGRES_URI")
 
 Cnae = NamedTuple("CNAE", (("codigo", int), ("descricao", str)))
 Schema = NamedTuple("Schema", (("field_name", str), ("field_type", str)))
@@ -29,7 +32,7 @@ def parse_code(code: str) -> Optional[int]:
 
 
 def cnaes(excel_file: Optional[str]) -> Iterator[Cnae]:
-    excel_file = excel_file or EXCEL_FILE
+    excel_file = excel_file or str(DATA_DIRECTORY / CNAE_FILE)
     wb = load_workbook(excel_file)
     for row in wb.active.rows:
         code = parse_code(row[4].value)
@@ -65,13 +68,24 @@ def cnaes_csv(excel_file=None):
         yield data.as_posix(), schema.as_posix()
 
 
-def main(excel_file=None):
-    with cnaes_csv(excel_file) as files:
-        data, schema = files
-        postgres = environ.get("POSTGRES_URI")
-        index = "CREATE INDEX idx_cnae_codigo ON cnae(codigo)"
-        run(["rows", "pgimport", "--schema", schema, data, postgres, "cnae"])
-        run(["psql", postgres, "-c", index])
+def create_index(table, field="cnpj"):
+    index = f"CREATE INDEX idx_{table}_{field} ON {table}({field});"
+    run(["psql", POSTGRES_URI, "-c", index])
+
+
+def main():
+    for table in ("empresa", "socio", "cnae_secundaria"):
+        pgimport(
+            str(DATA_DIRECTORY / f"{table}.csv.gz"),
+            POSTGRES_URI,
+            table,
+            schema=load_schema(str(SCHEMA_DIRECTORY / f"{table}.csv")),
+        )
+        create_index(table)
+
+    with cnaes_csv() as (source, schema):
+        pgimport(source, POSTGRES_URI, "cnae", schema=load_schema(schema))
+        create_index("cnae", "codigo")
 
 
 if __name__ == "__main__":

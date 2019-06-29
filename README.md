@@ -60,11 +60,10 @@ Copie o arquivo `.env.sample` como `.env` e ajuste de acordo com as suas prefer�
 
 ### Alimente o banco de dados local
 
-Existe um serviço nesse repositório chamado `feed` só para automatizar esse carregamento de dados. Utilizamos o primeiro comando para importar os dados da Receita Federal para o PostgreSQL (demora algumas horas) e depois os do IBGE (dmeora segundos):
+Existe um serviço nesse repositório chamado `feed` só para automatizar esse carregamento de dados, ele pode demorar mais de 1h, mas funciona (lembre-se de, antes, baixar os arquivos para o diretório `data/`):
 
 ```console
-$ docker-compose run --rm feed sh import.sh
-$ docker-compose run --rm feed python import_cnae.py
+$ docker-compose up feed
 ```
 
 #### Inicia a API web
