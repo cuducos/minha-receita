@@ -170,7 +170,7 @@ Exemplo de resposta válida:
 
 ## Contribuindo
 
-Escreva testes, reconstra os container, rode os testes e formate seu código com [Black](https://github.com/python/black):
+Escreva testes, reconstrua os containers, rode os testes e formate seu código com [Black](https://github.com/python/black):
 
 ```console
 $ docker-compose build
