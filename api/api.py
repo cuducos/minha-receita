@@ -1,11 +1,11 @@
 from re import sub
 
-from decouple import config
 from sanic import Sanic
 from sanic.exceptions import NotFound
 from sanic.response import json
 
 from search import get_company
+from settings import SANIC_HOST, SANIC_PORT, SANIC_DEBUG
 
 
 app = Sanic(__file__)
@@ -29,8 +29,4 @@ async def search(request):
 
 
 if __name__ == "__main__":
-    app.run(
-        host=config("SANIC_HOST", default="0.0.0.0"),
-        port=config("SANIC_PORT", default="8000", cast=int),
-        debug=config("SANIC_DEBUG", default="False", cast=bool),
-    )
+    app.run(host=SANIC_HOST, port=SANIC_PORT, debug=SANIC_DEBUG)

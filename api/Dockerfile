@@ -14,8 +14,7 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-ADD search.py search.py
-ADD api.py api.py
+ADD *.py ./
 ADD tests/ tests/
 
 CMD ["pipenv", "run", "python", "api.py"]
