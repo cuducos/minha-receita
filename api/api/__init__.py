@@ -2,10 +2,10 @@ from re import sub
 
 from sanic import Sanic
 from sanic.exceptions import NotFound
-from sanic.response import json
 
-from search import get_company
-from settings import SANIC_HOST, SANIC_PORT, SANIC_DEBUG
+from api.db import connect
+from api.json_tools import json_response
+from api.search import get_company
 
 
 app = Sanic(__file__)
@@ -21,12 +21,10 @@ async def search(request):
     if not cleaned or len(cleaned) != 14:
         raise NotFound(f"CNPJ {cnpj} inválido.")
 
-    company = await get_company(cleaned)
+    async with connect() as connection:
+        company = await get_company(connection, cleaned)
+
     if not company:
         raise NotFound(f"CNPJ {cnpj} não encontrado.")
 
-    return json(company)
-
-
-if __name__ == "__main__":
-    app.run(host=SANIC_HOST, port=SANIC_PORT, debug=SANIC_DEBUG)
+    return json_response(company)

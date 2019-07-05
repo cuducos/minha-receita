@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 asynctest = "*"
 pytest = "*"
+pytest-asyncio = "*"
 
 [packages]
 aiopg = "*"

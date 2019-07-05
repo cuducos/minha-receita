@@ -14,7 +14,6 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-ADD *.py ./
-ADD tests/ tests/
+ADD api/ ./api/
 
-CMD ["pipenv", "run", "python", "api.py"]
+CMD ["pipenv", "run", "python", "-m", "api"]
