@@ -2,6 +2,22 @@
 
 Sua API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jurídica) da Receita Federal.
 
+* [**Sobre**](#sobre)
+  * [Histórico](#hist%C3%B3rico)
+  * [Propósito](#prop%C3%B3sito)
+  * [Qual a URL para acesso?](#qual-a-url-para-acesso)
+* [**Instalação**](#instala%C3%A7%C3%A3o)
+  * [Requisitos](#requisitos)
+  * [Download dos arquivos](#download-dos-arquivos)
+  * [Configurações](#configura%C3%A7%C3%B5es)
+  * [Alimente o banco de dados local](#alimente-o-banco-de-dados-local)
+  * [Inicia a API web](#inicia-a-api-web)
+* [**Uso**](#uso)
+  * [API web](#api-web)
+  * [Acesso ao banco de dados](#acesso-ao-banco-de-dados)
+* [**Contribuindo**](#contribuindo)
+* [**Muito obrigado**](#muito-obrigado)
+
 ## Sobre
 
 ### Histórico
@@ -60,13 +76,13 @@ Copie o arquivo `.env.sample` como `.env` e ajuste de acordo com as suas prefer�
 
 ### Alimente o banco de dados local
 
-Existe um serviço nesse repositório chamado `feed` só para automatizar esse carregamento de dados, ele pode demorar mais de 1h, mas funciona (lembre-se de, antes, baixar os arquivos para o diretório `data/`):
+Existe um serviço nesse repositório chamado `feed` só para automatizar a criação das tabelas e o carregamento de dados. Ele pode demorar mais de 1h, mas funciona (lembre-se de, antes, baixar os arquivos para o diretório `data/`), desde que o banco de dados esteja limpo (sem tabelas ou índices) :
 
 ```console
 $ docker-compose up feed
 ```
 
-#### Inicia a API web
+### Inicia a API web
 
 A API web é uma aplicação super simples que pode ser inciada com:
 
@@ -89,6 +105,12 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 | `/` | `POST` | `cnpj=00000000000000` | 404 | `Error: CNPJ 00000000000000 não encontrado.` |
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |
+
+Exemplo de requisição usando o `curl`:
+
+```console
+$ curl -i -X POST -f cnpj=19131243000197 0.0.0.0:8000
+```
 
 Exemplo de resposta válida:
 
