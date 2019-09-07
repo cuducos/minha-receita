@@ -105,6 +105,7 @@ Exemplo de resposta válida:
   "codigo_natureza_juridica": 3999,
   "data_inicio_atividade": "2013-10-03",
   "cnae_fiscal": 9430800,
+  "cnae_fiscal_descricao": "Atividades de associações de defesa de direitos sociais",
   "descricao_tipo_logradouro": "ALAMEDA",
   "logradouro": "FRANCA",
   "numero": "144",
@@ -128,24 +129,24 @@ Exemplo de resposta válida:
   "data_situacao_especial": null,
   "cnaes_secundarios": [
     {
-      "cnae_codigo": 9493600,
-      "cnae_descricao": "Atividades de organizações associativas ligadas à cultura e à arte"
+      "codigo": 9493600,
+      "descricao": "Atividades de organizações associativas ligadas à cultura e à arte"
     },
     {
-      "cnae_codigo": 9499500,
-      "cnae_descricao": "Atividades associativas não especificadas anteriormente"
+      "codigo": 9499500,
+      "descricao": "Atividades associativas não especificadas anteriormente"
     },
     {
-      "cnae_codigo": 8599699,
-      "cnae_descricao": "Outras atividades de ensino não especificadas anteriormente"
+      "codigo": 8599699,
+      "descricao": "Outras atividades de ensino não especificadas anteriormente"
     },
     {
-      "cnae_codigo": 8230001,
-      "cnae_descricao": "Serviços de organização de feiras, congressos, exposições e festas"
+      "codigo": 8230001,
+      "descricao": "Serviços de organização de feiras, congressos, exposições e festas"
     },
     {
-      "cnae_codigo": 6204000,
-      "cnae_descricao": "Consultoria em tecnologia da informação"
+      "codigo": 6204000,
+      "descricao": "Consultoria em tecnologia da informação"
     }
   ],
   "qsa": [

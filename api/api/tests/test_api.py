@@ -22,7 +22,7 @@ def test_post_returns_404_if_sent_without_cnpj():
 
 
 def test_post_returns_404_for_non_existent_cnpj():
-    with patch("api.get_company") as mock:
+    with patch("api.company") as mock:
         mock.return_value = None
         _, response = app.test_client.post("/", data={"cnpj": "00.000.000/0000-00"})
 
@@ -31,7 +31,7 @@ def test_post_returns_404_for_non_existent_cnpj():
 
 
 def test_post_returns_200_for_existing_cnpj_masked():
-    with patch("api.get_company") as mock:
+    with patch("api.company") as mock:
         mock.return_value = {"hell": "yeah"}
         _, response = app.test_client.post("/", data={"cnpj": "19.131.243/0001-97"})
 
@@ -40,7 +40,7 @@ def test_post_returns_200_for_existing_cnpj_masked():
 
 
 def test_post_returns_200_for_existing_cnpj_unmasked():
-    with patch("api.get_company") as mock:
+    with patch("api.company") as mock:
         mock.return_value = {"hell": "yeah"}
         _, response = app.test_client.post("/", data={"cnpj": "19131243000197"})
 

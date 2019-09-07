@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 import aiopg
+from psycopg2.extras import RealDictCursor
 
 from api import settings
 
@@ -13,6 +14,7 @@ async def connect(custom_settings=None):
         user=_settings.POSTGRES_USER,
         password=_settings.POSTGRES_PASSWORD,
         host=_settings.POSTGRES_HOST,
+        cursor_factory=RealDictCursor,
     )
     yield connection
     connection.close()

@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from api.search import get_company, get_partners, get_secondary_activities
+from api.search import company, partners, secondary_activities
 
 
 EXPECTED = {
@@ -17,6 +17,7 @@ EXPECTED = {
     "codigo_natureza_juridica": 3999,
     "data_inicio_atividade": date(2013, 10, 3),
     "cnae_fiscal": 9430800,
+    "cnae_fiscal_descricao": "Atividades de associações de defesa de direitos sociais",
     "descricao_tipo_logradouro": "ALAMEDA",
     "logradouro": "FRANCA",
     "numero": "144",
@@ -40,25 +41,22 @@ EXPECTED = {
     "data_situacao_especial": None,
     "cnaes_secundarios": (
         {
-            "cnae_codigo": 9493600,
-            "cnae_descricao": "Atividades de organizações associativas ligadas à cultura e à arte",
+            "codigo": 9493600,
+            "descricao": "Atividades de organizações associativas ligadas à cultura e à arte",
         },
         {
-            "cnae_codigo": 9499500,
-            "cnae_descricao": "Atividades associativas não especificadas anteriormente",
+            "codigo": 9499500,
+            "descricao": "Atividades associativas não especificadas anteriormente",
         },
         {
-            "cnae_codigo": 8599699,
-            "cnae_descricao": "Outras atividades de ensino não especificadas anteriormente",
+            "codigo": 8599699,
+            "descricao": "Outras atividades de ensino não especificadas anteriormente",
         },
         {
-            "cnae_codigo": 8230001,
-            "cnae_descricao": "Serviços de organização de feiras, congressos, exposições e festas",
+            "codigo": 8230001,
+            "descricao": "Serviços de organização de feiras, congressos, exposições e festas",
         },
-        {
-            "cnae_codigo": 6204000,
-            "cnae_descricao": "Consultoria em tecnologia da informação",
-        },
+        {"codigo": 6204000, "descricao": "Consultoria em tecnologia da informação"},
     ),
     "qsa": (
         {
@@ -78,43 +76,43 @@ EXPECTED = {
 
 @pytest.mark.asyncio
 async def test_partners_exists(db):
-    partners = await get_partners(db, "19131243000197")
-    assert len(partners) == len(EXPECTED["qsa"])
+    rows = await partners(db, "19131243000197")
+    assert len(rows) == len(EXPECTED["qsa"])
     for partner in EXPECTED["qsa"]:
-        assert partner in partners
+        assert partner in rows
 
 
 @pytest.mark.asyncio
 async def test_partners_does_not_exist(db):
-    partners = await get_partners(db, "00000000000000")
-    assert partners == None
+    rows = await partners(db, "00000000000000")
+    assert rows is None
 
 
 @pytest.mark.asyncio
 async def test_secondary_activities_exists(db):
-    secondary_activities = await get_secondary_activities(db, "19131243000197")
-    assert len(secondary_activities) == len(EXPECTED["cnaes_secundarios"])
+    rows = await secondary_activities(db, "19131243000197")
+    assert len(rows) == len(EXPECTED["cnaes_secundarios"])
     for activity in EXPECTED["cnaes_secundarios"]:
-        assert activity in secondary_activities
+        assert activity in rows
 
 
 @pytest.mark.asyncio
 async def test_secondary_activities_does_not_exist(db):
-    secondary_activities = await get_secondary_activities(db, "00000000000000")
-    assert secondary_activities == None
+    rows = await secondary_activities(db, "00000000000000")
+    assert rows is None
 
 
 @pytest.mark.asyncio
 async def test_company_exists(db):
-    company = await get_company(db, "19131243000197")
-    for key in company.keys():
+    row = await company(db, "19131243000197")
+    for key in row.keys():
         if key in {"qsa", "cnaes_secundarios"}:
             continue
 
-        assert company[key] == EXPECTED[key]
+        assert row[key] == EXPECTED[key]
 
 
 @pytest.mark.asyncio
 async def test_company_does_not_exist(db):
-    company = await get_company(db, "00000000000000")
-    assert company == None
+    row = await company(db, "00000000000000")
+    assert row is None

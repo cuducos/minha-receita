@@ -10,8 +10,9 @@ pytest-asyncio = "*"
 
 [packages]
 aiopg = "*"
-sanic = "*"
+psycopg2-binary = "*"
 python-decouple = "*"
+sanic = "*"
 
 [requires]
 python_version = "3.7"

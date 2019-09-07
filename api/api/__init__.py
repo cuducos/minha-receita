@@ -5,7 +5,7 @@ from sanic.exceptions import NotFound
 
 from api.db import connect
 from api.json_tools import json_response
-from api.search import get_company
+from api.search import company
 
 
 app = Sanic(__file__)
@@ -22,9 +22,9 @@ async def search(request):
         raise NotFound(f"CNPJ {cnpj} inválido.")
 
     async with connect() as connection:
-        company = await get_company(connection, cleaned)
+        obj = await company(connection, cleaned)
 
-    if not company:
+    if not obj:
         raise NotFound(f"CNPJ {cnpj} não encontrado.")
 
-    return json_response(company)
+    return json_response(obj)
