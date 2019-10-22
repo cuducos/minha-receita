@@ -72,7 +72,7 @@ Depois, precisamos dos dados com a descrição dos CNAE (Classificação Naciona
 Copie o arquivo `.env.sample` como `.env` e ajuste de acordo com as suas preferências e necessidades:
 
 * As variáveis com o prefixo `POSTGRES_` configuram os dados de acesso ao PostgreSQL que o Docker Compose sobe
-* As variáveis com o prefixo `SANIC_` configuram o framework web [Sanic](https://github.com/huge-success/sanic) (se o uso for em producão é extremamente recomendável configurar `SANIC_DEBUG` para `True`)
+* As variáveis com o prefixo `SANIC_` configuram o framework web [Sanic](https://github.com/huge-success/sanic) (se o uso for em producão é extremamente recomendável configurar `SANIC_DEBUG` para `False`)
 
 ### Alimente o banco de dados local
 
