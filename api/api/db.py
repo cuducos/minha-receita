@@ -14,7 +14,7 @@ async def connect(custom_settings=None):
         f"user={_settings.POSTGRES_USER} "
         f"password={_settings.POSTGRES_PASSWORD} "
         f"host={_settings.POSTGRES_HOST} "
-        "port=5432"
+        f"port={_settings.POSTGRES_PORT}"
     )
     pool = await aiopg.create_pool(dsn)
     yield pool
