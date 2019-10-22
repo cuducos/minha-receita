@@ -5,6 +5,7 @@ from pathlib import Path
 from re import sub
 from subprocess import run
 from tempfile import TemporaryDirectory
+from time import sleep
 from typing import Iterator, NamedTuple, Optional
 
 from openpyxl import load_workbook
@@ -18,6 +19,10 @@ POSTGRES_URI = environ.get("POSTGRES_URI")
 
 Cnae = NamedTuple("CNAE", (("codigo", int), ("descricao", str)))
 Schema = NamedTuple("Schema", (("field_name", str), ("field_type", str)))
+
+
+def psql(sql, capture_output=False):
+    return run(["psql", POSTGRES_URI, "-c", sql], capture_output=capture_output)
 
 
 def parse_code(code: str) -> Optional[int]:
@@ -69,11 +74,42 @@ def cnaes_csv(excel_file=None):
 
 
 def create_index(table, field="cnpj"):
-    index = f"CREATE INDEX idx_{table}_{field} ON {table}({field});"
-    run(["psql", POSTGRES_URI, "-c", index])
+    psql(f"CREATE INDEX idx_{table}_{field} ON {table}({field});")
+
+
+def wait_for_postgres(retries=64):
+    result = psql("SELECT 1", capture_output=True)
+    if not result.stderr:
+        return True
+
+    sleep(1)
+    print("Waiting for PostgreSQL…")
+    retries -= 1
+    return wait_for_postgres(retries)
+
+
+def tables_exist(retries=16):
+    sql = """
+        SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+    """
+    result = psql(sql, capture_output=True)
+
+    # if the count line (3rd line) is different than zero, thus tables exist
+    return True if int(result.stdout.split(b"\n")[2]) != 0 else False
 
 
 def main():
+    if wait_for_postgres() and tables_exist():
+        print(
+            (
+                "There are existing tables in the database. "
+                "Please, start with a clean database."
+            )
+        )
+        return
+
     tables = ("empresa", "socio", "cnae_secundaria")
     files = ("empresa", "socio", "cnae-secundaria")
     for table, filename in zip(tables, files):
