@@ -42,7 +42,23 @@ def create_test_db():
         cursor.execute(fixtures.read_text())
         yield cursor
 
+        # block further connections
+        cursor.execute(
+            f"""
+            UPDATE pg_database
+            SET datallowconn = 'false'
+            WHERE datname = '{POSTGRES_TEST_DB}'
+        """
+        )
+
     with postgres(ORIGINAL_POSTGRES_DB) as cursor:
+        cursor.execute(
+            f"""
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = '{POSTGRES_TEST_DB}';
+        """
+        )
         cursor.execute(f"DROP DATABASE {POSTGRES_TEST_DB}")
 
 

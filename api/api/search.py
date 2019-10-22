@@ -1,3 +1,5 @@
+from asyncio import gather
+
 from api.db import query
 
 
@@ -39,6 +41,7 @@ async def company(connection, cnpj):
     if not row:
         return None
 
-    row["cnaes_secundarios"] = await secondary_activities(connection, cnpj)
-    row["qsa"] = await partners(connection, cnpj)
+    row["cnaes_secundarios"], row["qsa"] = await gather(
+        secondary_activities(connection, cnpj), partners(connection, cnpj)
+    )
     return row
