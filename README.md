@@ -109,7 +109,7 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 Exemplo de requisição usando o `curl`:
 
 ```console
-$ curl -i -X POST -f cnpj=19131243000197 0.0.0.0:8000
+$ curl -i -X POST -d cnpj=19131243000197 0.0.0.0:8000
 ```
 
 Exemplo de resposta válida:
