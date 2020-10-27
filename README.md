@@ -69,10 +69,7 @@ Depois, precisamos dos dados com a descrição dos CNAE (Classificação Naciona
 
 ### Configurações
 
-Copie o arquivo `.env.sample` como `.env` e ajuste de acordo com as suas preferências e necessidades:
-
-* As variáveis com o prefixo `POSTGRES_` configuram os dados de acesso ao PostgreSQL que o Docker Compose sobe
-* As variáveis com o prefixo `SANIC_` configuram o framework web [Sanic](https://github.com/huge-success/sanic) (se o uso for em producão é extremamente recomendável configurar `SANIC_DEBUG` para `False`)
+Copie o arquivo `.env.sample` como `.env` e ajuste o acesso ao banco de dados (`POSTGRES_URI`) de acordo com as suas preferências e necessidades. O `.env.sample` configura o acesso para o banco que o Docker Compose sobe.
 
 ### Alimente o banco de dados local
 
@@ -98,11 +95,11 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 
 | Caminho da URL | Tipo de requisição | Dados enviados | Código esperado na resposta | Conteúdo esperado na resposta |
 |---|---|---|---|---|
-| `/` | `GET` | | 405| `Error: Method GET not allowed for URL /` |
-| `/` | `POST` | | 404 | `Error: CNPJ não enviado na requisição POST.` |
-| `/` | `POST` | `cpf=foobar` | 404 | `Error: CNPJ não enviado na requisição POST.` 
-| `/` | `POST` | `cnpj=foobar` | 404 | `Error: CNPJ foobar inválido.` |
-| `/` | `POST` | `cnpj=00000000000000` | 404 | `Error: CNPJ 00000000000000 não encontrado.` |
+| `/` | `GET` | | 405| `{"message": "Method GET not allowed for URL /"}` |
+| `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
+| `/` | `POST` | `cpf=foobar` | 404 | `{"message": "CNPJ não enviado na requisição POST."}`
+| `/` | `POST` | `cnpj=foobar` | 404 | `{"message": "CNPJ foobar inválido."}` |
+| `/` | `POST` | `cnpj=00000000000000` | 404 | `{"message": "CNPJ 00.000.000/0001-91 não encontrado."}` |
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |
 
