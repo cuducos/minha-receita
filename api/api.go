@@ -30,11 +30,11 @@ func writeError(w http.ResponseWriter, m string, s int) {
 
 // API wraps the HTTP request handler and database interface.
 type API struct {
-	db Database
+	db database
 }
 
-// Handler wraps the database interface in a HTTP request/response cycle.
-func (app API) Handler(w http.ResponseWriter, r *http.Request) {
+// PostHandler wraps the database interface in a HTTP request/response cycle.
+func (app API) PostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	if r.Method != http.MethodPost {

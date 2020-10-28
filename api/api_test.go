@@ -11,12 +11,10 @@ import (
 	"github.com/cuducos/go-cnpj"
 )
 
-// MockDatabase is a interface of Database to be used in tests.
-type MockDatabase struct {
+type mockDatabase struct {
 }
 
-// GetCompany only returns values for the CNPJ 19.131.243/0001-97
-func (MockDatabase) GetCompany(c string) string {
+func (mockDatabase) GetCompany(c string) string {
 	if cnpj.Unmask(c) == "19131243000197" {
 		return "Yay!"
 	}
@@ -98,9 +96,9 @@ func TestCompanyHandler(t *testing.T) {
 			t.Fatal("Expected an HTTP response, but got an error.")
 		}
 
-		app := API{&MockDatabase{}}
+		app := API{&mockDatabase{}}
 		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.Handler)
+		handler := http.HandlerFunc(app.PostHandler)
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {
@@ -115,5 +113,4 @@ func TestCompanyHandler(t *testing.T) {
 			t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.content, resp.Body.String())
 		}
 	}
-
 }

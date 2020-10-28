@@ -14,12 +14,12 @@ import (
 )
 
 // Database interface to get a company (returns a JSON string).
-type Database interface {
+type database interface {
 	GetCompany(string) string
 }
 
-// Cnae represents a row from the `cnae` database table.
-type Cnae struct {
+// CNAE represents a row from the `cnae` database table.
+type CNAE struct {
 	tableName struct{} `pg:"cnae"`
 	Codigo    string   `json:"codigo"`
 	Descricao string   `json:"descricao"`
@@ -53,8 +53,8 @@ type Company struct {
 	NomeCidadeExterior        string     `json:"nome_cidade_exterior"`
 	CodigoNaturezaJuridica    int        `json:"codigo_natureza_juridica"`
 	DataInicioAtividade       time.Time  `json:"data_inicio_atividade"`
-	CnaeFiscal                int        `json:"cnae_fiscal"`
-	CnaeFiscalDescricao       string     `pg:"-" json:"cnae_fiscal_descricao"`
+	CNAEFiscal                int        `json:"cnae_fiscal"`
+	CNAEFiscalDescricao       string     `pg:"-" json:"cnae_fiscal_descricao"`
 	DescricaoTipoLogradouro   string     `json:"descricao_tipo_logradouro"`
 	Logradouro                string     `json:"logradouro"`
 	Numero                    string     `json:"numero"`
@@ -77,7 +77,7 @@ type Company struct {
 	SituacaoEspecial          string     `json:"situacao_especial"`
 	DataSituacaoEspecial      string     `json:"data_situacao_especial"`
 	Qsa                       []*Partner `pg:"-" json:"qsa"`
-	CnaesSecundarias          []*Cnae    `pg:"-" json:"cnaes_secundarias"`
+	CNAEsSecundarias          []*CNAE    `pg:"-" json:"cnaes_secundarias"`
 }
 
 func (c *Company) queryPartners(db *pg.DB, wg *sync.WaitGroup) {
@@ -92,7 +92,7 @@ func (c *Company) queryPartners(db *pg.DB, wg *sync.WaitGroup) {
 func (c *Company) queryActivities(db *pg.DB, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	_, err := db.Query(&c.CnaesSecundarias, `
+	_, err := db.Query(&c.CNAEsSecundarias, `
 		SELECT cnae_secundaria.cnae AS codigo, cnae.descricao
 		FROM cnae_secundaria
 		INNER JOIN cnae ON cnae_secundaria.cnae = cnae.codigo
@@ -103,15 +103,15 @@ func (c *Company) queryActivities(db *pg.DB, wg *sync.WaitGroup) {
 	}
 }
 
-func (c *Company) queryCnaeDescription(db *pg.DB, wg *sync.WaitGroup) {
+func (c *Company) queryCNAEDescription(db *pg.DB, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var cnae Cnae
-	err := db.Model(&cnae).Where("codigo = ?", c.CnaeFiscal).Select()
+	var cnae CNAE
+	err := db.Model(&cnae).Where("codigo = ?", c.CNAEFiscal).Select()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not get secondary CNAE for %s: %v", cnpj.Mask(c.Cnpj), err)
 	}
-	c.CnaeFiscalDescricao = cnae.Descricao
+	c.CNAEFiscalDescricao = cnae.Descricao
 }
 
 // PostgreSQL database interface.
@@ -134,7 +134,7 @@ func (p *PostgreSQL) GetCompany(num string) string {
 
 	var wg sync.WaitGroup
 	wg.Add(3)
-	go c.queryCnaeDescription(p.db, &wg)
+	go c.queryCNAEDescription(p.db, &wg)
 	go c.queryPartners(p.db, &wg)
 	go c.queryActivities(p.db, &wg)
 	wg.Wait()

@@ -22,6 +22,6 @@ func main() {
 	defer db.Close()
 
 	app := API{&db}
-	http.HandleFunc("/", app.Handler)
-	http.ListenAndServe(port, nil)
+	http.HandleFunc("/", app.PostHandler)
+	log.Fatal(http.ListenAndServe(port, nil))
 }
