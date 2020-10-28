@@ -30,7 +30,7 @@ O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos p
 
 O código desse repositório faz esses dados ainda mais acessíveis:
 
-1. Importando autimaticamente os dados para um banco de dados PostgreSQL utilizando a [`rows`](https://github.com/turicas/rows)
+1. Importando automaticamente os dados para um banco de dados PostgreSQL utilizando a [`rows`](https://github.com/turicas/rows)
 2. Adicionando dados com descrições dos CNAEs (inexistente nos arquivos da Receita Federal)
 3. Fornecendo uma API web para a consulta de dados de um CNPJ
 
