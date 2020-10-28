@@ -34,7 +34,7 @@ func TestCompanyHandler(t *testing.T) {
 			http.MethodGet,
 			nil,
 			http.StatusMethodNotAllowed,
-			`{"message":"Method GET not allowed for URL /"}`,
+			`{"message":"Essa URL aceita apenas o método POST."}`,
 		},
 		{
 			http.MethodPost,
@@ -45,13 +45,13 @@ func TestCompanyHandler(t *testing.T) {
 		{
 			http.MethodPost,
 			map[string]string{"cpf": "foobar"},
-			http.StatusNotFound,
+			http.StatusBadRequest,
 			`{"message":"CNPJ não enviado na requisição POST."}`,
 		},
 		{
 			http.MethodPost,
 			map[string]string{"cnpj": "foobar"},
-			http.StatusNotFound,
+			http.StatusBadRequest,
 			`{"message":"CNPJ foobar inválido."}`,
 		},
 		{

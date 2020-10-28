@@ -95,10 +95,10 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 
 | Caminho da URL | Tipo de requisição | Dados enviados | Código esperado na resposta | Conteúdo esperado na resposta |
 |---|---|---|---|---|
-| `/` | `GET` | | 405| `{"message": "Method GET not allowed for URL /"}` |
+| `/` | `GET` | | 405| `{"message": "Essa URL aceita apenas o método POST."}` |
 | `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
-| `/` | `POST` | `cpf=foobar` | 404 | `{"message": "CNPJ não enviado na requisição POST."}`
-| `/` | `POST` | `cnpj=foobar` | 404 | `{"message": "CNPJ foobar inválido."}` |
+| `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}`
+| `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
 | `/` | `POST` | `cnpj=00000000000000` | 404 | `{"message": "CNPJ 00.000.000/0001-91 não encontrado."}` |
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |

@@ -10,21 +10,21 @@ import (
 	"github.com/cuducos/go-cnpj"
 )
 
-// JSONMessage is a helper to serialize a message to JSON.
-type JSONMessage struct {
+// errorMessage is a helper to serialize an error message to JSON.
+type errorMessage struct {
 	Message string `json:"message"`
 }
 
-// WriteJSONMessage takes a text message, wraps it into a JSON output and
-// writes it to a `https.ResponseWriter`.
-func WriteJSONMessage(w http.ResponseWriter, m string) {
-	j := JSONMessage{m}
-	b, err := json.Marshal(j)
+// writeError takes a text message and a HTP status, wraps the message into a
+// JSON output and writes it toghether with the proper headers to a response.
+func writeError(w http.ResponseWriter, m string, s int) {
+	b, err := json.Marshal(errorMessage{m})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not wrap message in JSON: %s", m)
 		return
-
 	}
+
+	w.WriteHeader(s)
 	w.Write(b)
 }
 
@@ -38,37 +38,32 @@ func (app API) Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		WriteJSONMessage(w, "Method GET not allowed for URL /")
+		writeError(w, "Essa URL aceita apenas o método POST.", http.StatusMethodNotAllowed)
 		return
 	}
 
-	err := r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		WriteJSONMessage(w, "Conteúdo inválido na requisição POST.")
+	if err := r.ParseForm(); err != nil {
+		writeError(w, "Conteúdo inválido na requisição POST.", http.StatusBadRequest)
 		return
 	}
 
 	v := r.Form.Get("cnpj")
 	if v == "" {
-		w.WriteHeader(http.StatusNotFound)
-		WriteJSONMessage(w, "CNPJ não enviado na requisição POST.")
+		writeError(w, "CNPJ não enviado na requisição POST.", http.StatusBadRequest)
 		return
 	}
 
 	if !cnpj.IsValid(v) {
-		w.WriteHeader(http.StatusNotFound)
-		WriteJSONMessage(w, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v)))
+		writeError(w, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v)), http.StatusBadRequest)
 		return
 	}
 
 	c := app.db.GetCompany(v)
 	if c == "" {
-		w.WriteHeader(http.StatusNotFound)
-		WriteJSONMessage(w, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
+		writeError(w, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)), http.StatusNotFound)
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	io.WriteString(w, c)
 }
