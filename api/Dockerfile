@@ -1,19 +1,8 @@
-FROM python:3.7.5-slim
+FROM golang:1.15.3-buster as build
+WORKDIR /minha-receita-api
+ADD . .
+RUN go get && go build -o /usr/bin/minha-receita-api
 
-ENV PYTHONPATH=/api
-WORKDIR /api
-ADD Pipfile Pipfile
-ADD Pipfile.lock Pipfile.lock
-
-RUN apt-get update && \
-    apt-get install -y gcc python3-dev && \
-    python -m pip install --upgrade pip && \
-    python -m pip install --upgrade black pipenv && \
-    pipenv install --deploy --dev && \
-    apt-get remove -y gcc python3-dev && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
-
-ADD api/ ./api/
-
-CMD ["pipenv", "run", "python", "-m", "api"]
+FROM debian:buster-slim
+COPY --from=build /usr/bin/minha-receita-api /usr/bin/minha-receita-api
+CMD ["/usr/bin/minha-receita-api"]
