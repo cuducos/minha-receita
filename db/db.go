@@ -1,33 +1,41 @@
-package main
+// Package db implements the high level API for a database interface. The lines
+// in this file should be agnostic in terms of the database provider.
+//
+// Files such as `postgres.go` and `postgres_sql.go` implements a
+// specific database provider.
+//
+// `postgres.go` defines the high level methods described in the `db.Database`
+// interface, as well as a `NewPostgreSQL` method to create this database.
+//
+// `postgres_sql.go` implements the SQL queries to run the database.
+package db
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/go-pg/pg/v10"
 )
 
-// Database interface to get a company (returns a JSON string).
-type database interface {
-	GetCompany(string) string
+var pgURI = os.Getenv("POSTGRES_URI")
+
+// Database interface to Minha Receita.
+type Database interface {
+	CreateTables()
+	DropTables()
+	ImportData(string)
+	GetCompany(string) (Company, error)
 }
 
 // CNAE represents a row from the `cnae` database table.
 type CNAE struct {
-	tableName struct{} `pg:"cnae"`
-	Codigo    string   `json:"codigo"`
-	Descricao string   `json:"descricao"`
+	Codigo    int    `json:"codigo"`
+	Descricao string `json:"descricao"`
 }
 
 // Partner represents a row from the `socio` database table.
 type Partner struct {
-	tableName                            struct{}  `pg:"socio"`
 	Cnpj                                 string    `json:"cnpj"`
 	IdentificadorDeSocio                 int       `json:"identificador_de_socio"`
 	NomeSocio                            string    `json:"nome_socio"`
@@ -42,7 +50,6 @@ type Partner struct {
 
 // Company represents a row from the `empresa` database table.
 type Company struct {
-	tableName                 struct{}   `pg:"empresa"`
 	Cnpj                      string     `json:"cnpj"`
 	IdentificadorMatrizFilial int        `json:"identificador_matriz_filial"`
 	RazaoSocial               string     `json:"razao_social"`
@@ -54,7 +61,7 @@ type Company struct {
 	CodigoNaturezaJuridica    int        `json:"codigo_natureza_juridica"`
 	DataInicioAtividade       time.Time  `json:"data_inicio_atividade"`
 	CNAEFiscal                int        `json:"cnae_fiscal"`
-	CNAEFiscalDescricao       string     `pg:"-" json:"cnae_fiscal_descricao"`
+	CNAEFiscalDescricao       string     `json:"cnae_fiscal_descricao"`
 	DescricaoTipoLogradouro   string     `json:"descricao_tipo_logradouro"`
 	Logradouro                string     `json:"logradouro"`
 	Numero                    string     `json:"numero"`
@@ -64,8 +71,8 @@ type Company struct {
 	Uf                        string     `json:"uf"`
 	CodigoMunicipio           int        `json:"codigo_municipio"`
 	Municipio                 string     `json:"municipio"`
-	DddTelefone1              string     `pg:"ddd_telefone_1" json:"ddd_telefone_1"`
-	DddTelefone2              string     `pg:"ddd_telefone_2" json:"ddd_telefone_2"`
+	DddTelefone1              string     `json:"ddd_telefone_1"`
+	DddTelefone2              string     `json:"ddd_telefone_2"`
 	DddFax                    string     `json:"ddd_fax"`
 	QualificacaoDoResponsavel int        `json:"qualificacao_do_responsavel"`
 	CapitalSocial             float32    `json:"capital_social"`
@@ -76,92 +83,19 @@ type Company struct {
 	OpcaoPeloMei              bool       `json:"opcao_pelo_mei"`
 	SituacaoEspecial          string     `json:"situacao_especial"`
 	DataSituacaoEspecial      string     `json:"data_situacao_especial"`
-	Qsa                       []*Partner `pg:"-" json:"qsa"`
-	CNAEsSecundarias          []*CNAE    `pg:"-" json:"cnaes_secundarias"`
+	Qsa                       []*Partner `json:"qsa"`
+	CNAEsSecundarias          []*CNAE    `json:"cnaes_secundarias"`
 }
 
-func (c *Company) queryPartners(db *pg.DB, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	err := db.Model(&c.Qsa).Where("cnpj = ?", c.Cnpj).Select()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not get partners for %s: %v", cnpj.Mask(c.Cnpj), err)
-	}
-}
-
-func (c *Company) queryActivities(db *pg.DB, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	_, err := db.Query(&c.CNAEsSecundarias, `
-		SELECT cnae_secundaria.cnae AS codigo, cnae.descricao
-		FROM cnae_secundaria
-		INNER JOIN cnae ON cnae_secundaria.cnae = cnae.codigo
-		WHERE cnpj = ?
-	`, c.Cnpj)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not get secondary CNAE for %s: %v", cnpj.Mask(c.Cnpj), err)
-	}
-}
-
-func (c *Company) queryCNAEDescription(db *pg.DB, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	var cnae CNAE
-	err := db.Model(&cnae).Where("codigo = ?", c.CNAEFiscal).Select()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not get secondary CNAE for %s: %v", cnpj.Mask(c.Cnpj), err)
-	}
-	c.CNAEFiscalDescricao = cnae.Descricao
-}
-
-// PostgreSQL database interface.
-type PostgreSQL struct {
-	db *pg.DB
-}
-
-// Close ends the conection with the database.
-func (p *PostgreSQL) Close() {
-	p.db.Close()
-}
-
-// GetCompany returns a string in JSON format, or an empty string if not found.
-func (p *PostgreSQL) GetCompany(num string) string {
-	var c Company
-	err := p.db.Model(&c).Where("cnpj = ?", num).Select()
-	if err != nil {
-		panic(err)
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(3)
-	go c.queryCNAEDescription(p.db, &wg)
-	go c.queryPartners(p.db, &wg)
-	go c.queryActivities(p.db, &wg)
-	wg.Wait()
-
+// JSON outputs a `Company` as a valid JSON string.
+func (c *Company) JSON() (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
-		log.Output(2, fmt.Sprintf("Could not serialize %s: %v", cnpj.Mask(c.Cnpj), err))
-		return ""
+		return "", err
 	}
-	return string(b)
+	return string(b), nil
 }
 
-// NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL() PostgreSQL {
-	var p PostgreSQL
-
-	opt, err := pg.ParseURL(os.Getenv("POSTGRES_URI"))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to parse POSTGRES_URI: %v\n", err)
-		os.Exit(1)
-	}
-
-	p.db = pg.Connect(opt)
-	if err := p.db.Ping(context.Background()); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not connect to PostgreSQL: %v\n", err)
-		os.Exit(1)
-	}
-
-	return p
+func (c *Company) String() string {
+	return cnpj.Mask(c.Cnpj)
 }

@@ -1,42 +1,42 @@
-# Minha Receita
+# Minha Receita [![Tests](https://github.com/cuducos/minha-receita/workflows/API/badge.svg)](https://github.com/cuducos/minha-receita/actions)
 
-Sua API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jurídica) da Receita Federal.
+API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jurídica) da Receita Federal.
 
-* [**Sobre**](#sobre)
-  * [Histórico](#hist%C3%B3rico)
-  * [Propósito](#prop%C3%B3sito)
-  * [Qual a URL para acesso?](#qual-a-url-para-acesso)
-* [**Instalação**](#instala%C3%A7%C3%A3o)
-  * [Requisitos](#requisitos)
-  * [Download dos arquivos](#download-dos-arquivos)
-  * [Configurações](#configura%C3%A7%C3%B5es)
-  * [Alimente o banco de dados local](#alimente-o-banco-de-dados-local)
-  * [Inicia a API web](#inicia-a-api-web)
-* [**Uso**](#uso)
-  * [API web](#api-web)
-  * [Acesso ao banco de dados](#acesso-ao-banco-de-dados)
-* [**Contribuindo**](#contribuindo)
-* [**Muito obrigado**](#muito-obrigado)
+1. [Sobre](#sobre)
+    1. [Histórico](#historico)
+    1. [Propósito](#proposito)
+    1. [Qual a URL para acesso?](#qual-a-url-para-acesso)
+1. [Instalação](#instalacao)
+    1. [Requisitos](#requisitos)
+    1. [Configurações](#configuracoes)
+1. [Uso](#uso)
+    1. [Download dos dados](#download-dos-dados)
+    1. [Carregamento o banco de dados](#carregamento-o-banco-de-dados)
+    1. [API web](#api-web)
+1. [Contribuindo](#contribuindo)
+1. [Muito obrigado](#muito-obrigado)
 
 ## Sobre
 
 ### Histórico
 
-Pela [Lei de Acesso à Informação](http://www.acessoainformacao.gov.br/assuntos/conheca-seu-direito/a-lei-de-acesso-a-informacao), os dados de CNPJ devem ser públicos e acessíveis por máquina. A Receita Federal oferece esses dados escondidos atrás de um CAPTCHA ou em formato pouco convencional (um _fixed-width text file_), com links lentos para download de diversos arquivos somando gigas. Isso não é acessível o suficiente.
+Pela [Lei de Acesso à Informação](http://www.acessoainformacao.gov.br/assuntos/conheca-seu-direito/a-lei-de-acesso-a-informacao), os dados de CNPJ devem ser públicos e acessíveis por máquina. A Receita Federal oferece esses dados escondidos atrás de um CAPTCHA ou em formato pouco convencional (um _fixed-width text file_), com links lentos e instáveis para download arquivos somando gigas. Isso não é acessível o suficiente.
 
-O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos para CSV, e ainda oferece um _mirror_ para download mais estável desses arquivos — tudo isso no [`socios-brasil`](https://github.com/turicas/socios-brasil).
+O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos para CSV, e ainda oferece um _mirror_ para download mais estável desses arquivos — tudo isso no [`socios-brasil`](https://github.com/turicas/socios-brasil) e disponibilizado no [Brasil.IO](https://brasil.io/).
 
 ### Propósito
 
 O código desse repositório faz esses dados ainda mais acessíveis:
 
-1. Importando autimaticamente os dados para um banco de dados PostgreSQL utilizando a [`rows`](https://github.com/turicas/rows)
+1. Importando autimaticamente os dados para um banco de dados PostgreSQL
 2. Adicionando dados com descrições dos CNAEs (inexistente nos arquivos da Receita Federal)
 3. Fornecendo uma API web para a consulta de dados de um CNPJ
 
 ### Qual a URL para acesso?
 
-Não tem. Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, pois:
+Não tem.
+
+Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, pois:
 
 1. não tenho dinheiro para manter um serviço desse porte no ar
 2. não tenho interesse em desenvolver um sistema para cobrar por esse serviço
@@ -45,51 +45,122 @@ Não tem. Disponibilizo essa aplicação para que cada um rode na sua própria i
 
 ### Requisitos
 
+Existem duas formas de rodar essa aplicação:
+
+* ou diretamente a partir do seu sistema operacional
+* ou com Docker
+
+_Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
+
+É necessário cerca de 30Gb disponíveis de espaço em disco para armazenar os dados.
+
+#### Requisitos e instalação sem Docker
+
+* [Go](https://golang.org/) versão 1.15
+* Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
+* Variável de ambiente`POSTGRES_URI` com crdenciais de acesso a um banco de dados PostgreSQL (como no exemplo `.env.sample`)
+
+Baixe as dependências e compile a aplicação para um diretório incluído no set `PATH`:
+
+```console
+$ go get
+$ go build -o /usr/local/bin minha-receita
+```
+
+#### Requisitos e instalação com Docker
+
+* [Docker](https://www.docker.com/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
-* Cerca de 30Gb disponíveis de espaço em disco
-* _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
-### Download dos arquivos
+Gere as imagens dos containers com:
 
-Salve **quatro** arquivos no diretório `data/` desse repositório (3 da Receita Federal, 1 do IBGE):
-
-#### Receita Federal
-
-Primeiro faço o download dos arquivos da Receita Federal convertidos para CSV com o [`socios-brasil`](https://github.com/turicas/socios-brasil) e [disponibilizados no Google Drive do Turicas](https://drive.google.com/drive/folders/1JRJDfjm6uHqyEruJdtWT--kPwUx3APEy):
-
-* `empresa.csv.gz`
-* `socio.csv.gz`
-* `cnae-secundaria.csv.gz`
-
-#### IBGE
-
-Depois, precisamos dos dados com a descrição dos CNAE (Classificação Nacional de Atividades Econômicas), já que nos dados da Receita Federal apenas temos o código númerico, sem a descrição. Acesse [a página da CONCLA no IBGE](https://cnae.ibge.gov.br/classificacoes/download-concla.html) e baixe a planilha _Estrutura detalhada_ do documento _CNAE 2.3 Subclasses_:
-
-* [`CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx`](https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx)
+```console
+$ docker-compose build
+```
 
 ### Configurações
 
-Copie o arquivo `.env.sample` como `.env` e ajuste o acesso ao banco de dados (`POSTGRES_URI`) de acordo com as suas preferências e necessidades. O `.env.sample` configura o acesso para o banco que o Docker Compose sobe.
+Todas as configurações são passadas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
 
-### Alimente o banco de dados local
+#### Exemplo
 
-Existe um serviço nesse repositório chamado `feed` só para automatizar a criação das tabelas e o carregamento de dados. Ele pode demorar mais de 1h, mas funciona (lembre-se de, antes, baixar os arquivos para o diretório `data/`), desde que o banco de dados esteja limpo (sem tabelas ou índices) :
+Sem Docker:
 
 ```console
-$ docker-compose up feed
+$ minha-receita --help
+$ minha-receita api --help
 ```
 
-### Inicia a API web
-
-A API web é uma aplicação super simples que pode ser inciada com:
+Com Docker:
 
 ```console
-$ docker-compose up api
+$ docker-compose run --rm minha-receita --help
+$ docker-compose run --rm minha-receita api --help
 ```
 
 ## Uso
 
+### Download dos dados
+
+Precisamos de **quatro** arquivos no diretório `data/` desse repositório (3 da Receita Federal, 1 do IBGE). O comando `download` mostra as instruções e as URLs (no futuro ele fará o download em si).
+
+#### Exemplo
+
+Sem Docker:
+
+```console
+$ minha-receita download
+```
+
+Com Docker:
+
+```console
+$ docker-compose run --rm minha-receita download --directory /mnt/data/
+```
+
+### Carregamento do banco de dados
+
+Primeiro é necessário criar as tabelas no banco de dados, para isso utlize o comando `create`.
+
+Caso seja necessário limpar o banco de dados para começar um novo carregamento de dados, é possível excluir as tabelas com comando `drop`.
+
+Para importar os dados, utilize o comando `import` — esse comando pode demorar mais de 1h, depdendendo do equipamento. Esse comando aceita o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `./data/`).
+
+#### Exemplos de uso
+
+Sem Docker:
+
+```console
+$ minha-receita drop  # caso necessário
+$ minha-receita create
+$ minha-receita import
+```
+
+Com Docker:
+
+```console
+$ docker-compose run --rm minha-receita drop  # caso necessário
+$ docker-compose run --rm minha-receita create
+$ docker-compose run --rm minha-receita import -d /mnt/data/
+```
+
 ### API web
+
+A API web é uma aplicação super simples que, por padrão, ficará disponível em [`localhost:8000`](http://localhost:8000).
+
+#### Exemplos de uso
+
+Sem Docker:
+
+```console
+$ minha-receita api
+```
+
+Com Docker:
+
+```console
+$ docker-compose up
+```
 
 A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `POST`:
 
@@ -97,19 +168,19 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 |---|---|---|---|---|
 | `/` | `GET` | | 405| `{"message": "Essa URL aceita apenas o método POST."}` |
 | `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
-| `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}`
+| `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}` |
 | `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
 | `/` | `POST` | `cnpj=00000000000000` | 404 | `{"message": "CNPJ 00.000.000/0001-91 não encontrado."}` |
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |
 
-Exemplo de requisição usando o `curl`:
+##### Exemplo de requisição usando o `curl`
 
 ```console
 $ curl -i -X POST -d cnpj=19131243000197 0.0.0.0:8000
 ```
 
-Exemplo de resposta válida:
+##### Exemplo de resposta válida
 
 ```json
 {
@@ -184,19 +255,13 @@ Exemplo de resposta válida:
 }
 ```
 
-### Acesso ao banco de dados
-
-É possível, também, conectar-se diretamente ao PostresSQL, pois o serviço expõe a porta `5432`. A URI, descontando alterações no `.env`, seria `postgres://minhareceita:minhareceita@localhost:5432/minhareceita`.
-
 ## Contribuindo
 
-Escreva testes, reconstrua os containers, rode os testes e formate seu código com [Black](https://github.com/python/black):
+Escreva testes, rode os testes e reconstrua os containers para saber se está tudo certo:
 
 ```console
+$ go test ./...
 $ docker-compose build
-$ docker-compose run --rm api pipenv run py.test
-$ docker-compose run --rm api black . --check
-$ docker-compose run --rm feed black . --check
 ```
 
 ## Muito obrigado

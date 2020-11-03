@@ -1,6 +1,7 @@
-package main
+package api
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,16 +10,25 @@ import (
 	"testing"
 
 	"github.com/cuducos/go-cnpj"
+
+	"github.com/cuducos/minha-receita/db"
 )
 
-type mockDatabase struct {
-}
+const expected = `{"cnpj":"19131243000197","identificador_matriz_filial":0,"razao_social":"","nome_fantasia":"","situacao_cadastral":0,"data_situacao_cadastral":"0001-01-01T00:00:00Z","motivo_situacao_cadastral":0,"nome_cidade_exterior":"","codigo_natureza_juridica":0,"data_inicio_atividade":"0001-01-01T00:00:00Z","cnae_fiscal":0,"cnae_fiscal_descricao":"","descricao_tipo_logradouro":"","logradouro":"","numero":"","complemento":"","bairro":"","cep":0,"uf":"","codigo_municipio":0,"municipio":"","ddd_telefone_1":"","ddd_telefone_2":"","ddd_fax":"","qualificacao_do_responsavel":0,"capital_social":0,"porte":0,"opcao_pelo_simples":false,"data_opcao_pelo_simples":"","data_exclusao_do_simples":"","opcao_pelo_mei":false,"situacao_especial":"","data_situacao_especial":"","qsa":null,"cnaes_secundarias":null}`
 
-func (mockDatabase) GetCompany(c string) string {
-	if cnpj.Unmask(c) == "19131243000197" {
-		return "Yay!"
+type mockDatabase struct{}
+
+func (mockDatabase) CreateTables()       {}
+func (mockDatabase) DropTables()         {}
+func (mockDatabase) ImportData(_ string) {}
+
+func (mockDatabase) GetCompany(n string) (db.Company, error) {
+	var c db.Company
+	n = cnpj.Unmask(n)
+	if n == "19131243000197" {
+		return db.Company{Cnpj: n}, nil
 	}
-	return ""
+	return c, errors.New("Company not found")
 }
 
 func TestCompanyHandler(t *testing.T) {
@@ -68,13 +78,13 @@ func TestCompanyHandler(t *testing.T) {
 			http.MethodPost,
 			map[string]string{"cnpj": "19.131.243/0001-97"},
 			http.StatusOK,
-			"Yay!", // TODO add proper content
+			expected,
 		},
 		{
 			http.MethodPost,
 			map[string]string{"cnpj": "19131243000197"},
 			http.StatusOK,
-			"Yay!", // TODO add proper content
+			expected,
 		},
 	}
 
@@ -96,9 +106,9 @@ func TestCompanyHandler(t *testing.T) {
 			t.Fatal("Expected an HTTP response, but got an error.")
 		}
 
-		app := API{&mockDatabase{}}
+		app := api{&mockDatabase{}}
 		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.PostHandler)
+		handler := http.HandlerFunc(app.postHandler)
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {

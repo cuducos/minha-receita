@@ -1,13 +1,20 @@
-package main
+// Package api provides the HTTP server with wrappers for JSON responses. It
+// validates data before passing it to the `db.Database`, which handles the
+// query and serialization.
+package api
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/cuducos/go-cnpj"
+
+	"github.com/cuducos/minha-receita/db"
 )
 
 // errorMessage is a helper to serialize an error message to JSON.
@@ -28,13 +35,11 @@ func writeError(w http.ResponseWriter, m string, s int) {
 	w.Write(b)
 }
 
-// API wraps the HTTP request handler and database interface.
-type API struct {
-	db database
+type api struct {
+	db db.Database
 }
 
-// PostHandler wraps the database interface in a HTTP request/response cycle.
-func (app API) PostHandler(w http.ResponseWriter, r *http.Request) {
+func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -58,12 +63,34 @@ func (app API) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := app.db.GetCompany(v)
-	if c == "" {
+	c, err := app.db.GetCompany(cnpj.Unmask(v))
+	if err != nil {
 		writeError(w, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)), http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, c)
+	s, err := c.JSON()
+	if err != nil {
+		writeError(w, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(v)), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, s)
+}
+
+// Serve spins up the HTTP server.
+func Serve(db db.Database) {
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Output(2, "No PORT environment variable found, using 8000.")
+		port = ":8000"
+	}
+
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
+	}
+
+	app := api{db: db}
+	http.HandleFunc("/", app.postHandler)
+	log.Fatal(http.ListenAndServe(port, nil))
 }
