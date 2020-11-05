@@ -36,8 +36,6 @@ github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfc
 github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cuducos/go-cnpj v0.0.1 h1:qx3CbujuZaugm/1HE0sN65BoqAO8bzRZtP7qEvvwMT8=
 github.com/cuducos/go-cnpj v0.0.1/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGtEey/f4Y=
-github.com/cuducos/minha-receita/api v0.0.0-20201030193030-36ac5ba84c8f h1:lvlIXnom8+ooIJaQnWv33587jomyDmh/Z865MxCQbL0=
-github.com/cuducos/minha-receita/api v0.0.0-20201030193030-36ac5ba84c8f/go.mod h1:cY8fzZ17CDVoWaflcpe54CaDxfqg1oAq4+TUbTOO6nA=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
