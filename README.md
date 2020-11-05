@@ -11,7 +11,7 @@ API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jur�
     1. [Configurações](#configuracoes)
 1. [Uso](#uso)
     1. [Download dos dados](#download-dos-dados)
-    1. [Carregamento do banco de dados](#carregamento-o-banco-de-dados)
+    1. [Carregamento do banco de dados](#carregamento-do-banco-de-dados)
     1. [API web](#api-web)
 1. [Contribuindo](#contribuindo)
 1. [Muito obrigado](#muito-obrigado)
