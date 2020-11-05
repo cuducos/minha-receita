@@ -90,7 +90,8 @@ func Serve(db db.Database) {
 		port = ":" + port
 	}
 
+	nr := newRelicApp()
 	app := api{db: db}
-	http.HandleFunc("/", app.postHandler)
+	http.HandleFunc(newRelicHandle(nr, "/", app.postHandler))
 	log.Fatal(http.ListenAndServe(port, nil))
 }

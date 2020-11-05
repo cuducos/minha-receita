@@ -59,7 +59,11 @@ different number.
 
 Using GODEBUG environment variable changes the HTTP server verbosity (for
 example: http2debug=1 is verbose and http2debug=2 is more verbose, as in
-https://golang.org/pkg/net/http/`
+https://golang.org/pkg/net/http/
+
+The HTTP server is prepared to send logs to New Relic. If the
+NEW_RELIC_LICENSE_KEY environment variable is set, the app automatically
+reports to New Relic. Otherwise, the New Relic wrappers are just ignored.`
 
 var dir string
 var pg db.PostgreSQL
