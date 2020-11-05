@@ -32,7 +32,7 @@ Receita Federal
 
 Primeiro faço o download dos arquivos da Receita Federal convertidos para CSV e
 disponibilizados pelo Brasil.IO:
-https://data.brasil.io/dataset/socios-brasil/_meta/list.html
+https://drive.google.com/drive/folders/1tOGB1mJZcF5V1SUS-YlPJF0-zdhfN1yd
 
 Precisamos apenas desses três arquivos:
 
