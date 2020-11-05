@@ -1,32 +1,24 @@
 version: "3"
 services:
 
-  api:
-    build:
-      context: api/
-    depends_on:
-      - postgres
+  minha-receita:
+    build: .
     ports:
       - 8000:8000
     env_file:
       - .env
-
-  feed:
-    build:
-      context: feed/
-    env_file:
-      - .env
-    volumes:
-      - ./data:/mnt/data
-      - ./schemas:/mnt/schemas
     depends_on:
       - postgres
+    volumes:
+      - ./data:/mnt/data
 
   postgres:
     image: postgres:11.4-alpine
     ports:
       - 5432:5432
-    env_file:
-      - .env
+    environment:
+      POSTGRES_PASSWORD: minhareceita
+      POSTGRES_USER: minhareceita
+      POSTGRES_DB: minhareceita
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
