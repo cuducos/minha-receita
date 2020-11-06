@@ -22,15 +22,16 @@ API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jur�
 
 Pela [Lei de Acesso à Informação](http://www.acessoainformacao.gov.br/assuntos/conheca-seu-direito/a-lei-de-acesso-a-informacao), os dados de CNPJ devem ser públicos e acessíveis por máquina. A Receita Federal oferece esses dados escondidos atrás de um CAPTCHA ou em formato pouco convencional (um _fixed-width text file_), com links lentos e instáveis para download arquivos somando gigas. Isso não é acessível o suficiente.
 
-O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos para CSV, e ainda oferece um _mirror_ para download mais estável desses arquivos — tudo isso no [`socios-brasil`](https://github.com/turicas/socios-brasil) e disponibilizado no [Brasil.IO](https://brasil.io/).
+O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos para CSV, e ainda oferece um _mirror_ para download mais estável desses arquivos — tudo isso no [`socios-brasil`]() e disponibilizado no [Brasil.IO](https://brasil.io/).
 
 ### Propósito
 
 O código desse repositório faz esses dados ainda mais acessíveis:
 
-1. Importando autimaticamente os dados para um banco de dados PostgreSQL
-2. Adicionando dados com descrições dos CNAEs (inexistente nos arquivos da Receita Federal)
-3. Fornecendo uma API web para a consulta de dados de um CNPJ
+1. Transformando os dados em CSV (assim como o [`socios-brasil`](https://github.com/turicas/socios-brasil) já faz)
+2. Importando autimaticamente os dados para um banco de dados PostgreSQL
+3. Adicionando dados com descrições dos CNAEs (inexistente nos arquivos da Receita Federal)
+4. Fornecendo uma API web para a consulta de dados de um CNPJ
 
 ### Qual a URL para acesso?
 
@@ -102,20 +103,24 @@ $ docker-compose run --rm minha-receita api --help
 
 ### Download dos dados
 
-Precisamos de **quatro** arquivos no diretório `data/` desse repositório (3 da Receita Federal, 1 do IBGE). O comando `download` mostra as instruções e as URLs (no futuro ele fará o download em si).
+O comando `download` faz o download dos arquivos necessǻrios para alimentar o banco de dados. Na sequência, o comando `parse` transforma os arquivos para o formato CSV. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
+
+Por padrão o comando `download` baixa dados do servidor da Receita Federal, que é lento e instável, então, como alternativa, podemos utilizar o _mirror_ do [Brasil.IO](https://brasil.io) com a opção `--mirror`.
 
 #### Exemplo
 
 Sem Docker:
 
 ```console
-$ minha-receita download
+$ minha-receita download --mirror
+$ minha-receita parse
 ```
 
 Com Docker:
 
 ```console
 $ docker-compose run --rm minha-receita download --directory /mnt/data/
+$ docker-compose run --rm minha-receita parse --directory /mnt/data/
 ```
 
 ### Carregamento do banco de dados
@@ -124,7 +129,8 @@ Primeiro é necessário criar as tabelas no banco de dados, para isso utlize o c
 
 Caso seja necessário limpar o banco de dados para começar um novo carregamento de dados, é possível excluir as tabelas com comando `drop`.
 
-Para importar os dados, utilize o comando `import` — esse comando pode demorar mais de 1h, depdendendo do equipamento. Esse comando aceita o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `./data/`).
+Para importar os dados, utilize o comando `import` — esse comando pode demorar mais de 1h, depdendendo do equipamento. Esse comando também aceita a opção `--directory` ou `-d` para especificar um local diferente do padrão onde encontrar os arquivos.
+
 
 #### Exemplos de uso
 

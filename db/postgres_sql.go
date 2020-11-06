@@ -18,19 +18,9 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-var pgSchema = getSchema()
-
-func getSchema() string {
-	s := os.Getenv("POSTGRES_SCHEMA")
-	if s == "" {
-		log.Output(2, "No POSTGRES_SCHEMA environment variable found, using public.")
-		s = "public"
-	}
-	return s
-}
-
 type source struct {
-	name string
+	name   string
+	schema string
 }
 
 func (s source) path(dir string) string {
@@ -53,7 +43,7 @@ func (s source) tableName() string {
 }
 
 func (s source) fullTableName() string {
-	return fmt.Sprintf("%s.%s", pgSchema, s.tableName())
+	return fmt.Sprintf("%s.%s", s.schema, s.tableName())
 }
 
 func (s source) indexName() string {
@@ -124,10 +114,10 @@ func (s source) columns() string {
 	return strings.Join(cols, ", ")
 }
 
-func getSources() []source {
+func getSources(schema string) []source {
 	var s []source
 	for _, n := range []string{"empresa", "cnae", "cnae_secundaria", "socio"} {
-		s = append(s, source{n})
+		s = append(s, source{n, schema})
 	}
 	return s
 }

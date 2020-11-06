@@ -12,7 +12,8 @@ import (
 
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	conn *pg.DB
+	conn   *pg.DB
+	schema string
 }
 
 // Close ends the conection with the database.
@@ -39,7 +40,7 @@ func (p *PostgreSQL) GetCompany(num string) (Company, error) {
 // CreateTables creates the required database tables.
 func (p *PostgreSQL) CreateTables() {
 	var wg sync.WaitGroup
-	src := getSources()
+	src := getSources(p.schema)
 	wg.Add(len(src))
 	for _, s := range src {
 		go createTable(p.conn, &wg, s)
@@ -50,7 +51,7 @@ func (p *PostgreSQL) CreateTables() {
 // DropTables drops the database tables created by `CreateTables`.
 func (p *PostgreSQL) DropTables() {
 	var wg sync.WaitGroup
-	src := getSources()
+	src := getSources(p.schema)
 	wg.Add(len(src))
 	for _, s := range src {
 		go dropTable(p.conn, &wg, s)
@@ -61,7 +62,7 @@ func (p *PostgreSQL) DropTables() {
 // ImportData reads dtaa from compresed CSV and Excel files and import it.
 func (p *PostgreSQL) ImportData(dir string) {
 	var wg sync.WaitGroup
-	src := getSources()
+	src := getSources(p.schema)
 	wg.Add(len(src))
 	for _, s := range src {
 		if s.name == "cnae" {
@@ -81,6 +82,12 @@ func NewPostgreSQL() PostgreSQL {
 		os.Exit(1)
 	}
 
+	s := os.Getenv("POSTGRES_SCHEMA")
+	if s == "" {
+		log.Output(2, "No POSTGRES_SCHEMA environment variable found, using public.")
+		s = "public"
+	}
+
 	opt, err := pg.ParseURL(u)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to parse POSTGRES_URI: %v\n", err)
@@ -88,6 +95,7 @@ func NewPostgreSQL() PostgreSQL {
 	}
 
 	var p PostgreSQL
+	p.schema = s
 	p.conn = pg.Connect(opt)
 	if err := p.conn.Ping(context.Background()); err != nil {
 		fmt.Fprintf(os.Stderr, "Could not connect to PostgreSQL: %v\n", err)

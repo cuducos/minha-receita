@@ -45,7 +45,7 @@ func TestSource(t *testing.T) {
 
 	var s source
 	for _, c := range cases {
-		s = source{c.name}
+		s = source{c.name, "public"}
 		if p := s.path("data"); !strings.HasSuffix(p, c.path) {
 			t.Errorf("Expected path to be %s, but got %s", c.path, p)
 		}
@@ -62,7 +62,7 @@ func TestSource(t *testing.T) {
 }
 
 func TestGetSources(t *testing.T) {
-	s := getSources()
+	s := getSources("public")
 	if len(s) != 4 {
 		t.Errorf("Expected to get 4 fources, but got %d: %v", len(s), s)
 	}
