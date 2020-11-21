@@ -108,42 +108,42 @@ func parseCNAE(l string) [][]string {
 
 func parseCompany(l string) []string {
 	cols := cleanLine([]string{
-		l[3:17],    // CNPJ
-		l[17:18],   // IdentificadorMatrizFilial
-		l[18:168],  // RazaoSocial
-		l[168:223], // NomeFantasia
-		l[223:225], // SituacaoCadastral
-		l[225:233], // DataSituacaoCadastral
-		l[233:235], // MotivoSituacaoCadastral
-		l[235:290], // NomeCidadeExterior
-		l[362:367], // CodigoNaturezaJuridica
-		l[367:375], // DataInicioAtividade
-		l[375:382], // CNAEFiscal
-		l[382:402], // DescricaoTipoLogradouro
-		l[402:462], // Logradouro
-		l[462:467], // Numero
-		l[467:624], // Complemento
-		l[624:674], // Bairro
-		l[674:682], // CEP
-		l[682:684], // UF
-		l[684:688], // CodigoMunicipio
-		l[688:738], // Municipio
-		l[738:750], // DDDTelefone1
-		l[750:762], // DDDTelefone2
-		l[762:774], // DDDFax
-		l[889:891], // QualificacaoDoResponsavel
-		l[891:905], // CapitalSocial
-		l[905:907], // Porte
-		l[907:908], // OpcaoPeloSimples
-		l[908:916], // DataOpcaoPeloSimples
-		l[916:924], // DataExclusaoDoSimples
-		l[924:925], // OpcaoPeloMEI
-		l[925:948], // SituacaoEspecial
-		l[948:956], // DataSituacaoEspecial
+		l[3:17],    //  0 CNPJ
+		l[17:18],   //  1 IdentificadorMatrizFilial
+		l[18:168],  //  2 RazaoSocial
+		l[168:223], //  3 NomeFantasia
+		l[223:225], //  4 SituacaoCadastral
+		l[225:233], //  5 DataSituacaoCadastral
+		l[233:235], //  6 MotivoSituacaoCadastral
+		l[235:290], //  7 NomeCidadeExterior
+		l[362:367], //  8 CodigoNaturezaJuridica
+		l[367:375], //  9 DataInicioAtividade
+		l[375:382], // 10 CNAEFiscal
+		l[382:402], // 11 DescricaoTipoLogradouro
+		l[402:462], // 12 Logradouro
+		l[462:467], // 13 Numero
+		l[467:624], // 14 Complemento
+		l[624:674], // 15 Bairro
+		l[674:682], // 16 CEP
+		l[682:684], // 17 UF
+		l[684:688], // 18 CodigoMunicipio
+		l[688:738], // 29 Municipio
+		l[738:750], // 20 DDDTelefone1
+		l[750:762], // 21 DDDTelefone2
+		l[762:774], // 22 DDDFax
+		l[889:891], // 23 QualificacaoDoResponsavel
+		l[891:905], // 24 CapitalSocial
+		l[905:907], // 25 Porte
+		l[907:908], // 26 OpcaoPeloSimples
+		l[908:916], // 27 DataOpcaoPeloSimples
+		l[916:924], // 28 DataExclusaoDoSimples
+		l[924:925], // 29 OpcaoPeloMEI
+		l[925:948], // 30 SituacaoEspecial
+		l[948:956], // 31 DataSituacaoEspecial
 	})
 
 	// format dates
-	for _, i := range []int{5, 9} {
+	for _, i := range []int{5, 9, 27, 28, 31} {
 		cols[i] = formatDate(cols[i])
 	}
 

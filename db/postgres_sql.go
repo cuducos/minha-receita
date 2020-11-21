@@ -102,11 +102,11 @@ func (s source) columns() string {
 			"capital_social decimal NULL",
 			"porte integer NULL",
 			"opcao_pelo_simples boolean NOT NULL",
-			"data_opcao_pelo_simples text NULL",
-			"data_exclusao_do_simples text NULL",
+			"data_opcao_pelo_simples date NULL",
+			"data_exclusao_do_simples date NULL",
 			"opcao_pelo_mei boolean NOT NULL",
 			"situacao_especial text NULL",
-			"data_situacao_especial text NULL",
+			"data_situacao_especial date NULL",
 		}
 	default:
 		panic(fmt.Sprintf("No columns defined for source %s", s.name))

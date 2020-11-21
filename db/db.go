@@ -12,6 +12,7 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 
@@ -19,6 +20,18 @@ import (
 )
 
 var pgURI = os.Getenv("POSTGRES_URI")
+
+// Date wraps time.Time as type that only outputs YYYY-MM-DD in JSON.
+type Date time.Time
+
+// MarshalJSON formats a `Date` as YYYY-MM-DD, or null for zero values.
+func (d Date) MarshalJSON() ([]byte, error) {
+	t := time.Time(d)
+	if t.IsZero() {
+		return []byte("null"), nil
+	}
+	return []byte(fmt.Sprintf(`"%s"`, t.Format("2006-01-02"))), nil
+}
 
 // Database interface to Minha Receita.
 type Database interface {
@@ -36,16 +49,16 @@ type CNAE struct {
 
 // Partner represents a row from the `socio` database table.
 type Partner struct {
-	CNPJ                                 string    `json:"cnpj"`
-	IdentificadorDeSocio                 int       `json:"identificador_de_socio"`
-	NomeSocio                            string    `json:"nome_socio"`
-	CNPJCPFDoSocio                       string    `json:"cnpj_cpf_do_socio"`
-	CodigoQualificacaoSocio              int       `json:"codigo_qualificacao_socio"`
-	PercentualCapitalSocial              int       `json:"percentual_capital_social"`
-	DataEntradaSociedade                 time.Time `json:"data_entrada_sociedade"`
-	CPFRepresentanteLegal                string    `json:"cpf_representante_legal"`
-	NomeRepresentanteLegal               string    `json:"nome_representante_legal"`
-	CodigoQualificacaoRepresentanteLegal int       `json:"codigo_qualificacao_representante_legal"`
+	CNPJ                                 string `json:"cnpj"`
+	IdentificadorDeSocio                 int    `json:"identificador_de_socio"`
+	NomeSocio                            string `json:"nome_socio"`
+	CNPJCPFDoSocio                       string `json:"cnpj_cpf_do_socio"`
+	CodigoQualificacaoSocio              int    `json:"codigo_qualificacao_socio"`
+	PercentualCapitalSocial              int    `json:"percentual_capital_social"`
+	DataEntradaSociedade                 Date   `json:"data_entrada_sociedade"`
+	CPFRepresentanteLegal                string `json:"cpf_representante_legal"`
+	NomeRepresentanteLegal               string `json:"nome_representante_legal"`
+	CodigoQualificacaoRepresentanteLegal int    `json:"codigo_qualificacao_representante_legal"`
 }
 
 // Company represents a row from the `empresa` database table.
@@ -55,11 +68,11 @@ type Company struct {
 	RazaoSocial               string     `json:"razao_social"`
 	NomeFantasia              string     `json:"nome_fantasia"`
 	SituacaoCadastral         int        `json:"situacao_cadastral"`
-	DataSituacaoCadastral     time.Time  `json:"data_situacao_cadastral"`
+	DataSituacaoCadastral     Date       `json:"data_situacao_cadastral"`
 	MotivoSituacaoCadastral   int        `json:"motivo_situacao_cadastral"`
 	NomeCidadeExterior        string     `json:"nome_cidade_exterior"`
 	CodigoNaturezaJuridica    int        `json:"codigo_natureza_juridica"`
-	DataInicioAtividade       time.Time  `json:"data_inicio_atividade"`
+	DataInicioAtividade       Date       `json:"data_inicio_atividade"`
 	CNAEFiscal                int        `json:"cnae_fiscal"`
 	CNAEFiscalDescricao       string     `json:"cnae_fiscal_descricao"`
 	DescricaoTipoLogradouro   string     `json:"descricao_tipo_logradouro"`
@@ -78,11 +91,11 @@ type Company struct {
 	CapitalSocial             float32    `json:"capital_social"`
 	Porte                     int        `json:"porte"`
 	OpcaoPeloSimples          bool       `json:"opcao_pelo_simples"`
-	DataOpcaoPeloSimples      string     `json:"data_opcao_pelo_simples"`
-	DataExclusaoDoSimples     string     `json:"data_exclusao_do_simples"`
+	DataOpcaoPeloSimples      Date       `json:"data_opcao_pelo_simples"`
+	DataExclusaoDoSimples     Date       `json:"data_exclusao_do_simples"`
 	OpcaoPeloMEI              bool       `json:"opcao_pelo_mei"`
 	SituacaoEspecial          string     `json:"situacao_especial"`
-	DataSituacaoEspecial      string     `json:"data_situacao_especial"`
+	DataSituacaoEspecial      Date       `json:"data_situacao_especial"`
 	QSA                       []*Partner `json:"qsa"`
 	CNAESecundarias           []*CNAE    `json:"cnaes_secundarias"`
 }
