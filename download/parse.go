@@ -61,16 +61,16 @@ func cleanCompanyName(n string) string {
 
 func parsePartner(l string) []string {
 	cols := cleanLine([]string{
-		l[3:17],    // cnpj
-		l[17:18],   // identificadorDeSocio
-		l[18:168],  // nomeSocio
-		l[168:182], // cnpjCpfDoSocio
-		l[182:184], // codigoQualificacaoSocio
-		l[184:189], // percentualCapitalSocial
-		l[189:197], // dataEntradaSociedade
-		l[270:281], // cpfRepresentanteLegal
-		l[281:341], // nomeRepresentanteLegal
-		l[341:343], // codigoQualificacaoRepresentanteLegal
+		l[3:17],    // CNPJ
+		l[17:18],   // IdentificadorDeSocio
+		l[18:168],  // NomeSocio
+		l[168:182], // CNPJCPFDoSocio
+		l[182:184], // CodigoQualificacaoSocio
+		l[184:189], // PercentualCapitalSocial
+		l[189:197], // DataEntradaSociedade
+		l[270:281], // CPFRepresentanteLegal
+		l[281:341], // NomeRepresentanteLegal
+		l[341:343], // CodigoQualificacaoRepresentanteLegal
 	})
 
 	// fix date
@@ -108,7 +108,7 @@ func parseCNAE(l string) [][]string {
 
 func parseCompany(l string) []string {
 	cols := cleanLine([]string{
-		l[3:17],    // Cnpj
+		l[3:17],    // CNPJ
 		l[17:18],   // IdentificadorMatrizFilial
 		l[18:168],  // RazaoSocial
 		l[168:223], // NomeFantasia
@@ -124,20 +124,20 @@ func parseCompany(l string) []string {
 		l[462:467], // Numero
 		l[467:624], // Complemento
 		l[624:674], // Bairro
-		l[674:682], // Cep
-		l[682:684], // Uf
+		l[674:682], // CEP
+		l[682:684], // UF
 		l[684:688], // CodigoMunicipio
 		l[688:738], // Municipio
-		l[738:750], // DddTelefone1
-		l[750:762], // DddTelefone2
-		l[762:774], // DddFax
+		l[738:750], // DDDTelefone1
+		l[750:762], // DDDTelefone2
+		l[762:774], // DDDFax
 		l[889:891], // QualificacaoDoResponsavel
 		l[891:905], // CapitalSocial
 		l[905:907], // Porte
 		l[907:908], // OpcaoPeloSimples
 		l[908:916], // DataOpcaoPeloSimples
 		l[916:924], // DataExclusaoDoSimples
-		l[924:925], // OpcaoPeloMei
+		l[924:925], // OpcaoPeloMEI
 		l[925:948], // SituacaoEspecial
 		l[948:956], // DataSituacaoEspecial
 	})

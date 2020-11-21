@@ -239,7 +239,7 @@ func importCNAEXls(db *pg.DB, wg *sync.WaitGroup, s source, dir string) {
 
 func queryPartners(db *pg.DB, wg *sync.WaitGroup, c *Company) {
 	defer wg.Done()
-	_, err := db.Query(&c.Qsa, "SELECT * FROM socios WHERE cnpj = ?", c.Cnpj)
+	_, err := db.Query(&c.QSA, "SELECT * FROM socios WHERE cnpj = ?", c.CNPJ)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not get partners for %s: %v", c, err)
 	}
@@ -247,12 +247,12 @@ func queryPartners(db *pg.DB, wg *sync.WaitGroup, c *Company) {
 
 func queryActivities(db *pg.DB, wg *sync.WaitGroup, c *Company) {
 	defer wg.Done()
-	_, err := db.Query(&c.CNAEsSecundarias, `
+	_, err := db.Query(&c.CNAESecundarias, `
 		SELECT cnae_secundarias.cnae AS codigo, cnaes.descricao
 		FROM cnae_secundarias
 		INNER JOIN cnaes ON cnae_secundarias.cnae = cnaes.codigo
 		WHERE cnpj = ?
-	`, c.Cnpj)
+	`, c.CNPJ)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not get secondary CNAE for %s: %v", c, err)
 	}

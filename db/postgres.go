@@ -59,7 +59,7 @@ func (p *PostgreSQL) DropTables() {
 	wg.Wait()
 }
 
-// ImportData reads dtaa from compresed CSV and Excel files and import it.
+// ImportData reads data from compresed CSV and Excel files and import it.
 func (p *PostgreSQL) ImportData(dir string) {
 	var wg sync.WaitGroup
 	src := getSources(p.schema)

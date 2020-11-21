@@ -18,7 +18,7 @@ func TestCompany(t *testing.T) {
 	}
 	expected := strings.TrimSpace(string(b))
 
-	c := Company{Cnpj: "19131243000197"}
+	c := Company{CNPJ: "19131243000197"}
 	if j, _ := c.JSON(); j != expected {
 		t.Errorf("\nExpected JSON to be:\n\t%s\nGot:\n\t%s", expected, j)
 	}

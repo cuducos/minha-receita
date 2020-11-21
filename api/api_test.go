@@ -26,7 +26,7 @@ func (mockDatabase) GetCompany(n string) (db.Company, error) {
 	var c db.Company
 	n = cnpj.Unmask(n)
 	if n == "19131243000197" {
-		return db.Company{Cnpj: n}, nil
+		return db.Company{CNPJ: n}, nil
 	}
 	return c, errors.New("Company not found")
 }
