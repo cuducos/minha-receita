@@ -67,7 +67,7 @@ type Company struct {
 	Numero                    string     `json:"numero"`
 	Complemento               string     `json:"complemento"`
 	Bairro                    string     `json:"bairro"`
-	CEP                       int        `json:"cep"`
+	CEP                       string     `json:"cep"`
 	UF                        string     `json:"uf"`
 	CodigoMunicipio           int        `json:"codigo_municipio"`
 	Municipio                 string     `json:"municipio"`

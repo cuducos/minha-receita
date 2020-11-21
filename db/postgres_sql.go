@@ -91,7 +91,7 @@ func (s source) columns() string {
 			"numero text NULL",
 			"complemento text NULL",
 			"bairro text NULL",
-			"cep integer NULL",
+			"cep text NULL",
 			"uf text NULL",
 			"codigo_municipio integer NULL",
 			"municipio text NULL",
