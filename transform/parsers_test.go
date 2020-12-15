@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+const zipFixture = "DADOS_ABERTOS_CNPJ_01.zip"
+
 type fixtures struct {
 	company string
 	partner string
@@ -147,10 +149,10 @@ func TestParseCompany(t *testing.T) {
 		"16",
 		"",
 		"5",
-		"false",
+		"0",
 		"",
 		"",
-		"false",
+		"N",
 		"",
 		"",
 	}
@@ -158,23 +160,23 @@ func TestParseCompany(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Error(err)
 	}
-	defer os.RemoveAll(dir)
+	defer os.RemoveAll(tmp)
 
-	src, err := ioutil.ReadFile(filepath.Join("..", "testdata", "DADOS_ABERTOS_CNPJ_01.zip"))
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = ioutil.WriteFile(filepath.Join(dir, "DADOS_ABERTOS_CNPJ_01.zip"), src, 0644)
+	src, err := ioutil.ReadFile(filepath.Join("..", "testdata", zipFixture))
 	if err != nil {
 		t.Error(err)
 	}
 
-	Parse(dir)
+	err = ioutil.WriteFile(filepath.Join(tmp, zipFixture), src, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	Parse(tmp)
 	for _, n := range []string{"empresa", "socio", "cnae_secundaria"} {
 		f := fmt.Sprintf("%s.csv.gz", n)
 		expected, err := os.Stat(filepath.Join("..", "testdata", f))
@@ -182,7 +184,7 @@ func TestParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		got, err := os.Stat(filepath.Join(dir, f))
+		got, err := os.Stat(filepath.Join(tmp, f))
 		if err != nil {
 			t.Error(err)
 		}
