@@ -12,10 +12,10 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+const FilePattern = "DADOS_ABERTOS_CNPJ_%02d.zip"
 const federalRevenue = "http://200.152.38.155/CNPJ/"
 const brasilIO = "https://data.brasil.io/mirror/socios-brasil/"
 const files = 20
-const filePattern = "DADOS_ABERTOS_CNPJ_%02d.zip"
 
 type file struct {
 	url   string
@@ -42,7 +42,7 @@ func getFiles(m bool, dir string) []file {
 		s = federalRevenue
 	}
 	for i := 1; i <= files; i++ {
-		n := fmt.Sprintf(filePattern, i)
+		n := fmt.Sprintf(FilePattern, i)
 		fs = append(fs, file{url: fmt.Sprintf("%s%s", s, n), path: filepath.Join(dir, n)})
 	}
 	return fs

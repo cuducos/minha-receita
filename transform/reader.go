@@ -1,10 +1,12 @@
-package download
+package transform
 
 import (
 	"archive/zip"
 	"fmt"
 	"io"
 	"path/filepath"
+
+	"github.com/cuducos/minha-receita/download"
 )
 
 type zippedFile struct {
@@ -13,7 +15,7 @@ type zippedFile struct {
 	firstFile io.ReadCloser
 }
 
-func (z *zippedFile) closeReaders() error {
+func (z *zippedFile) Close() error {
 	if z.firstFile != nil {
 		err := z.firstFile.Close()
 		if err != nil {
@@ -30,7 +32,7 @@ func (z *zippedFile) closeReaders() error {
 }
 
 func newZippedFile(dir string, i int) (*zippedFile, error) {
-	p := filepath.Join(dir, fmt.Sprintf(filePattern, i))
+	p := filepath.Join(dir, fmt.Sprintf(download.FilePattern, i))
 	z, err := zip.OpenReader(p)
 	if err != nil {
 		return nil, err

@@ -101,10 +101,10 @@ func (s source) columns() string {
 			"qualificacao_do_responsavel integer NULL",
 			"capital_social decimal NULL",
 			"porte integer NULL",
-			"opcao_pelo_simples boolean NOT NULL",
+			"opcao_pelo_simples boolean NULL",
 			"data_opcao_pelo_simples date NULL",
 			"data_exclusao_do_simples date NULL",
-			"opcao_pelo_mei boolean NOT NULL",
+			"opcao_pelo_mei boolean NULL",
 			"situacao_especial text NULL",
 			"data_situacao_especial date NULL",
 		}
@@ -148,6 +148,7 @@ func dropTable(db *pg.DB, wg *sync.WaitGroup, s source) {
 
 func copyFrom(db *pg.DB, wg *sync.WaitGroup, s source, dir string) {
 	defer wg.Done()
+
 	table := s.fullTableName()
 	src := s.path(dir)
 	log.Output(2, fmt.Sprintf("Importing data from %s to %s…", src, table))
