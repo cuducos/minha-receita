@@ -205,7 +205,8 @@ func parseField(v string, f schema.Field) string {
 		}
 	}
 
-	return v
+	// remove null character
+	return strings.Replace(v, "\x00", "", -1)
 }
 
 type parsedLine struct {
