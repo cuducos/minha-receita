@@ -179,7 +179,7 @@ func copyFrom(db *pg.DB, c chan<- error, s source, dir string) {
 	if err == nil {
 		log.Output(2, fmt.Sprintf("Done! Imported data from %s to %s.", src, table))
 	} else {
-		err = fmt.Errorf("Error while importing %s to %s: %s\n%s", src, table, out, err)
+		err = fmt.Errorf("Error while importing %s to %s: %s\n%s", src, table, out.String(), err)
 	}
 	c <- err
 }
