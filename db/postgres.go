@@ -61,17 +61,27 @@ func (p *PostgreSQL) DropTables() {
 
 // ImportData reads data from compresed CSV and Excel files and import it.
 func (p *PostgreSQL) ImportData(dir string) {
-	var wg sync.WaitGroup
+	c := make(chan error)
 	src := getSources(p.schema)
-	wg.Add(len(src))
 	for _, s := range src {
 		if s.name == "cnae" {
-			go importCNAEXls(p.conn, &wg, s, dir)
+			go importCNAEXls(p.conn, c, s, dir)
 		} else {
-			go copyFrom(p.conn, &wg, s, dir)
+			go copyFrom(p.conn, c, s, dir)
 		}
 	}
-	wg.Wait()
+
+	hasErr := false
+	for i := 0; i < len(src); i++ {
+		err := <-c
+		if err != nil {
+			hasErr = true
+			log.Output(2, fmt.Sprintf("%s", err))
+		}
+	}
+	if hasErr {
+		os.Exit(1)
+	}
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.

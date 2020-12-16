@@ -1,10 +1,10 @@
 package db
 
 import (
+	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -146,44 +146,42 @@ func dropTable(db *pg.DB, wg *sync.WaitGroup, s source) {
 	}
 }
 
-func copyFrom(db *pg.DB, wg *sync.WaitGroup, s source, dir string) {
-	defer wg.Done()
-
+func copyFrom(db *pg.DB, c chan<- error, s source, dir string) {
 	table := s.fullTableName()
 	src := s.path(dir)
 	log.Output(2, fmt.Sprintf("Importing data from %s to %s…", src, table))
-	defer log.Output(2, fmt.Sprintf("Done! Imported data from %s to %s.", src, table))
 
 	f, err := os.Open(src)
 	if err != nil {
-		panic(err)
+		c <- err
+		return
 	}
 	defer f.Close()
 
 	r, err := gzip.NewReader(f)
 	if err != nil {
-		panic(err)
+		c <- err
+		return
 	}
 	defer r.Close()
 
+	var out bytes.Buffer
 	cmd := exec.Command(
 		"psql",
 		pgURI,
 		"-c",
 		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, table),
 	)
+	cmd.Stdin = r
+	cmd.Stderr = &out
+	err = cmd.Run()
 
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		panic(err)
+	if err == nil {
+		log.Output(2, fmt.Sprintf("Done! Imported data from %s to %s.", src, table))
+	} else {
+		err = fmt.Errorf("Error while importing %s to %s: %s\n%s", src, table, out, err)
 	}
-	defer stdin.Close()
-
-	cmd.Start()
-	_, err = io.Copy(stdin, r)
-	if err != nil {
-		panic(err)
-	}
+	c <- err
 }
 
 func parseCNAE(r []string) (CNAE, error) {
@@ -204,8 +202,7 @@ func parseCNAE(r []string) (CNAE, error) {
 	return c, nil
 }
 
-func importCNAEXls(db *pg.DB, wg *sync.WaitGroup, s source, dir string) {
-	defer wg.Done()
+func importCNAEXls(db *pg.DB, c chan<- error, s source, dir string) {
 	p := s.path(dir)
 	t := s.fullTableName()
 	log.Output(2, fmt.Sprintf("Importing data from %s to %s…", p, t))
@@ -213,12 +210,14 @@ func importCNAEXls(db *pg.DB, wg *sync.WaitGroup, s source, dir string) {
 
 	f, err := excelize.OpenFile(p)
 	if err != nil {
-		panic(err)
+		c <- err
+		return
 	}
 
 	rows, err := f.GetRows("Estrutura Det. CNAE Subclass2.3")
 	if err != nil {
-		panic(err)
+		c <- err
+		return
 	}
 
 	sql := fmt.Sprintf("INSERT INTO %s VALUES ", t)
@@ -233,9 +232,7 @@ func importCNAEXls(db *pg.DB, wg *sync.WaitGroup, s source, dir string) {
 	sql += ";"
 
 	_, err = db.Exec(sql)
-	if err != nil {
-		panic(err)
-	}
+	c <- err
 }
 
 func queryPartners(db *pg.DB, wg *sync.WaitGroup, c *Company) {
