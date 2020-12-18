@@ -29,7 +29,7 @@ func (mockDatabase) GetCompany(n string) (db.Company, error) {
 	if n == "19131243000197" {
 		return db.Company{
 			CNPJ:                "19131243000197",
-			DataInicioAtividade: db.Date(time.Date(2013, time.October, 3, 0, 0, 0, 0, time.UTC)),
+			DataInicioAtividade: time.Date(2013, time.October, 3, 0, 0, 0, 0, time.UTC),
 		}, nil
 	}
 	return c, errors.New("Company not found")

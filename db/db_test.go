@@ -21,7 +21,7 @@ func TestCompany(t *testing.T) {
 
 	c := Company{
 		CNPJ:                "19131243000197",
-		DataInicioAtividade: Date(time.Date(2013, time.October, 3, 0, 0, 0, 0, time.UTC)),
+		DataInicioAtividade: time.Date(2013, time.October, 3, 0, 0, 0, 0, time.UTC),
 	}
 	if j, err := c.JSON(); j != expected {
 		t.Errorf("\nExpected JSON to be:\n\t%s\nGot:\n\t%s\nError:\n\t%v", expected, j, err)

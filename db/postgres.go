@@ -28,12 +28,6 @@ func (p *PostgreSQL) GetCompany(num string) (Company, error) {
 		log.Output(2, fmt.Sprintf("ERROR: %v", err))
 		return c, err
 	}
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go queryPartners(p.conn, &wg, &c)
-	go queryActivities(p.conn, &wg, &c)
-	wg.Wait()
 	return c, nil
 }
 
