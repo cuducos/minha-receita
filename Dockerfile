@@ -3,7 +3,11 @@ WORKDIR /minha-receita
 ADD go.* ./
 ADD main.go .
 ADD api/ ./api/
+ADD cmd/ ./cmd/
 ADD db/ ./db/
+ADD download/ ./download/
+ADD testdata/ ./testdata/
+ADD transform/ ./transform/
 RUN go get && go test ./... && go build -o /usr/bin/minha-receita
 
 FROM debian:buster-slim
