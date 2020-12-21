@@ -12,7 +12,8 @@ RUN go get && go test ./... && go build -o /usr/bin/minha-receita
 
 FROM debian:buster-slim
 RUN apt-get update && \
-    apt-get install -y postgresql-client && \
+    apt-get install -y --no-install-recommends postgresql-client ca-certificates && \
+    update-ca-certificates && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
