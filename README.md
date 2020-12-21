@@ -59,7 +59,7 @@ _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certe
 
 * [Go](https://golang.org/) versão 1.15
 * Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
-* Variável de ambiente`POSTGRES_URI` com crdenciais de acesso a um banco de dados PostgreSQL (como no exemplo `.env.sample`)
+* Variável de ambiente`POSTGRES_URI` com credenciais de acesso a um banco de dados PostgreSQL (como no exemplo `.env.sample`)
 
 Baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
 
