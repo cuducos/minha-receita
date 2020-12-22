@@ -53,6 +53,12 @@ func TestCompanyHandler(t *testing.T) {
 		content string
 	}{
 		{
+			http.MethodHead,
+			nil,
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método POST."}`,
+		},
+		{
 			http.MethodGet,
 			nil,
 			http.StatusMethodNotAllowed,
@@ -112,12 +118,11 @@ func TestCompanyHandler(t *testing.T) {
 			b = strings.NewReader(d.Encode())
 		}
 		req, err := http.NewRequest(c.method, "/", b)
+		if err != nil {
+			t.Fatal("Expected an HTTP request, but got an error.")
+		}
 		if c.method == http.MethodPost {
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-		}
-
-		if err != nil {
-			t.Fatal("Expected an HTTP response, but got an error.")
 		}
 
 		app := api{&mockDatabase{}}
@@ -135,6 +140,48 @@ func TestCompanyHandler(t *testing.T) {
 
 		if strings.TrimSpace(resp.Body.String()) != c.content {
 			t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.content, resp.Body.String())
+		}
+	}
+}
+
+func TestHealthHandler(t *testing.T) {
+	cases := []struct {
+		method  string
+		status  int
+		content string
+	}{
+		{
+			http.MethodGet,
+			http.StatusOK,
+			"",
+		},
+		{
+			http.MethodPost,
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
+		},
+		{
+			http.MethodHead,
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
+		},
+	}
+
+	for _, c := range cases {
+		req, err := http.NewRequest(c.method, "/healthz", nil)
+		if err != nil {
+			t.Fatal("Expected an HTTP request, but got an error.")
+		}
+		app := api{&mockDatabase{}}
+		resp := httptest.NewRecorder()
+		handler := http.HandlerFunc(app.healthHandler)
+		handler.ServeHTTP(resp, req)
+
+		if resp.Code != c.status {
+			t.Errorf("Expected %s /healthz to return %v, but got %v", c.method, c.status, resp.Code)
+		}
+		if strings.TrimSpace(resp.Body.String()) != c.content {
+			t.Errorf("\nExpected HTTP contents to be %s, got %s", c.content, resp.Body.String())
 		}
 	}
 }
