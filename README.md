@@ -35,12 +35,9 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 
 ### Qual a URL para acesso?
 
-Não tem.
+Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, mas existe um protótipo no ar em [minhareceita.org](https://minhareceita.org). O protótipo não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade é contribuindo via [financiamento coletivo aqui no GitHub](https://github.com/sponsors/cuducos). Mais sobre o protótipo nesse [fio](https://twitter.com/cuducos/status/1339980776985808901).
 
-Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, pois:
-
-1. não tenho dinheiro para manter um serviço desse porte no ar
-2. não tenho interesse em desenvolver um sistema para cobrar por esse serviço
+Não tenho interesse em desenvolver um sistema para cobrar por esse serviço.
 
 ## Instalação
 
@@ -173,6 +170,7 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 | Caminho da URL | Tipo de requisição | Dados enviados | Código esperado na resposta | Conteúdo esperado na resposta |
 |---|---|---|---|---|
 | `/` | `GET` | | 405| `{"message": "Essa URL aceita apenas o método POST."}` |
+| `/` | `HEAD` | | 405| `{"message": "Essa URL aceita apenas o método POST."}` |
 | `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
 | `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}` |
 | `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
