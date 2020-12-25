@@ -29,7 +29,7 @@ O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos p
 O código desse repositório faz esses dados ainda mais acessíveis:
 
 1. Transformando os dados em CSV (assim como o [`socios-brasil`](https://github.com/turicas/socios-brasil) já faz)
-2. Importando autimaticamente os dados para um banco de dados PostgreSQL
+2. Importando automaticamente os dados para um banco de dados PostgreSQL
 3. Adicionando dados com descrições dos CNAEs (inexistente nos arquivos da Receita Federal)
 4. Fornecendo uma API web para a consulta de dados de um CNPJ
 
@@ -100,7 +100,7 @@ $ docker-compose run --rm minha-receita api --help
 
 ### Download dos dados
 
-O comando `download` faz o download dos arquivos necessǻrios para alimentar o banco de dados. Na sequência, o comando `parse` transforma os arquivos para o formato CSV. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
+O comando `download` faz o download dos arquivos necessários para alimentar o banco de dados. Na sequência, o comando `parse` transforma os arquivos para o formato CSV. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
 
 Por padrão o comando `download` baixa dados do servidor da Receita Federal, que é lento e instável, então, como alternativa, podemos utilizar o _mirror_ do [Brasil.IO](https://brasil.io) com a opção `--mirror`.
 
