@@ -165,12 +165,14 @@ Com Docker:
 $ docker-compose up
 ```
 
-A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `POST`:
+A API web tem apenas dois _endpoints_:
+
+##### `POST /`
 
 | Caminho da URL | Tipo de requisição | Dados enviados | Código esperado na resposta | Conteúdo esperado na resposta |
 |---|---|---|---|---|
-| `/` | `GET` | | 405| `{"message": "Essa URL aceita apenas o método POST."}` |
-| `/` | `HEAD` | | 405| `{"message": "Essa URL aceita apenas o método POST."}` |
+| `/` | `GET` | | 405 | `{"message": "Essa URL aceita apenas o método POST."}` |
+| `/` | `HEAD` | | 405 | `{"message": "Essa URL aceita apenas o método POST."}` |
 | `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
 | `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}` |
 | `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
@@ -178,13 +180,13 @@ A API web tem apenas um endpoint (`/`) que somente aceita requisições tipo `PO
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |
 
-##### Exemplo de requisição usando o `curl`
+###### Exemplo de requisição usando o `curl`
 
 ```console
 $ curl -i -X POST -d cnpj=19131243000197 0.0.0.0:8000
 ```
 
-##### Exemplo de resposta válida
+###### Exemplo de resposta válida
 
 ```json
 {
@@ -261,6 +263,14 @@ $ curl -i -X POST -d cnpj=19131243000197 0.0.0.0:8000
   ]
 }
 ```
+
+##### `GET /healthz`
+
+| Caminho da URL | Tipo de requisição | Código esperado na resposta | Conteúdo esperado na resposta |
+|---|---|---|---|
+| `/healthz` | `GET` | 200 | |
+| `/healthz` | `HEAD` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
+| `/healthz` | `POST` | 405 | `{"message": "conteúdo inválido na requisição GET."}` |
 
 ## Contribuindo
 

@@ -78,6 +78,14 @@ func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, s)
 }
 
+func (app api) healthHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, "Essa URL aceita apenas o método GET.", http.StatusMethodNotAllowed)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // Serve spins up the HTTP server.
 func Serve(db db.Database) {
 	port := os.Getenv("PORT")
@@ -93,5 +101,6 @@ func Serve(db db.Database) {
 	nr := newRelicApp()
 	app := api{db: db}
 	http.HandleFunc(newRelicHandle(nr, "/", app.postHandler))
+	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
 	log.Fatal(http.ListenAndServe(port, nil))
 }
