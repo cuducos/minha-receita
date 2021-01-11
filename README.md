@@ -128,6 +128,9 @@ Caso seja necessário limpar o banco de dados para começar um novo carregamento
 
 Para importar os dados, utilize o comando `import` — esse comando pode demorar horas, depdendendo do equipamento. Esse comando também aceita a opção `--directory` ou `-d` para especificar um local diferente do padrão onde encontrar os arquivos.
 
+#### Questões de privacidade
+
+Assim como o [`socios-brasil`](https://github.com/turicas/socios-brasil#privacidade) removemos alguns dados para evitar exposição de dados sensíveis de pessoas físicas, bem como SPAM. Ao contrário do `socios-brasil`, não temos uma opção para desativar essa camada de provacidade (mas PRs são bem-vindos).
 
 #### Exemplos de uso
 
