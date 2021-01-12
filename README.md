@@ -177,7 +177,7 @@ A API web tem apenas dois _endpoints_:
 | `/` | `GET` | | 405 | `{"message": "Essa URL aceita apenas o método POST."}` |
 | `/` | `HEAD` | | 405 | `{"message": "Essa URL aceita apenas o método POST."}` |
 | `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
-| `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}` |
+| `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CPF não enviado na requisição POST."}` |
 | `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
 | `/` | `POST` | `cnpj=00000000000000` | 404 | `{"message": "CNPJ 00.000.000/0001-91 não encontrado."}` |
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
