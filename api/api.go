@@ -65,7 +65,7 @@ func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
 
 	c, err := app.db.GetCompany(cnpj.Unmask(v))
 	if err != nil {
-		writeError(w, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)), http.StatusNotFound)
+		writeError(w, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)), http.StatusNoContent)
 		return
 	}
 
