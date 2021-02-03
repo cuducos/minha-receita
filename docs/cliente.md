@@ -11,7 +11,7 @@ A API web tem apenas dois _endpoints_:
 | `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
 | `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}` |
 | `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
-| `/` | `POST` | `cnpj=00000000000000` | 204 | `{"message": "CNPJ 00.000.000/0001-91 não encontrado."}` |
+| `/` | `POST` | `cnpj=00000000000000` | 204 | |
 | `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |
 

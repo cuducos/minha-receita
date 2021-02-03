@@ -86,13 +86,13 @@ func TestCompanyHandler(t *testing.T) {
 			http.MethodPost,
 			map[string]string{"cnpj": "00.000.000/0001-91"},
 			http.StatusNoContent,
-			`{"message":"CNPJ 00.000.000/0001-91 não encontrado."}`,
+			"",
 		},
 		{
 			http.MethodPost,
 			map[string]string{"cnpj": "00000000000191"},
 			http.StatusNoContent,
-			`{"message":"CNPJ 00.000.000/0001-91 não encontrado."}`,
+			"",
 		},
 		{
 			http.MethodPost,
