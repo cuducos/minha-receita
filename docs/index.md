@@ -21,7 +21,7 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 
 Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, mas existe um protótipo no ar em [`https://minhareceita.org/`](https://minhareceita.org).
 
-O protótipo não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade é contribuindo via [financiamento coletivo no GitHub](https://github.com/sponsors/cuducos).
+O protótipo não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade é contribuindo via [financiamento coletivo no GitHub](https://github.com/sponsors/cuducos) ou Bitcoin (`13WCAR21g1LGqzzn6WTNV5g7QdN1J35BDk`).
 
 Mais sobre o protótipo nesse [fio no Twitter](https://twitter.com/cuducos/status/1339980776985808901).
 
