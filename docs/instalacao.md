@@ -43,7 +43,8 @@ Gere o arquivo com as variáveis de ambiente baseado no arquivo de exemplo:
 $ cp .env.sample .env
 ```
 
-Todas as configurações são passadas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
+Todas as configurações podem ser sobrescritas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
+
 
 ### Exemplo
 
