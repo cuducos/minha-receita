@@ -28,6 +28,7 @@ $ go build -o /usr/local/bin minha-receita
 
 * [Docker](https://www.docker.com/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
+* Arquivo `.env` (copie o `.env.sample` e ajuste caso necessário)
 
 Gere as imagens dos containers com:
 
@@ -37,13 +38,7 @@ $ docker-compose build
 
 ## Configurações
 
-Gere o arquivo com as variáveis de ambiente baseado no arquivo de exemplo:
-
-```console
-$ cp .env.sample .env
-```
-
-Todas as configurações podem ser sobrescritas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
+Todas as configurações podem ser passadas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
 
 ### Exemplo
 
