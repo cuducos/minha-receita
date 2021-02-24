@@ -45,7 +45,6 @@ $ cp .env.sample .env
 
 Todas as configurações podem ser sobrescritas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
 
-
 ### Exemplo
 
 Sem Docker:
