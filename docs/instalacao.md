@@ -37,7 +37,13 @@ $ docker-compose build
 
 ## Configurações
 
-Todas as configurações são passadas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
+Gere o arquivo com as variáveis de ambiente baseado no arquivo de exemplo:
+
+```console
+$ cp .env.sample .env
+```
+
+Todas as configurações podem ser sobrescritas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
 
 ### Exemplo
 
