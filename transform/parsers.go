@@ -20,19 +20,12 @@ func isNumeric(s string) bool {
 	return err == nil
 }
 
-// values comes as integers (to preserve precision, I guess) so we need to
-// format them as decimals (e.g.: "123456" => "1234.56")
-func addDecimalSeparator(s string) string {
-	if s == "" || s == "0" {
-		return s
+func asDecimal(s string) string {
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return ""
 	}
-	if len(s) <= 2 {
-		return "0." + s
-	}
-
-	i := s[0 : len(s)-2]
-	d := s[len(s)-2:]
-	return fmt.Sprintf("%s.%s", i, d)
+	return strconv.FormatFloat(float64(n)/100.0, 'f', 2, 64)
 }
 
 func allZeros(s string) bool {
@@ -174,7 +167,7 @@ func parseCompany(l string) []string {
 	}
 
 	// properly format decimals
-	cols[24] = addDecimalSeparator(cols[24])
+	cols[24] = asDecimal(cols[24])
 
 	// privacy issues
 	deleteFromIndividuals := []int{
