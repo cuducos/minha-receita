@@ -17,7 +17,7 @@ A API web tem apenas dois _endpoints_:
 ### Exemplo de requisição usando o `curl`
 
 ```console
-$ curl -i -X GET 0.0.0.0:8000/19131243000197
+$ curl -i 0.0.0.0:8000/19131243000197
 ```
 
 ### Exemplo de resposta válida
