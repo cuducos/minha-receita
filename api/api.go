@@ -42,7 +42,7 @@ type api struct {
 	db db.Database
 }
 
-func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
+func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -103,7 +103,7 @@ func Serve(db db.Database) {
 
 	nr := newRelicApp()
 	app := api{db: db}
-	http.HandleFunc(newRelicHandle(nr, "/", app.postHandler))
+	http.HandleFunc(newRelicHandle(nr, "/", app.getHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
 	log.Fatal(http.ListenAndServe(port, nil))
 }

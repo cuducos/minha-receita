@@ -127,7 +127,7 @@ func TestCompanyHandler(t *testing.T) {
 
 		app := api{&mockDatabase{}}
 		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.postHandler)
+		handler := http.HandlerFunc(app.getHandler)
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {
