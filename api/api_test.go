@@ -47,7 +47,7 @@ func TestCompanyHandler(t *testing.T) {
 
 	cases := []struct {
 		method  string
-		data    string
+		path    string
 		status  int
 		content string
 	}{
@@ -102,7 +102,7 @@ func TestCompanyHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req, err := http.NewRequest(c.method, fmt.Sprint("/", c.data), nil)
+		req, err := http.NewRequest(c.method, fmt.Sprint("/", c.path), nil)
 		if err != nil {
 			t.Fatal("Expected an HTTP request, but got an error.")
 		}
