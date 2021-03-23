@@ -2,11 +2,10 @@ package api
 
 import (
 	"errors"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
