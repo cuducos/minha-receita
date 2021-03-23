@@ -50,18 +50,18 @@ func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cnpjField := strings.SplitAfterN(r.URL.Path, "/", 2)[1]
-	if cnpjField == "" {
+	v := strings.SplitAfterN(r.URL.Path, "/", 2)[1]
+	if v == "" {
 		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição GET.")
 		return
 	}
 
-	if !cnpj.IsValid(cnpjField) {
-		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(cnpjField)))
+	if !cnpj.IsValid(v) {
+		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v)))
 		return
 	}
 
-	c, err := app.db.GetCompany(cnpj.Unmask(cnpjField))
+	c, err := app.db.GetCompany(cnpj.Unmask(v))
 	if err != nil {
 		messageResponse(w, http.StatusNoContent, "")
 		return
@@ -70,7 +70,7 @@ func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	s, err := c.JSON()
 	if err != nil {
-		messageResponse(w, http.StatusInternalServerError, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(cnpjField)))
+		messageResponse(w, http.StatusInternalServerError, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(v)))
 		return
 	}
 	io.WriteString(w, s)
