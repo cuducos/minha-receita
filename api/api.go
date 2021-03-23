@@ -50,23 +50,21 @@ func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		messageResponse(w, http.StatusBadRequest, "Conteúdo inválido na requisição POST.")
 		return
 	}
 
-	v := r.Form.Get("cnpj")
-	if v == "" {
 		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição POST.")
+	cnpjField := strings.SplitAfterN(r.URL.Path, "/", 2)[1]
+	if cnpjField == "" {
 		return
 	}
 
-	if !cnpj.IsValid(v) {
-		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v)))
+	if !cnpj.IsValid(cnpjField) {
+		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(cnpjField)))
 		return
 	}
 
-	c, err := app.db.GetCompany(cnpj.Unmask(v))
+	c, err := app.db.GetCompany(cnpj.Unmask(cnpjField))
 	if err != nil {
 		messageResponse(w, http.StatusNoContent, "")
 		return
@@ -75,7 +73,7 @@ func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	s, err := c.JSON()
 	if err != nil {
-		messageResponse(w, http.StatusInternalServerError, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(v)))
+		messageResponse(w, http.StatusInternalServerError, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(cnpjField)))
 		return
 	}
 	io.WriteString(w, s)

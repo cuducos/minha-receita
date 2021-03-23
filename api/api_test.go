@@ -48,13 +48,13 @@ func TestCompanyHandler(t *testing.T) {
 
 	cases := []struct {
 		method  string
-		data    map[string]string
+		data    string
 		status  int
 		content string
 	}{
 		{
 			http.MethodHead,
-			nil,
+			"",
 			http.StatusMethodNotAllowed,
 			`{"message":"Essa URL aceita apenas o método POST."}`,
 		},
@@ -66,58 +66,50 @@ func TestCompanyHandler(t *testing.T) {
 		},
 		{
 			http.MethodPost,
-			nil,
-			http.StatusBadRequest,
-			`{"message":"Conteúdo inválido na requisição POST."}`,
+			"",
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
 		},
 		{
 			http.MethodPost,
-			map[string]string{"cpf": "foobar"},
+			"",
 			http.StatusBadRequest,
 			`{"message":"CNPJ não enviado na requisição POST."}`,
 		},
 		{
 			http.MethodPost,
-			map[string]string{"cnpj": "foobar"},
+			"foobar",
 			http.StatusBadRequest,
 			`{"message":"CNPJ foobar inválido."}`,
 		},
 		{
 			http.MethodPost,
-			map[string]string{"cnpj": "00.000.000/0001-91"},
+			"00.000.000/0001-91",
 			http.StatusNoContent,
 			"",
 		},
 		{
 			http.MethodPost,
-			map[string]string{"cnpj": "00000000000191"},
+			"00000000000191",
 			http.StatusNoContent,
 			"",
 		},
 		{
 			http.MethodPost,
-			map[string]string{"cnpj": "19.131.243/0001-97"},
+			"19.131.243/0001-97",
 			http.StatusOK,
 			expected,
 		},
 		{
 			http.MethodPost,
-			map[string]string{"cnpj": "19131243000197"},
+			"19131243000197",
 			http.StatusOK,
 			expected,
 		},
 	}
 
 	for _, c := range cases {
-		var b io.Reader
-		if c.data != nil {
-			d := url.Values{}
-			for k, v := range c.data {
-				d.Set(k, v)
-			}
-			b = strings.NewReader(d.Encode())
-		}
-		req, err := http.NewRequest(c.method, "/", b)
+		req, err := http.NewRequest(c.method, fmt.Sprint("/", c.data), nil)
 		if err != nil {
 			t.Fatal("Expected an HTTP request, but got an error.")
 		}
