@@ -45,17 +45,14 @@ type api struct {
 func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
-	if r.Method != http.MethodPost {
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método POST.")
+	if r.Method != http.MethodGet {
+		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
 
-		return
-	}
-
-		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição POST.")
 	cnpjField := strings.SplitAfterN(r.URL.Path, "/", 2)[1]
 	if cnpjField == "" {
+		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição GET.")
 		return
 	}
 
