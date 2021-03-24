@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -53,56 +52,56 @@ func TestCompanyHandler(t *testing.T) {
 	}{
 		{
 			http.MethodHead,
-			"",
+			"/",
 			http.StatusMethodNotAllowed,
 			`{"message":"Essa URL aceita apenas o método GET."}`,
 		},
 		{
 			http.MethodPost,
-			"",
+			"/",
 			http.StatusMethodNotAllowed,
 			`{"message":"Essa URL aceita apenas o método GET."}`,
 		},
 		{
 			http.MethodGet,
-			"",
+			"/",
 			http.StatusBadRequest,
 			`{"message":"CNPJ não enviado na requisição GET."}`,
 		},
 		{
 			http.MethodGet,
-			"foobar",
+			"/foobar",
 			http.StatusBadRequest,
 			`{"message":"CNPJ foobar inválido."}`,
 		},
 		{
 			http.MethodGet,
-			"00.000.000/0001-91",
+			"/00.000.000/0001-91",
 			http.StatusNoContent,
 			"",
 		},
 		{
 			http.MethodGet,
-			"00000000000191",
+			"/00000000000191",
 			http.StatusNoContent,
 			"",
 		},
 		{
 			http.MethodGet,
-			"19.131.243/0001-97",
+			"/19.131.243/0001-97",
 			http.StatusOK,
 			expected,
 		},
 		{
 			http.MethodGet,
-			"19131243000197",
+			"/19131243000197",
 			http.StatusOK,
 			expected,
 		},
 	}
 
 	for _, c := range cases {
-		req, err := http.NewRequest(c.method, fmt.Sprint("/", c.path), nil)
+		req, err := http.NewRequest(c.method, c.path, nil)
 		if err != nil {
 			t.Fatal("Expected an HTTP request, but got an error.")
 		}
