@@ -42,7 +42,7 @@ type api struct {
 	db db.Database
 }
 
-func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
+func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -53,24 +53,19 @@ func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method != http.MethodPost {
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método POST.")
+	if r.Method != http.MethodGet {
+		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		messageResponse(w, http.StatusBadRequest, "Conteúdo inválido na requisição POST.")
-		return
-	}
-
-	v := r.Form.Get("cnpj")
-	if v == "" {
-		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição POST.")
+	v := r.URL.Path
+	if v == "/" {
+		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição GET.")
 		return
 	}
 
 	if !cnpj.IsValid(v) {
-		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v)))
+		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v[1:])))
 		return
 	}
 
@@ -111,7 +106,7 @@ func Serve(db db.Database) {
 
 	nr := newRelicApp()
 	app := api{db: db}
-	http.HandleFunc(newRelicHandle(nr, "/", app.postHandler))
+	http.HandleFunc(newRelicHandle(nr, "/", app.getHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
 	log.Fatal(http.ListenAndServe(port, nil))
 }
