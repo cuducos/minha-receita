@@ -50,14 +50,14 @@ func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v := strings.SplitAfterN(r.URL.Path, "/", 2)[1]
-	if v == "" {
+	v := r.URL.Path
+	if v == "/" {
 		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição GET.")
 		return
 	}
 
 	if !cnpj.IsValid(v) {
-		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v)))
+		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v[1:])))
 		return
 	}
 
