@@ -2,11 +2,9 @@ package api
 
 import (
 	"errors"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -48,21 +46,15 @@ func TestCompanyHandler(t *testing.T) {
 
 	cases := []struct {
 		method  string
-		data    map[string]string
+		path    string
 		status  int
 		content string
 	}{
 		{
 			http.MethodHead,
-			nil,
+			"/",
 			http.StatusMethodNotAllowed,
-			`{"message":"Essa URL aceita apenas o método POST."}`,
-		},
-		{
-			http.MethodGet,
-			nil,
-			http.StatusMethodNotAllowed,
-			`{"message":"Essa URL aceita apenas o método POST."}`,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
 		},
 		{
 			http.MethodOptions,
@@ -72,58 +64,50 @@ func TestCompanyHandler(t *testing.T) {
 		},
 		{
 			http.MethodPost,
-			nil,
-			http.StatusBadRequest,
-			`{"message":"Conteúdo inválido na requisição POST."}`,
+			"/",
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
 		},
 		{
-			http.MethodPost,
-			map[string]string{"cpf": "foobar"},
+			http.MethodGet,
+			"/",
 			http.StatusBadRequest,
-			`{"message":"CNPJ não enviado na requisição POST."}`,
+			`{"message":"CNPJ não enviado na requisição GET."}`,
 		},
 		{
-			http.MethodPost,
-			map[string]string{"cnpj": "foobar"},
+			http.MethodGet,
+			"/foobar",
 			http.StatusBadRequest,
 			`{"message":"CNPJ foobar inválido."}`,
 		},
 		{
-			http.MethodPost,
-			map[string]string{"cnpj": "00.000.000/0001-91"},
+			http.MethodGet,
+			"/00.000.000/0001-91",
 			http.StatusNoContent,
 			"",
 		},
 		{
-			http.MethodPost,
-			map[string]string{"cnpj": "00000000000191"},
+			http.MethodGet,
+			"/00000000000191",
 			http.StatusNoContent,
 			"",
 		},
 		{
-			http.MethodPost,
-			map[string]string{"cnpj": "19.131.243/0001-97"},
+			http.MethodGet,
+			"/19.131.243/0001-97",
 			http.StatusOK,
 			expected,
 		},
 		{
-			http.MethodPost,
-			map[string]string{"cnpj": "19131243000197"},
+			http.MethodGet,
+			"/19131243000197",
 			http.StatusOK,
 			expected,
 		},
 	}
 
 	for _, c := range cases {
-		var b io.Reader
-		if c.data != nil {
-			d := url.Values{}
-			for k, v := range c.data {
-				d.Set(k, v)
-			}
-			b = strings.NewReader(d.Encode())
-		}
-		req, err := http.NewRequest(c.method, "/", b)
+		req, err := http.NewRequest(c.method, c.path, nil)
 		if err != nil {
 			t.Fatal("Expected an HTTP request, but got an error.")
 		}
@@ -133,7 +117,7 @@ func TestCompanyHandler(t *testing.T) {
 
 		app := api{&mockDatabase{}}
 		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.postHandler)
+		handler := http.HandlerFunc(app.getHandler)
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {

@@ -4,21 +4,20 @@ A API web tem apenas dois _endpoints_:
 
 ## `POST /`
 
-| Caminho da URL | Tipo de requisição | Dados enviados | Código esperado na resposta | Conteúdo esperado na resposta |
-|---|---|---|---|---|
-| `/` | `GET` | | 405 | `{"message": "Essa URL aceita apenas o método POST."}` |
-| `/` | `HEAD` | | 405 | `{"message": "Essa URL aceita apenas o método POST."}` |
-| `/` | `POST` | | 400 | `{"message": "conteúdo inválido na requisição POST."}` |
-| `/` | `POST` | `cpf=foobar` | 400 | `{"message": "CNPJ não enviado na requisição POST."}` |
-| `/` | `POST` | `cnpj=foobar` | 400 | `{"message": "CNPJ foobar inválido."}` |
-| `/` | `POST` | `cnpj=00000000000000` | 204 | _Corpo vazio, significa que o CNPJ é válido mas não consta no banco de dados._ |
-| `/` | `POST` | `cnpj=19131243000197` | 200 | _Ver JSON de exemplo abaixo._ |
-| `/` | `POST` | `cnpj=19.131.243/0001-97` | 200 | _Ver JSON de exemplo abaixo._ |
+| Caminho da URL | Tipo de requisição | Código esperado na resposta | Conteúdo esperado na resposta |
+|---|---|---|---|
+| `/` | `POST` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
+| `/` | `HEAD` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
+| `/` | `GET` | 400 | `{"message": "CNPJ não enviado na requisição GET."}` |
+| `/foobar` | `GET` | 400 | `{"message": "CNPJ foobar inválido."}` |
+| `/00000000000000` | `GET` | 204 | _Corpo vazio, significa que o CNPJ é válido mas não consta no banco de dados._ |
+| `/19131243000197` | `GET` | 200 | _Ver JSON de exemplo abaixo._ |
+| `/19.131.243/0001-97` | `GET` | 200 | _Ver JSON de exemplo abaixo._ |
 
 ### Exemplo de requisição usando o `curl`
 
 ```console
-$ curl -i -X POST -d cnpj=19131243000197 0.0.0.0:8000
+$ curl -i 0.0.0.0:8000/19131243000197
 ```
 
 ### Exemplo de resposta válida
