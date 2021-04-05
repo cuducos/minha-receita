@@ -65,6 +65,12 @@ func TestCompanyHandler(t *testing.T) {
 			`{"message":"Essa URL aceita apenas o método POST."}`,
 		},
 		{
+			http.MethodOptions,
+			nil,
+			http.StatusOK,
+			"",
+		},
+		{
 			http.MethodPost,
 			nil,
 			http.StatusBadRequest,

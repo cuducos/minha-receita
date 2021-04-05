@@ -44,6 +44,14 @@ type api struct {
 
 func (app api) postHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	if r.Method != http.MethodPost {
 		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método POST.")
