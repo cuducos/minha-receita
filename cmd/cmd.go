@@ -44,8 +44,7 @@ const downloadHelper = `
 Downloads the required ZIP and Excel files.
 
 The main files are downloaded from the official website of the Brazilian
-Federal Revenue, or from Brasil.IO mirror. An extra Excel file is downloaded
-from IBGE.`
+Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
 const parseHelper = `
 Parse the fixed-width files from the Federal Revenue into CSV files.
@@ -54,7 +53,6 @@ Three compressed CSVs are created: empresa.csv.gz, socio.csv.gz and
 cnae_secundarias.csv.gz.`
 
 var dir string
-var mirror bool
 
 func assertDirExists() {
 	var err error
@@ -96,7 +94,7 @@ var downloadCmd = &cobra.Command{
 	Long:  downloadHelper,
 	Run: func(_ *cobra.Command, _ []string) {
 		assertDirExists()
-		download.Download(mirror, dir)
+		download.Download(dir)
 	},
 }
 
@@ -143,7 +141,6 @@ var importCmd = &cobra.Command{
 
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
-	downloadCmd.Flags().BoolVarP(&mirror, "mirror", "m", false, "use Brasil.IO mirror")
 	for _, c := range []*cobra.Command{downloadCmd, parseCmd, importCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
 	}

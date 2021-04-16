@@ -8,14 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/schollz/progressbar/v3"
 )
 
-const FilePattern = "DADOS_ABERTOS_CNPJ_%02d.zip"
-const federalRevenue = "http://200.152.38.155/CNPJ/"
-const brasilIO = "https://data.brasil.io/mirror/socios-brasil/"
-const files = 20
+const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
 
 type file struct {
 	url   string
@@ -28,24 +27,43 @@ type size struct {
 	err  error
 }
 
-func getFiles(m bool, dir string) []file {
+func getUrls() ([]string, error) {
+	u := []string{}
+	d, err := goquery.NewDocument(federalRevenue)
+	if err != nil {
+		return u, err
+	}
+
+	d.Find("a.external-link").Each(func(_ int, a *goquery.Selection) {
+		h, exist := a.Attr("href")
+		if !exist {
+			return
+		}
+
+		if strings.HasSuffix(h, ".zip") {
+			h = strings.Replace(h, "http//", "", -1) // fix error in HTML
+			u = append(u, h)
+		}
+	})
+	return u, nil
+}
+
+func getFiles(dir string) ([]file, error) {
 	fs := []file{{
 		url:   "https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx",
 		path:  filepath.Join(dir, "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"),
 		extra: true,
 	}}
 
-	var s string
-	if m {
-		s = brasilIO
-	} else {
-		s = federalRevenue
+	us, err := getUrls()
+	if err != nil {
+		return fs, err
 	}
-	for i := 1; i <= files; i++ {
-		n := fmt.Sprintf(FilePattern, i)
-		fs = append(fs, file{url: fmt.Sprintf("%s%s", s, n), path: filepath.Join(dir, n)})
+
+	for _, u := range us {
+		fs = append(fs, file{url: u, path: filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])})
 	}
-	return fs
+	return fs, nil
 }
 
 func getSize(c chan<- size, url string) {
@@ -77,6 +95,11 @@ func download(c chan<- error, b *progressbar.ProgressBar, f file) {
 		return
 	}
 	defer r.Body.Close()
+
+	if r.StatusCode != http.StatusOK {
+		c <- fmt.Errorf("%s returned HTTP %s", f.url, r.Status)
+		return
+	}
 
 	h, err := os.Create(f.path)
 	if err != nil {
@@ -119,16 +142,14 @@ func getTotalSize(fs []file) (int64, error) {
 }
 
 // Download all the files (might take several minutes).
-func Download(m bool, dir string) {
-	var msg string
-	if m {
-		msg = "Preparing to downlaod from Brasil.IO mirror…"
-	} else {
-		msg = "Preparing to downlaod from the Federal Revenue official website…"
-	}
-	log.Output(2, msg)
+func Download(dir string) {
+	log.Output(2, "Preparing to downlaod from the Federal Revenue official website…")
 
-	fs := getFiles(m, dir)
+	fs, err := getFiles(dir)
+	if err != nil {
+		panic(err)
+	}
+
 	t, err := getTotalSize(fs)
 	if err != nil {
 		panic(err)

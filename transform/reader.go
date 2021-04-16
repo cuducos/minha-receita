@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-
-	"github.com/cuducos/minha-receita/download"
 )
+
+const FilePattern = "DADOS_ABERTOS_CNPJ_%02d.zip"
 
 type zippedFile struct {
 	path      string
@@ -32,7 +32,7 @@ func (z *zippedFile) Close() error {
 }
 
 func newZippedFile(dir string, i int) (*zippedFile, error) {
-	p := filepath.Join(dir, fmt.Sprintf(download.FilePattern, i))
+	p := filepath.Join(dir, fmt.Sprintf(FilePattern, i))
 	z, err := zip.OpenReader(p)
 	if err != nil {
 		return nil, err
