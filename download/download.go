@@ -4,17 +4,20 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/schollz/progressbar/v3"
 )
 
 const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
+const retries = 10
 
 type file struct {
 	url   string
@@ -41,7 +44,6 @@ func getUrls() ([]string, error) {
 		}
 
 		if strings.HasSuffix(h, ".zip") {
-			h = strings.Replace(h, "http//", "", -1) // fix error in HTML
 			u = append(u, h)
 		}
 	})
@@ -88,7 +90,7 @@ func getSize(c chan<- size, url string) {
 	return
 }
 
-func download(c chan<- error, b *progressbar.ProgressBar, f file) {
+func download(c chan<- error, b *progressbar.ProgressBar, f file, a int) {
 	r, err := http.Get(f.url)
 	if err != nil {
 		c <- err
@@ -97,8 +99,13 @@ func download(c chan<- error, b *progressbar.ProgressBar, f file) {
 	defer r.Body.Close()
 
 	if r.StatusCode != http.StatusOK {
-		c <- fmt.Errorf("%s returned HTTP %s", f.url, r.Status)
-		return
+		if a < retries {
+			time.Sleep(time.Duration(int(math.Pow(float64(2), float64(a)))) * time.Second)
+			download(c, b, f, a+1)
+		} else {
+			log.Output(2, fmt.Sprintf("After %d attempts, could not download %s (%s)", retries, f.url, r.Status))
+			return
+		}
 	}
 
 	h, err := os.Create(f.path)
@@ -159,9 +166,9 @@ func Download(dir string) {
 	bar := progressbar.DefaultBytes(t, "Downloading")
 	for _, f := range fs {
 		if f.extra {
-			go download(q, nil, f)
+			go download(q, nil, f, 0)
 		} else {
-			go download(q, bar, f)
+			go download(q, bar, f, 0)
 		}
 	}
 	for range fs {
