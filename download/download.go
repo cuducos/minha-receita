@@ -44,6 +44,13 @@ func getUrls() ([]string, error) {
 		}
 
 		if strings.HasSuffix(h, ".zip") {
+			if strings.Contains(h, "http//") { // fix error in HTML
+				h = strings.Replace(h, "2http//", "", -1)
+				h = strings.Replace(h, "http//", "", -1)
+			}
+			if strings.Contains(h, "D10313") { // fix another error in HTML
+				h = strings.Replace(h, "D10313", "D10410", -1)
+			}
 			u = append(u, h)
 		}
 	})
