@@ -42,7 +42,30 @@ type api struct {
 	db db.Database
 }
 
-func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
+func (app api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodPost {
+		return fmt.Errorf("No backward compatibilityt with method %s", r.Method)
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return fmt.Errorf("Invalid payload")
+	}
+
+	v := r.Form.Get("cnpj")
+	if v == "" {
+		return fmt.Errorf("No CNPJ sent in the payload")
+	}
+
+	v = cnpj.Unmask(v)
+	if !cnpj.IsValid(v) {
+		return fmt.Errorf("Invalid CNPJ")
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/%s", v), http.StatusSeeOther)
+	return nil
+}
+
+func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -54,7 +77,10 @@ func (app api) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method != http.MethodGet {
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		err := app.backwardCompatibilityHandler(w, r)
+		if err != nil {
+			messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		}
 		return
 	}
 
@@ -106,7 +132,7 @@ func Serve(db db.Database) {
 
 	nr := newRelicApp()
 	app := api{db: db}
-	http.HandleFunc(newRelicHandle(nr, "/", app.getHandler))
+	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
 	log.Fatal(http.ListenAndServe(port, nil))
 }

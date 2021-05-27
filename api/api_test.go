@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -58,9 +59,15 @@ func TestCompanyHandler(t *testing.T) {
 		},
 		{
 			http.MethodOptions,
-			nil,
+			"/",
 			http.StatusOK,
 			"",
+		},
+		{
+			http.MethodHead,
+			"/",
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
 		},
 		{
 			http.MethodPost,
@@ -117,7 +124,7 @@ func TestCompanyHandler(t *testing.T) {
 
 		app := api{&mockDatabase{}}
 		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.getHandler)
+		handler := http.HandlerFunc(app.companyHandler)
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {
@@ -130,6 +137,65 @@ func TestCompanyHandler(t *testing.T) {
 
 		if strings.TrimSpace(resp.Body.String()) != c.content {
 			t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.content, resp.Body.String())
+		}
+	}
+}
+
+func TestCompanyHandlerBackwardCompatibility(t *testing.T) {
+	cases := []struct {
+		payload map[string]string
+		status  int
+		body    string
+	}{
+		{
+			map[string]string{"cpf": "123"},
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
+		},
+		{
+			map[string]string{"cnpj": "123"},
+			http.StatusMethodNotAllowed,
+			`{"message":"Essa URL aceita apenas o método GET."}`,
+		},
+		{
+			map[string]string{"cnpj": "19131243000197"},
+			http.StatusSeeOther,
+			"",
+		},
+		{
+			map[string]string{"cnpj": "19.131.243/0001-97"},
+			http.StatusSeeOther,
+			"",
+		},
+	}
+
+	for _, c := range cases {
+		d := url.Values{}
+		for k, v := range c.payload {
+			d.Set(k, v)
+		}
+
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(d.Encode()))
+		if err != nil {
+			t.Fatal("Expected an HTTP request, but got an error.")
+		}
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+		app := api{&mockDatabase{}}
+		resp := httptest.NewRecorder()
+		handler := http.HandlerFunc(app.companyHandler)
+		handler.ServeHTTP(resp, req)
+
+		if resp.Code != c.status {
+			t.Errorf("Expected POST to return %v, but got %v", c.status, resp.Code)
+		}
+
+		if c := resp.Header().Get("Content-type"); c != "application/json" {
+			t.Errorf("\nExpected content-type to be application/json, but got %s", c)
+		}
+
+		if strings.TrimSpace(resp.Body.String()) != c.body {
+			t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.body, resp.Body.String())
 		}
 	}
 }
