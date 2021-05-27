@@ -97,7 +97,7 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 
 	c, err := app.db.GetCompany(cnpj.Unmask(v))
 	if err != nil {
-		messageResponse(w, http.StatusNoContent, "")
+		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
 

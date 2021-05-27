@@ -90,14 +90,14 @@ func TestCompanyHandler(t *testing.T) {
 		{
 			http.MethodGet,
 			"/00.000.000/0001-91",
-			http.StatusNoContent,
-			"",
+			http.StatusNotFound,
+			`{"message":"CNPJ 00.000.000/0001-91 não encontrado."}`,
 		},
 		{
 			http.MethodGet,
 			"/00000000000191",
-			http.StatusNoContent,
-			"",
+			http.StatusNotFound,
+			`{"message":"CNPJ 00.000.000/0001-91 não encontrado."}`,
 		},
 		{
 			http.MethodGet,

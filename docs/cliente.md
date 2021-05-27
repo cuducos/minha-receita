@@ -10,7 +10,8 @@ A API web tem apenas dois _endpoints_:
 | `/` | `HEAD` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
 | `/` | `GET` | 400 | `{"message": "CNPJ não enviado na requisição GET."}` |
 | `/foobar` | `GET` | 400 | `{"message": "CNPJ foobar inválido."}` |
-| `/00000000000000` | `GET` | 204 | _Corpo vazio, significa que o CNPJ é válido mas não consta no banco de dados._ |
+| `/00000000000000` | `GET` | 404 | `{"message": "CNPJ 00.000.000/0000-00 não encontrado."}`  |
+| `/00.000.000/0000-00` | `GET` | 404 | `{"message": "CNPJ 00.000.000/0000-00 não encontrado."}`  |
 | `/19131243000197` | `GET` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/19.131.243/0001-97` | `GET` | 200 | _Ver JSON de exemplo abaixo._ |
 
