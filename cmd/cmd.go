@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/cuducos/minha-receita/adapter"
 	"github.com/cuducos/minha-receita/api"
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/download"
-	"github.com/cuducos/minha-receita/transform"
 )
 
 const help = `Minha Receita.
@@ -46,11 +46,11 @@ Downloads the required ZIP and Excel files.
 The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
-const parseHelper = `
-Parse the fixed-width files from the Federal Revenue into CSV files.
+const transformHelper = `
+Unzips the downloaded files and merge them into CSV files.
 
-Three compressed CSVs are created: empresa.csv.gz, socio.csv.gz and
-cnae_secundarias.csv.gz.`
+Creates unique CSV files for each dataset and decompress the data into these
+single CSV files.`
 
 var dir string
 var urlsOnly bool
@@ -99,13 +99,13 @@ var downloadCmd = &cobra.Command{
 	},
 }
 
-var parseCmd = &cobra.Command{
-	Use:   "parse",
-	Short: "Parse the fixed-width files from the Federal Revenue into CSV files",
-	Long:  parseHelper,
+var transformCmd = &cobra.Command{
+	Use:   "transform",
+	Short: "Unzips the downloaded files and merge them into CSV files",
+	Long:  transformHelper,
 	Run: func(_ *cobra.Command, _ []string) {
 		assertDirExists()
-		transform.Parse(dir)
+		adapter.Transform(dir)
 	},
 }
 
@@ -143,10 +143,17 @@ var importCmd = &cobra.Command{
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
-	for _, c := range []*cobra.Command{downloadCmd, parseCmd, importCmd} {
+	for _, c := range []*cobra.Command{downloadCmd, transformCmd, importCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
 	}
-	for _, c := range []*cobra.Command{apiCmd, downloadCmd, parseCmd, createCmd, dropCmd, importCmd} {
+	for _, c := range []*cobra.Command{
+		apiCmd,
+		downloadCmd,
+		transformCmd,
+		createCmd,
+		dropCmd,
+		importCmd,
+	} {
 		rootCmd.AddCommand(c)
 	}
 	return rootCmd
