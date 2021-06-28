@@ -1,13 +1,8 @@
 package adapter
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
-
-	"github.com/dustin/go-humanize"
 )
 
 type kind string
@@ -39,42 +34,12 @@ func (a *Adapter) files() ([]string, error) {
 	return filesFor(a, o), nil
 }
 
-func (a *Adapter) status() string {
-	p := csvPathFor(a)
-	s, err := os.Stat(p)
-	if err != nil {
-		return err.Error()
-	}
-
-	return fmt.Sprintf("%s (%s)", p, humanize.Bytes(uint64(s.Size())))
-}
-
-func status(as []*Adapter) {
-	p := 0
-	s := []string{"⠋", "⠙", "⠸", "⠴", "⠦", "⠇"}
-
-	for {
-		l := []string{}
-		for _, a := range as {
-			l = append(l, a.status())
-		}
-
-		fmt.Printf(fmt.Sprintf("\r%s %s", s[p], strings.Join(l, " | ")))
-		time.Sleep(1 * time.Second)
-
-		p++
-		if p >= len(s) {
-			p = 0
-		}
-	}
-}
-
 // Transform unzips the downloaded files and merge them into CSV files.
 func Transform(dir string) {
-	as := []*Adapter{
-		&Adapter{company, dir},
-		&Adapter{facility, dir},
-		&Adapter{partner, dir},
+	var as []*Adapter
+	for _, k := range []kind{company, facility, partner} {
+		a := Adapter{k, dir}
+		as = append(as, &a)
 	}
 
 	c := make(chan error)
