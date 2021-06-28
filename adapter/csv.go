@@ -1,12 +1,14 @@
 package adapter
 
 import (
+	"encoding/csv"
 	"os"
 	"path/filepath"
-	"strings"
+
+	"github.com/ulikunitz/xz"
 )
 
-const separator = ";"
+const separator = ';'
 
 func headersFor(a *Adapter) []string {
 	switch a.kind {
@@ -75,11 +77,11 @@ func csvPathFor(a *Adapter) string {
 	var n string
 	switch a.kind {
 	case company:
-		n = "empresa.csv"
+		n = "empresa.csv.xz"
 	case facility:
-		n = "estabelecimento.csv"
+		n = "estabelecimento.csv.xz"
 	case partner:
-		n = "socio.csv"
+		n = "socio.csv.xz"
 	}
 
 	return filepath.Join(a.dir, n)
@@ -95,7 +97,20 @@ func createCsvFor(a *Adapter) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	f.WriteString(strings.Join(headersFor(a), separator) + "\n")
+	x, err := xz.NewWriter(f)
+	if err != nil {
+		return err
+	}
+	defer x.Close()
+
+	w := csv.NewWriter(x)
+
+	if err := w.Write(headersFor(a)); err != nil {
+		return err
+	}
+	w.Flush()
+
 	return nil
 }

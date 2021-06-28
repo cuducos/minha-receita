@@ -47,10 +47,11 @@ The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
 const transformHelper = `
-Unzips the downloaded files and merge them into CSV files.
+Unzips the downloaded files and merge them into LZMA compressed CSV files.
 
-Creates unique CSV files for each dataset and decompress the data into these
-single CSV files.`
+The Federal Revenue splits data from the same datasets in multiple files. This
+command creates unique files for each dataset merging the data into single LZMA
+compressed CSV files per dataset.`
 
 var dir string
 var urlsOnly bool
