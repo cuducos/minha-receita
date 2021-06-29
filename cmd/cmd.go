@@ -47,12 +47,17 @@ The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
 const transformHelper = `
-Unzips the downloaded files and merge them into LZMA compressed CSV files.
+Unzips the downloaded files and merge them into CSV files.
 
 The Federal Revenue splits data from the same datasets in multiple files. This
-command creates unique files for each dataset merging the data into single LZMA
-compressed CSV files per dataset.`
+command creates unique files for each dataset merging the data into single CSV
+files per dataset.
 
+Optionally, compression can be used. No compression is quicker but generates
+large files. Gzip (gz) is slower, but generates considerably smaller files.
+ZMA (xz) is even slower, and generates sligthly smaller files than Gzip.`
+
+var compression string
 var dir string
 var urlsOnly bool
 
@@ -104,9 +109,9 @@ var transformCmd = &cobra.Command{
 	Use:   "transform",
 	Short: "Unzips the downloaded files and merge them into CSV files",
 	Long:  transformHelper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		assertDirExists()
-		adapter.Transform(dir)
+		return adapter.Transform(dir, compression)
 	},
 }
 
@@ -144,9 +149,20 @@ var importCmd = &cobra.Command{
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
+	transformCmd.Flags().StringVarP(
+		&compression,
+		"compression",
+		"c",
+		"",
+		fmt.Sprintf(
+			"optional compression algorithm (options available: %s)",
+			adapter.CompressionAlgorithms,
+		),
+	)
 	for _, c := range []*cobra.Command{downloadCmd, transformCmd, importCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
 	}
+
 	for _, c := range []*cobra.Command{
 		apiCmd,
 		downloadCmd,
@@ -157,5 +173,6 @@ func CLI() *cobra.Command {
 	} {
 		rootCmd.AddCommand(c)
 	}
+
 	return rootCmd
 }

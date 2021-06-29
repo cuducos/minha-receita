@@ -9,7 +9,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/ulikunitz/xz"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -58,13 +57,13 @@ func lineConsumer(a *Adapter, l chan []string) {
 	}
 	defer f.Close()
 
-	x, err := xz.NewWriter(f)
+	i, err := a.Writer(f)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer x.Close()
+	defer i.Close()
 
-	w := csv.NewWriter(x)
+	w := csv.NewWriter(i)
 	for {
 		s, ok := <-l
 		if !ok {
