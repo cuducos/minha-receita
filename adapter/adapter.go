@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"compress/gzip"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
@@ -14,9 +15,16 @@ import (
 type kind string
 
 const (
-	company  kind = "EMPRECSV"
-	facility      = "ESTABELE"
-	partner       = "SOCIOCSV"
+	city          kind = "MUNICCSV"
+	cnae               = "CNAECSV"
+	company            = "EMPRECSV"
+	country            = "PAISCSV"
+	facility           = "ESTABELE"
+	motive             = "MOTICSV"
+	nature             = "NATJUCSV"
+	partner            = "SOCIOCSV"
+	qualification      = "QUALSCSV"
+	simple             = "SIMPLES"
 )
 
 const CompressionAlgorithms = "xz, gz"
@@ -25,6 +33,31 @@ type Adapter struct {
 	kind        kind
 	dir         string
 	compression string
+	done        bool
+	fileHandler *os.File
+	ioWriter    io.WriteCloser
+	csvWriter   *csv.Writer
+}
+
+func NewAdapter(k kind, d, c string) *Adapter {
+	a := Adapter{k, d, c, false, nil, nil, nil}
+	return &a
+}
+
+func (a *Adapter) Close() {
+	if a.csvWriter != nil {
+		a.csvWriter.Flush()
+	}
+
+	if a.fileHandler != nil {
+		a.fileHandler.Close()
+	}
+
+	if a.ioWriter != nil {
+		a.ioWriter.Close()
+	}
+
+	a.done = true
 }
 
 func (a *Adapter) files() ([]string, error) {
@@ -54,43 +87,55 @@ func (a *Adapter) Writer(i io.WriteCloser) (io.WriteCloser, error) {
 	}
 }
 
-func validateCompressionAlgorithm(c string) bool {
+func validateCompressionAlgorithm(c string) error {
 	if c == "" {
-		return true
+		return nil
 	}
 
 	for _, o := range strings.Split(CompressionAlgorithms, ",") {
 		if c == strings.TrimSpace(o) {
-			return true
+			return nil
 		}
 	}
 
-	return false
+	return fmt.Errorf(
+		"Unknown compression algorithm %s, options are: %s",
+		c,
+		CompressionAlgorithms,
+	)
 }
 
 // Transform unzips the downloaded files and merge them into CSV files.
-func Transform(dir string, compression string) error {
-	if !validateCompressionAlgorithm(compression) {
-		return fmt.Errorf(
-			"Unknown compression algorithm %s, options are: %s",
-			compression,
-			CompressionAlgorithms,
-		)
+func Transform(dir string, compression string, quiet bool) error {
+	if err := validateCompressionAlgorithm(compression); err != nil {
+		return err
 	}
 
 	var as []*Adapter
-	for _, k := range []kind{company, facility, partner} {
-		a := Adapter{k, dir, compression}
-		as = append(as, &a)
+	for _, k := range []kind{
+		city,
+		cnae,
+		company,
+		country,
+		facility,
+		motive,
+		nature,
+		partner,
+		qualification,
+		simple,
+	} {
+		as = append(as, NewAdapter(k, dir, compression))
 	}
 
 	c := make(chan error)
 	for _, a := range as {
-		createCsvFor(a)
-		go writeCsvsFor(a, c)
+		go a.writeCsv(c)
 	}
 
-	go status(as)
+	q := make(chan struct{})
+	if !quiet {
+		go status(q, as)
+	}
 
 	for range as {
 		err := <-c
@@ -98,5 +143,12 @@ func Transform(dir string, compression string) error {
 			return err
 		}
 	}
+
+	if !quiet {
+		q <- struct{}{} // ask the status function to wrap up
+		<-q             // wait the status function to wrap up
+		close(q)
+	}
+
 	return nil
 }

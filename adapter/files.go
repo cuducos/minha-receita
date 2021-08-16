@@ -3,13 +3,14 @@ package adapter
 import "strings"
 
 func isFileOf(a *Adapter, f string) bool {
-	s := strings.Split(f, ".")
-	p := len(s) - 2
-	if p < 0 {
-		return false
+	k := string(a.kind)
+	for _, part := range strings.Split(f, ".") {
+		if part == k {
+			return true
+		}
 	}
 
-	return s[p] == string(a.kind)
+	return false
 }
 
 func filesFor(a *Adapter, ls []string) []string {

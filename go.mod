@@ -8,6 +8,7 @@ require (
 	github.com/cuducos/go-cnpj v0.0.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-pg/pg/v10 v10.5.0
+	github.com/gosuri/uilive v0.0.4
 	github.com/newrelic/go-agent/v3 v3.9.0
 	github.com/schollz/progressbar/v3 v3.7.0
 	github.com/spf13/cobra v1.1.1
@@ -15,4 +16,4 @@ require (
 	golang.org/x/text v0.3.3
 )
 
-// +heroku goVersion go1.15
+// +heroku goVersion go1.16
