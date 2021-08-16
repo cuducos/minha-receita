@@ -155,14 +155,14 @@ func getTotalSize(fs []file) (int64, error) {
 }
 
 // Download all the files (might take several minutes).
-func Download(dir string, urlsOnly bool) {
+func Download(dir string, urlsOnly bool) error {
 	if !urlsOnly {
 		log.Output(2, "Preparing to downlaod from the Federal Revenue official website…")
 	}
 
 	fs, err := getFiles(dir)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if urlsOnly {
@@ -174,12 +174,12 @@ func Download(dir string, urlsOnly bool) {
 		for _, u := range urls {
 			fmt.Println(u)
 		}
-		return
+		return nil
 	}
 
 	t, err := getTotalSize(fs)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	q := make(chan error)
@@ -194,8 +194,10 @@ func Download(dir string, urlsOnly bool) {
 	for range fs {
 		err := <-q
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 	bar.Finish()
+
+	return nil
 }

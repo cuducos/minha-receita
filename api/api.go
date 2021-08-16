@@ -119,7 +119,7 @@ func (app api) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serve spins up the HTTP server.
-func Serve(db db.Database) {
+func Serve(db db.Database) error {
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Output(2, "No PORT environment variable found, using 8000.")
@@ -130,9 +130,14 @@ func Serve(db db.Database) {
 		port = ":" + port
 	}
 
-	nr := newRelicApp()
+	nr, err := newRelicApp()
+	if err != nil {
+		return err
+	}
+
 	app := api{db: db}
 	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
 	log.Fatal(http.ListenAndServe(port, nil))
+	return nil
 }

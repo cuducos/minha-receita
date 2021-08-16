@@ -89,9 +89,9 @@ var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Spins up the web API",
 	Long:  apiHelper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		pg := db.NewPostgreSQL()
-		api.Serve(&pg)
+		return api.Serve(&pg)
 	},
 }
 
@@ -99,9 +99,9 @@ var downloadCmd = &cobra.Command{
 	Use:   "download",
 	Short: "Downloads the required ZIP and Excel files",
 	Long:  downloadHelper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		assertDirExists()
-		download.Download(dir, urlsOnly)
+		return download.Download(dir, urlsOnly)
 	},
 }
 
@@ -111,7 +111,7 @@ var transformCmd = &cobra.Command{
 	Long:  transformHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		assertDirExists()
-		return adapter.Transform(dir, compression)
+		return adapter.Transform(dir, compression, false)
 	},
 }
 

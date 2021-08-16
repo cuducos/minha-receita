@@ -7,10 +7,10 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func newRelicApp() *newrelic.Application {
+func newRelicApp() (*newrelic.Application, error) {
 	k := os.Getenv("NEW_RELIC_LICENSE_KEY")
 	if k == "" {
-		return nil
+		return nil, nil
 	}
 
 	app, err := newrelic.NewApplication(
@@ -18,9 +18,9 @@ func newRelicApp() *newrelic.Application {
 		newrelic.ConfigLicense(k),
 	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return app
+	return app, nil
 }
 
 func newRelicHandle(app *newrelic.Application, pth string, f func(http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
