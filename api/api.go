@@ -86,7 +86,7 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 
 	v := r.URL.Path
 	if v == "/" {
-		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição GET.")
+		messageResponse(w, http.StatusBadRequest, "CNPJ não enviado na requisição GET. Visite https://docs.minhareceita.org para mais informações sobre o uso dessa API.")
 		return
 	}
 
