@@ -8,7 +8,7 @@ A API web tem apenas dois _endpoints_:
 |---|---|---|---|
 | `/` | `POST` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
 | `/` | `HEAD` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
-| `/` | `GET` | 400 | `{"message": "CNPJ não enviado na requisição GET."}` |
+| `/` | `GET` | 302 | _Redireciona para essa documentação._ |
 | `/foobar` | `GET` | 400 | `{"message": "CNPJ foobar inválido."}` |
 | `/00000000000000` | `GET` | 404 | `{"message": "CNPJ 00.000.000/0000-00 não encontrado."}`  |
 | `/00.000.000/0000-00` | `GET` | 404 | `{"message": "CNPJ 00.000.000/0000-00 não encontrado."}`  |
