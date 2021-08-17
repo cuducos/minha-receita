@@ -79,7 +79,7 @@ func TestCompanyHandler(t *testing.T) {
 			http.MethodGet,
 			"/",
 			http.StatusBadRequest,
-			`{"message":"CNPJ não enviado na requisição GET."}`,
+			`{"message":"CNPJ não enviado na requisição GET. Visite https://docs.minhareceita.org para mais informações sobre o uso dessa API."}`,
 		},
 		{
 			http.MethodGet,
