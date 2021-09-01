@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -54,23 +55,23 @@ cnae_secundarias.csv.gz.`
 
 var dir string
 var urlsOnly bool
+var timeout string
 
-func assertDirExists() {
+func assertDirExists() error {
 	var err error
 	i, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Directory %s does not exist.", dir))
-		os.Exit(1)
+		return fmt.Errorf("Directory %s does not exist.", dir)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 
 	if !i.Mode().IsDir() {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("%s is not a directory.", dir))
-		os.Exit(1)
+		return fmt.Errorf("%s is not a directory.", dir)
 	}
+
+	return nil
 }
 
 var rootCmd = &cobra.Command{
@@ -93,9 +94,15 @@ var downloadCmd = &cobra.Command{
 	Use:   "download",
 	Short: "Downloads the required ZIP and Excel files",
 	Long:  downloadHelper,
-	Run: func(_ *cobra.Command, _ []string) {
-		assertDirExists()
-		download.Download(dir, urlsOnly)
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		dur, err := time.ParseDuration(timeout)
+		if err != nil {
+			return err
+		}
+		return download.Download(dir, dur, urlsOnly)
 	},
 }
 
@@ -103,9 +110,11 @@ var parseCmd = &cobra.Command{
 	Use:   "parse",
 	Short: "Parse the fixed-width files from the Federal Revenue into CSV files",
 	Long:  parseHelper,
-	Run: func(_ *cobra.Command, _ []string) {
-		assertDirExists()
-		transform.Parse(dir)
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		return transform.Parse(dir)
 	},
 }
 
@@ -143,6 +152,7 @@ var importCmd = &cobra.Command{
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
+	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
 	for _, c := range []*cobra.Command{downloadCmd, parseCmd, importCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
 	}
