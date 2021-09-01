@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -62,15 +61,17 @@ func getFiles(dir string) ([]file, error) {
 	return fs, nil
 }
 
-type Downloader struct {
+type downloader struct {
 	files     []file
 	client    *http.Client
 	totalSize int64
 	bar       *progressbar.ProgressBar
 }
 
-func (d *Downloader) getSize(ch chan<- error, url string) {
-	// IBGE does not respond to HTTP HEAD as expected
+func (d *downloader) getSize(ch chan<- error, url string) {
+	// We use a HTTP HEAD request to get the file size, but IBGE server does
+	// not respond properly to that. Thus, as a temporary workaround we just
+	// hardcoded the current file size (checked manually after downloading it)
 	if url == listOfCNAE {
 		d.totalSize += 137216
 		ch <- nil
@@ -79,51 +80,49 @@ func (d *Downloader) getSize(ch chan<- error, url string) {
 
 	r, err := d.client.Head(url)
 	if err != nil {
-		ch <- err
+		ch <- fmt.Errorf("Error sending a HTTP HEAD request to %s: %s", url, err)
 		return
 	}
-	for _, k := range []string{"Content-Length", "content-length"} {
-		var s int
-		s, err = strconv.Atoi(r.Header.Get(k))
-		if err == nil {
-			d.totalSize += int64(s)
-			ch <- nil
-			return
-		}
+	defer r.Body.Close()
+
+	if r.ContentLength == 0 {
+		ch <- fmt.Errorf("Could not get size for %s", url)
+		return
 	}
-	err = fmt.Errorf("Could not get size for %s", url)
-	ch <- err
+
+	d.totalSize += r.ContentLength
+	ch <- nil
+	return
 }
 
-func (d *Downloader) getTotalSize() error {
+func (d *downloader) getTotalSize() error {
 	d.totalSize = 0
 	q := make(chan error)
 	for _, f := range d.files {
 		go d.getSize(q, f.url)
 	}
 	for range d.files {
-		err := <-q
-		if err != nil {
+		if err := <-q; err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (d *Downloader) setProgressBar() {
+func (d *downloader) setProgressBar() {
 	d.bar = progressbar.DefaultBytes(d.totalSize, "Downloading")
 }
 
-func (d *Downloader) download(ch chan<- error, f *file, a int) {
+func (d *downloader) download(ch chan<- error, f *file, a int) {
 	r, err := d.client.Get(f.url)
 	if err != nil {
 		log.Output(2, fmt.Sprintf("HTTP request to %s failed", f.url))
 		ch <- err
 		return
 	}
-	defer r.Body.Close()
 
 	if r.StatusCode != http.StatusOK {
+		r.Body.Close()
 		if a < retries {
 			time.Sleep(time.Duration(int(math.Pow(float64(2), float64(a)))) * time.Second)
 			d.download(ch, f, a+1)
@@ -134,6 +133,7 @@ func (d *Downloader) download(ch chan<- error, f *file, a int) {
 			return
 		}
 	}
+	defer r.Body.Close()
 
 	var h *os.File
 	h, err = os.Create(f.path)
@@ -153,7 +153,7 @@ func (d *Downloader) download(ch chan<- error, f *file, a int) {
 	ch <- nil
 }
 
-func (d *Downloader) downloadAll() error {
+func (d *downloader) downloadAll() error {
 	q := make(chan error)
 	for _, f := range d.files {
 		go d.download(q, &f, 0)
@@ -168,8 +168,8 @@ func (d *Downloader) downloadAll() error {
 	return nil
 }
 
-func NewDownloader(c *http.Client, fs []file) (*Downloader, error) {
-	d := Downloader{files: fs, client: c}
+func newDownloader(c *http.Client, fs []file) (*downloader, error) {
+	d := downloader{files: fs, client: c}
 	err := d.getTotalSize()
 	if err != nil {
 		return nil, err
@@ -199,7 +199,7 @@ func Download(dir string, timeout time.Duration, urlsOnly bool) error {
 		return nil
 	}
 	c := &http.Client{Timeout: timeout}
-	d, err := NewDownloader(c, fs)
+	d, err := newDownloader(c, fs)
 	if err != nil {
 		return err
 	}
