@@ -68,43 +68,47 @@ type downloader struct {
 	bar       *progressbar.ProgressBar
 }
 
-func (d *downloader) getSize(ch chan<- error, url string) {
+type size struct {
+	size int64
+	err  error
+}
+
+func (d *downloader) getSize(ch chan<- size, url string) {
 	// We use a HTTP HEAD request to get the file size, but IBGE server does
 	// not respond properly to that. Thus, as a temporary workaround we just
 	// hardcoded the current file size (checked manually after downloading it)
 	if url == listOfCNAE {
-		d.totalSize += 137216
-		ch <- nil
+		ch <- size{size: 137216}
 		return
 	}
 
 	r, err := d.client.Head(url)
 	if err != nil {
-		ch <- fmt.Errorf("Error sending a HTTP HEAD request to %s: %s", url, err)
+		ch <- size{err: fmt.Errorf("Error sending a HTTP HEAD request to %s: %s", url, err)}
 		return
 	}
 	defer r.Body.Close()
 
 	if r.ContentLength == 0 {
-		ch <- fmt.Errorf("Could not get size for %s", url)
+		ch <- size{err: fmt.Errorf("Could not get size for %s", url)}
 		return
 	}
 
-	d.totalSize += r.ContentLength
-	ch <- nil
-	return
+	ch <- size{size: r.ContentLength}
 }
 
 func (d *downloader) getTotalSize() error {
 	d.totalSize = 0
-	q := make(chan error)
+	q := make(chan size)
 	for _, f := range d.files {
 		go d.getSize(q, f.url)
 	}
 	for range d.files {
-		if err := <-q; err != nil {
-			return err
+		s := <-q
+		if s.err != nil {
+			return s.err
 		}
+		d.totalSize += s.size
 	}
 	return nil
 }
@@ -114,43 +118,43 @@ func (d *downloader) setProgressBar() {
 }
 
 func (d *downloader) download(ch chan<- error, f *file, a int) {
-	r, err := d.client.Get(f.url)
-	if err != nil {
-		log.Output(2, fmt.Sprintf("HTTP request to %s failed", f.url))
-		ch <- err
-		return
-	}
+	err := func(f *file) error {
+		r, err := d.client.Get(f.url)
+		if err != nil {
+			log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", f.url, err))
+			return err
+		}
+		defer r.Body.Close()
 
-	if r.StatusCode != http.StatusOK {
-		r.Body.Close()
+		if r.StatusCode != http.StatusOK {
+			return fmt.Errorf("HTTP request to %s got %s", f.url, r.Status)
+		}
+
+		var h *os.File
+		h, err = os.Create(f.path)
+		if err != nil {
+			return fmt.Errorf("Failed to create %s: %v", f.path, err)
+		}
+		defer h.Close()
+
+		_, err = io.Copy(io.MultiWriter(h, d.bar), r.Body)
+		if err != nil {
+			return fmt.Errorf("Error downloading %s: %v", f.url, err)
+		}
+		return nil
+	}(f)
+
+	if err != nil {
 		if a < retries {
 			time.Sleep(time.Duration(int(math.Pow(float64(2), float64(a)))) * time.Second)
 			d.download(ch, f, a+1)
 			return
 		} else {
-			err = fmt.Errorf("After %d attempts, could not download %s (%s)", retries, f.url, r.Status)
+			err = fmt.Errorf("After %d attempts, could not download %s: %c", retries, f.url, err)
 			ch <- err
 			return
 		}
 	}
-	defer r.Body.Close()
-
-	var h *os.File
-	h, err = os.Create(f.path)
-	if err != nil {
-		log.Output(2, fmt.Sprintf("Failed to create %s", f.path))
-		ch <- err
-		return
-	}
-	defer h.Close()
-
-	_, err = io.Copy(io.MultiWriter(h, d.bar), r.Body)
-	if err != nil {
-		log.Output(2, fmt.Sprintf("Error downloading %s", f.url))
-		ch <- err
-		return
-	}
-	ch <- nil
 }
 
 func (d *downloader) downloadAll() error {
