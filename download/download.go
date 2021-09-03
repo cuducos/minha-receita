@@ -25,8 +25,18 @@ type file struct {
 	path string
 }
 
-func getURLs(src string) ([]string, error) {
-	d, err := goquery.NewDocument(src)
+func getURLs(client *http.Client, src string) ([]string, error) {
+	r, err := client.Get(src)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	if r.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s responded with %s", src, r.Status)
+	}
+
+	d, err := goquery.NewDocumentFromReader(r.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +54,13 @@ func getURLs(src string) ([]string, error) {
 	return urls, nil
 }
 
-func getFiles(dir string) ([]file, error) {
+func getFiles(client *http.Client, dir string) ([]file, error) {
 	fs := []file{{
 		url:  listOfCNAE,
 		path: filepath.Join(dir, "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"),
 	}}
 
-	urls, err := getURLs(federalRevenue)
+	urls, err := getURLs(client, federalRevenue)
 	if err != nil {
 		return fs, err
 	}
@@ -117,8 +127,8 @@ func (d *downloader) setProgressBar() {
 	d.bar = progressbar.DefaultBytes(d.totalSize, "Downloading")
 }
 
-func (d *downloader) download(ch chan<- error, f *file, a int) {
-	err := func(f *file) error {
+func (d *downloader) download(ch chan<- error, f file, a int) {
+	err := func(f file) error {
 		r, err := d.client.Get(f.url)
 		if err != nil {
 			log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", f.url, err))
@@ -155,12 +165,13 @@ func (d *downloader) download(ch chan<- error, f *file, a int) {
 			return
 		}
 	}
+	ch <- nil
 }
 
 func (d *downloader) downloadAll() error {
 	q := make(chan error)
 	for _, f := range d.files {
-		go d.download(q, &f, 0)
+		go d.download(q, f, 0)
 	}
 	for range d.files {
 		err := <-q
@@ -184,13 +195,16 @@ func newDownloader(c *http.Client, fs []file) (*downloader, error) {
 
 // Download all the files (might take several minutes).
 func Download(dir string, timeout time.Duration, urlsOnly bool) error {
+	c := &http.Client{Timeout: timeout}
 	if !urlsOnly {
 		log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	}
-	fs, err := getFiles(dir)
+
+	fs, err := getFiles(c, dir)
 	if err != nil {
 		return err
 	}
+
 	if urlsOnly {
 		urls := make([]string, 0, len(fs))
 		for _, f := range fs {
@@ -202,7 +216,7 @@ func Download(dir string, timeout time.Duration, urlsOnly bool) error {
 		}
 		return nil
 	}
-	c := &http.Client{Timeout: timeout}
+
 	d, err := newDownloader(c, fs)
 	if err != nil {
 		return err
