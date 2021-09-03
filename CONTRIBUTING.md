@@ -1,6 +1,7 @@
 # Contribuindo com a Minha Receita 
 
-Escreva testes, rode os testes e reconstrua os containers para saber se está tudo certo:
+
+Escreva testes, rode os testes e reconstrua os containers para saber se está tudo certo. Se for utilizar Docker, copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário.
 
 ```console
 $ go test ./...
