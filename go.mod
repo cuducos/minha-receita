@@ -14,4 +14,4 @@ require (
 	golang.org/x/text v0.3.3
 )
 
-// +heroku goVersion go1.15
+// +heroku goVersion go1.16
