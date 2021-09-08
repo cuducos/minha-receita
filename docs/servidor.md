@@ -4,14 +4,15 @@
 
 O comando `download` faz o download dos arquivos necessários para alimentar o banco de dados. Na sequência, o comando `parse` transforma os arquivos para o formato CSV. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
 
-Por padrão o comando `download` baixa dados do servidor da Receita Federal, que é lento e instável, então, como alternativa, podemos utilizar o _mirror_ do [Brasil.IO](https://brasil.io) com a opção `--mirror`.
+O comando `download` baixa dados do servidor da Receita Federal, que é lento e instável. Como alternativa, pode-se apenas listar as URLs para download dos arquivos com `--urls-only` (ou `-u`). O _timeout_ padrão para o download de cada arquivo é de 15min, mas pode ser alterado com `--timeout` (ou `-t`).
 
 ### Exemplos de uso
 
 Sem Docker:
 
 ```console
-$ minha-receita download --mirror
+$ minha-receita download --urls-only
+$ minha-receita download --timeout 1h42m12s
 $ minha-receita parse
 ```
 

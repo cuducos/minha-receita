@@ -53,10 +53,10 @@ func status(w *writers, f, c int) error {
 }
 
 // Parse the downloaded files and saves a compressed CSV version of them.
-func Parse(dir string) {
+func Parse(dir string) error {
 	w, err := newWriters(dir)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer w.Close()
 
@@ -68,7 +68,7 @@ func Parse(dir string) {
 			break // no more files to read
 		}
 		if err != nil {
-			panic(err)
+			return err
 		}
 		go parseZipFile(&wg, c, z)
 	}
@@ -99,4 +99,6 @@ func Parse(dir string) {
 		r++
 		s += len(l.contents)
 	}
+
+	return nil
 }

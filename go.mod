@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.3.1
+	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/cuducos/go-cnpj v0.0.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/frictionlessdata/tableschema-go v1.1.3

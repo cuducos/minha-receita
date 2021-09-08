@@ -6,7 +6,7 @@
 
 Pela [Lei de Acesso à Informação](http://www.acessoainformacao.gov.br/assuntos/conheca-seu-direito/a-lei-de-acesso-a-informacao), os dados de CNPJ devem ser públicos e acessíveis por máquina. A Receita Federal oferece esses dados escondidos atrás de um CAPTCHA ou em formato pouco convencional (um _fixed-width text file_), com links lentos e instáveis para download de arquivos somando gigas. Isso não é acessível o suficiente.
 
-O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos para CSV, e ainda oferece um _mirror_ para download mais estável desses arquivos — tudo isso no [`socios-brasil`](https://github.com/turicas/socios-brasil) e disponibilizado no [Brasil.IO](https://brasil.io/).
+O [Turicas](https://twitter.com/turicas) já baixou e converteu esses arquivos para CSV — tudo isso no [`socios-brasil`](https://github.com/turicas/socios-brasil) e disponibilizado no [Brasil.IO](https://brasil.io/).
 
 ## Propósito
 

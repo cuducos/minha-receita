@@ -4,150 +4,222 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
+	"sort"
+	"strings"
+	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/schollz/progressbar/v3"
 )
 
-const FilePattern = "DADOS_ABERTOS_CNPJ_%02d.zip"
-const federalRevenue = "http://200.152.38.155/CNPJ/"
-const brasilIO = "https://data.brasil.io/mirror/socios-brasil/"
-const files = 20
+const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
+const listOfCNAE = "https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"
+const retries = 10
 
 type file struct {
-	url   string
-	path  string
-	extra bool // extra file (not from the Federal Revenue)
+	url  string
+	path string
+}
+
+func getURLs(client *http.Client, src string) ([]string, error) {
+	r, err := client.Get(src)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	if r.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s responded with %s", src, r.Status)
+	}
+
+	d, err := goquery.NewDocumentFromReader(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var urls []string
+	d.Find("a.external-link").Each(func(_ int, a *goquery.Selection) {
+		h, exist := a.Attr("href")
+		if !exist {
+			return
+		}
+		if strings.HasSuffix(h, ".zip") {
+			urls = append(urls, h)
+		}
+	})
+	return urls, nil
+}
+
+func getFiles(client *http.Client, dir string) ([]file, error) {
+	fs := []file{{
+		url:  listOfCNAE,
+		path: filepath.Join(dir, "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"),
+	}}
+
+	urls, err := getURLs(client, federalRevenue)
+	if err != nil {
+		return fs, err
+	}
+
+	for _, u := range urls {
+		fs = append(fs, file{url: u, path: filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])})
+	}
+	return fs, nil
+}
+
+type downloader struct {
+	files     []file
+	client    *http.Client
+	totalSize int64
+	bar       *progressbar.ProgressBar
 }
 
 type size struct {
-	size int
+	size int64
 	err  error
 }
 
-func getFiles(m bool, dir string) []file {
-	fs := []file{{
-		url:   "https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx",
-		path:  filepath.Join(dir, "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"),
-		extra: true,
-	}}
-
-	var s string
-	if m {
-		s = brasilIO
-	} else {
-		s = federalRevenue
-	}
-	for i := 1; i <= files; i++ {
-		n := fmt.Sprintf(FilePattern, i)
-		fs = append(fs, file{url: fmt.Sprintf("%s%s", s, n), path: filepath.Join(dir, n)})
-	}
-	return fs
-}
-
-func getSize(c chan<- size, url string) {
-	var size size
-	var r *http.Response
-	r, size.err = http.Head(url)
-	if size.err != nil {
-		c <- size
+func (d *downloader) getSize(ch chan<- size, url string) {
+	// We use a HTTP HEAD request to get the file size, but IBGE server does
+	// not respond properly to that. Thus, as a temporary workaround we just
+	// hardcoded the current file size (checked manually after downloading it)
+	if url == listOfCNAE {
+		ch <- size{size: 137216}
 		return
 	}
 
-	for _, k := range []string{"Content-Length", "content-length"} {
-		size.size, size.err = strconv.Atoi(r.Header.Get(k))
-		if size.err == nil {
-			c <- size
-			return
-		}
-	}
-
-	size.err = fmt.Errorf("Could not get size for %s", url)
-	c <- size
-	return
-}
-
-func download(c chan<- error, b *progressbar.ProgressBar, f file) {
-	r, err := http.Get(f.url)
+	r, err := d.client.Head(url)
 	if err != nil {
-		c <- err
+		ch <- size{err: fmt.Errorf("Error sending a HTTP HEAD request to %s: %s", url, err)}
 		return
 	}
 	defer r.Body.Close()
 
-	h, err := os.Create(f.path)
-	if err != nil {
-		c <- err
+	if r.ContentLength == 0 {
+		ch <- size{err: fmt.Errorf("Could not get size for %s", url)}
 		return
 	}
-	defer h.Close()
 
-	if b != nil {
-		_, err = io.Copy(io.MultiWriter(h, b), r.Body)
-	} else {
-		_, err = io.Copy(h, r.Body)
-	}
-	if err != nil {
-		c <- err
-	}
-	c <- nil
+	ch <- size{size: r.ContentLength}
 }
 
-func getTotalSize(fs []file) (int64, error) {
-	var t int64
+func (d *downloader) getTotalSize() error {
+	d.totalSize = 0
 	q := make(chan size)
-	for _, f := range fs {
-		if f.extra {
-			continue
-		}
-		go getSize(q, f.url)
+	for _, f := range d.files {
+		go d.getSize(q, f.url)
 	}
-	for _, f := range fs {
-		if f.extra {
-			continue
+	for range d.files {
+		s := <-q
+		if s.err != nil {
+			return s.err
 		}
-		r := <-q
-		if r.err != nil {
-			return 0, r.err
-		}
-		t += int64(r.size)
+		d.totalSize += s.size
 	}
-	return t, nil
+	return nil
+}
+
+func (d *downloader) setProgressBar() {
+	d.bar = progressbar.DefaultBytes(d.totalSize, "Downloading")
+}
+
+func (d *downloader) download(ch chan<- error, f file, a int) {
+	err := func(f file) error {
+		r, err := d.client.Get(f.url)
+		if err != nil {
+			log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", f.url, err))
+			return err
+		}
+		defer r.Body.Close()
+
+		if r.StatusCode != http.StatusOK {
+			return fmt.Errorf("HTTP request to %s got %s", f.url, r.Status)
+		}
+
+		var h *os.File
+		h, err = os.Create(f.path)
+		if err != nil {
+			return fmt.Errorf("Failed to create %s: %v", f.path, err)
+		}
+		defer h.Close()
+
+		_, err = io.Copy(io.MultiWriter(h, d.bar), r.Body)
+		if err != nil {
+			return fmt.Errorf("Error downloading %s: %v", f.url, err)
+		}
+		return nil
+	}(f)
+
+	if err != nil {
+		if a < retries {
+			time.Sleep(time.Duration(int(math.Pow(float64(2), float64(a)))) * time.Second)
+			d.download(ch, f, a+1)
+			return
+		} else {
+			err = fmt.Errorf("After %d attempts, could not download %s: %c", retries, f.url, err)
+			ch <- err
+			return
+		}
+	}
+	ch <- nil
+}
+
+func (d *downloader) downloadAll() error {
+	q := make(chan error)
+	for _, f := range d.files {
+		go d.download(q, f, 0)
+	}
+	for range d.files {
+		err := <-q
+		if err != nil {
+			return err
+		}
+	}
+	d.bar.Finish()
+	return nil
+}
+
+func newDownloader(c *http.Client, fs []file) (*downloader, error) {
+	d := downloader{files: fs, client: c}
+	err := d.getTotalSize()
+	if err != nil {
+		return nil, err
+	}
+	d.setProgressBar()
+	return &d, nil
 }
 
 // Download all the files (might take several minutes).
-func Download(m bool, dir string) {
-	var msg string
-	if m {
-		msg = "Preparing to downlaod from Brasil.IO mirror…"
-	} else {
-		msg = "Preparing to downlaod from the Federal Revenue official website…"
+func Download(dir string, timeout time.Duration, urlsOnly bool) error {
+	c := &http.Client{Timeout: timeout}
+	if !urlsOnly {
+		log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	}
-	log.Output(2, msg)
 
-	fs := getFiles(m, dir)
-	t, err := getTotalSize(fs)
+	fs, err := getFiles(c, dir)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	q := make(chan error)
-	bar := progressbar.DefaultBytes(t, "Downloading")
-	for _, f := range fs {
-		if f.extra {
-			go download(q, nil, f)
-		} else {
-			go download(q, bar, f)
+	if urlsOnly {
+		urls := make([]string, 0, len(fs))
+		for _, f := range fs {
+			urls = append(urls, f.url)
 		}
-	}
-	for range fs {
-		err := <-q
-		if err != nil {
-			panic(err)
+		sort.Strings(urls)
+		for _, u := range urls {
+			fmt.Println(u)
 		}
+		return nil
 	}
-	bar.Finish()
+
+	d, err := newDownloader(c, fs)
+	if err != nil {
+		return err
+	}
+	return d.downloadAll()
 }
