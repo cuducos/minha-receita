@@ -47,12 +47,18 @@ Downloads the required ZIP and Excel files.
 The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
-const parseHelper = `
-Parse the fixed-width files from the Federal Revenue into CSV files.
+const transformHelper = `
+Unzips the downloaded files and merge them into CSV files.
 
-Three compressed CSVs are created: empresa.csv.gz, socio.csv.gz and
-cnae_secundarias.csv.gz.`
+The Federal Revenue splits data from the same datasets in multiple files. This
+command creates unique files for each dataset merging the data into single CSV
+files per dataset.
 
+Optionally, compression can be used. No compression is quicker but generates
+large files. Gzip (gz) is slower, but generates considerably smaller files.
+ZMA (xz) is even slower, and generates sligthly smaller files than Gzip.`
+
+var compression string
 var dir string
 var urlsOnly bool
 var timeout string
@@ -106,15 +112,15 @@ var downloadCmd = &cobra.Command{
 	},
 }
 
-var parseCmd = &cobra.Command{
-	Use:   "parse",
-	Short: "Parse the fixed-width files from the Federal Revenue into CSV files",
-	Long:  parseHelper,
+var transformCmd = &cobra.Command{
+	Use:   "transform",
+	Short: "Unzips the downloaded files and merge them into CSV files",
+	Long:  transformHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := assertDirExists(); err != nil {
 			return err
 		}
-		return transform.Parse(dir)
+		return transform.Transform(dir, compression)
 	},
 }
 
@@ -153,10 +159,28 @@ var importCmd = &cobra.Command{
 func CLI() *cobra.Command {
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
 	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
-	for _, c := range []*cobra.Command{downloadCmd, parseCmd, importCmd} {
+	transformCmd.Flags().StringVarP(
+		&compression,
+		"compression",
+		"c",
+		"",
+		fmt.Sprintf(
+			"optional compression algorithm (options available: %s)",
+			transform.CompressionAlgorithms,
+		),
+	)
+	for _, c := range []*cobra.Command{downloadCmd, transformCmd, importCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
 	}
-	for _, c := range []*cobra.Command{apiCmd, downloadCmd, parseCmd, createCmd, dropCmd, importCmd} {
+
+	for _, c := range []*cobra.Command{
+		apiCmd,
+		downloadCmd,
+		transformCmd,
+		createCmd,
+		dropCmd,
+		importCmd,
+	} {
 		rootCmd.AddCommand(c)
 	}
 	return rootCmd

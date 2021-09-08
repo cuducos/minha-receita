@@ -1,104 +1,150 @@
 package transform
 
 import (
-	"bufio"
+	"compress/gzip"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
-	"sync"
-	"time"
+	"path/filepath"
+	"strings"
 
-	"github.com/dustin/go-humanize"
+	"github.com/ulikunitz/xz"
 )
 
-func parseZipFile(wg *sync.WaitGroup, c chan<- parsedLine, z *zippedFile) {
-	wg.Add(1)
-	defer wg.Done()
-	defer z.Close()
+type kind string
 
-	s := bufio.NewScanner(z.firstFile)
-	for s.Scan() {
-		l := parseLine(s.Text())
-		if l.valid {
-			c <- l
+const (
+	city          kind = "MUNICCSV"
+	cnae               = "CNAECSV"
+	company            = "EMPRECSV"
+	country            = "PAISCSV"
+	facility           = "ESTABELE"
+	motive             = "MOTICSV"
+	nature             = "NATJUCSV"
+	partner            = "SOCIOCSV"
+	qualification      = "QUALSCSV"
+	simple             = "SIMPLES"
+)
+
+const CompressionAlgorithms = "xz, gz"
+
+type dataset struct {
+	kind        kind
+	dir         string
+	compression string
+	done        bool
+	fileHandler *os.File
+	ioWriter    io.WriteCloser
+	csvWriter   *csv.Writer
+}
+
+func newDataset(k kind, d, c string) *dataset {
+	a := dataset{k, d, c, false, nil, nil, nil}
+	return &a
+}
+
+func (a *dataset) Close() {
+	if a.csvWriter != nil {
+		a.csvWriter.Flush()
+	}
+
+	if a.fileHandler != nil {
+		a.fileHandler.Close()
+	}
+
+	if a.ioWriter != nil {
+		a.ioWriter.Close()
+	}
+
+	a.done = true
+}
+
+func (a *dataset) files() ([]string, error) {
+	var o []string
+
+	ls, err := os.ReadDir(a.dir)
+	if err != nil {
+		return []string{}, err
+	}
+
+	for _, f := range ls {
+		if !f.IsDir() {
+			o = append(o, filepath.Join(a.dir, f.Name()))
 		}
+	}
+	return filesFor(a, o), nil
+}
+
+func (a *dataset) Writer(i io.WriteCloser) (io.WriteCloser, error) {
+	switch a.compression {
+	case "xz":
+		return xz.NewWriter(i)
+	case "gz":
+		return gzip.NewWriter(i), nil
+	default:
+		return i, nil
 	}
 }
 
-func status(w *writers, f, c int) error {
-	company, err := os.Stat(w.company.path)
-	if err != nil {
-		return err
-	}
-	partner, err := os.Stat(w.partner.path)
-	if err != nil {
-		return err
-	}
-	cnae, err := os.Stat(w.cnae.path)
-	if err != nil {
-		return err
+func validateCompressionAlgorithm(c string) error {
+	if c == "" {
+		return nil
 	}
 
-	fmt.Printf(
-		"\rFixed-width lines read: %s | CSV lines written: %s | %s: %s | %s: %s | %s: %s ",
-		humanize.Comma(int64(f)),
-		humanize.Comma(int64(c)),
-		w.company.path,
-		humanize.Bytes(uint64(company.Size())),
-		w.partner.path,
-		humanize.Bytes(uint64(partner.Size())),
-		w.cnae.path,
-		humanize.Bytes(uint64(cnae.Size())),
+	for _, o := range strings.Split(CompressionAlgorithms, ",") {
+		if c == strings.TrimSpace(o) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf(
+		"Unknown compression algorithm %s, options are: %s",
+		c,
+		CompressionAlgorithms,
 	)
-	return nil
 }
 
-// Parse the downloaded files and saves a compressed CSV version of them.
-func Parse(dir string) error {
-	w, err := newWriters(dir)
-	if err != nil {
+// Transform unzips the downloaded files and merge them into CSV files.
+func Transform(dir string, compression string) error {
+	if err := validateCompressionAlgorithm(compression); err != nil {
 		return err
 	}
-	defer w.Close()
 
-	var wg sync.WaitGroup
-	c := make(chan parsedLine)
-	for i := 1; i >= 1; i++ { // infinite loop: breaks when file does not exist
-		z, err := newZippedFile(dir, i)
-		if os.IsNotExist(err) {
-			break // no more files to read
-		}
+	var as []*dataset
+	for _, k := range []kind{
+		city,
+		cnae,
+		company,
+		country,
+		facility,
+		motive,
+		nature,
+		partner,
+		qualification,
+		simple,
+	} {
+		as = append(as, newDataset(k, dir, compression))
+	}
+
+	c := make(chan error)
+	for _, a := range as {
+		go a.writeCsv(c)
+	}
+
+	q := make(chan struct{})
+	go startSpinners(q, as)
+
+	for range as {
+		err := <-c
 		if err != nil {
 			return err
 		}
-		go parseZipFile(&wg, c, z)
 	}
 
-	go func(wg *sync.WaitGroup) {
-		wg.Wait()
-		close(c)
-	}(&wg)
-
-	// show the status (progress)
-	var r, s int
-	go func() {
-		for {
-			status(w, r, s)
-			time.Sleep(3 * time.Second)
-		}
-	}()
-
-	for l := range c {
-		switch l.kind {
-		case "empresa":
-			w.company.write(l.contents)
-		case "socio":
-			w.partner.write(l.contents)
-		case "cnae":
-			w.cnae.write(l.contents)
-		}
-		r++
-		s += len(l.contents)
-	}
+	q <- struct{}{} // ask the spinner to wrap up
+	<-q             // wait for the spinner to wrap up
+	close(q)
 
 	return nil
 }
