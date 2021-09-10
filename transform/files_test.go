@@ -4,7 +4,7 @@ import "testing"
 
 func TestIsFileOf(t *testing.T) {
 	types := []kind{company, partner, facility}
-	cases := []struct {
+	testCases := []struct {
 		name     string
 		expected kind
 	}{
@@ -24,13 +24,15 @@ func TestIsFileOf(t *testing.T) {
 		{"K3241.K03200Y5.D10612.EMPRECSV.zip", company},
 	}
 
-	for _, c := range cases {
-		for _, k := range types {
-			e := c.expected == k
-			if r := isFileOf(newDataset(k, "testdata", ""), c.name); r != e {
-				t.Errorf("Expected %s to be of kind %s", c.name, c.expected)
+	for _, c := range testCases {
+		t.Run(c.name, func(t *testing.T) {
+			for _, k := range types {
+				e := c.expected == k
+				if r := isFileOf(newDataset(k, "testdata", ""), c.name); r != e {
+					t.Errorf("Expected %s to be of kind %s", c.name, c.expected)
+				}
 			}
-		}
+		})
 	}
 }
 
@@ -52,7 +54,7 @@ func TestArchivesFor(t *testing.T) {
 		"K3241.K03200Y2.D10612.SOCIOCSV.zip",
 		"K3241.K03200Y5.D10612.EMPRECSV.zip",
 	}
-	cases := []struct {
+	testCases := []struct {
 		kind     kind
 		expected []string
 	}{
@@ -78,7 +80,7 @@ func TestArchivesFor(t *testing.T) {
 		{simple, []string{"F.K03200$W.SIMPLES.CSV.D10612.zip"}},
 	}
 
-	for _, c := range cases {
+	for _, c := range testCases {
 		r := filesFor(newDataset(c.kind, "testdata", ""), ls)
 		if len(r) != len(c.expected) {
 			t.Errorf("Expected %d files for %s, got %d", len(c.expected), c.kind, len(r))
