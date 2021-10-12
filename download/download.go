@@ -16,7 +16,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const FederalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
+const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
 const listOfCNAE = "https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"
 const retries = 10
 
@@ -194,13 +194,13 @@ func newDownloader(c *http.Client, fs []file) (*downloader, error) {
 }
 
 // Download all the files (might take several minutes).
-func Download(src, dir string, timeout time.Duration, urlsOnly bool) error {
+func Download(dir string, timeout time.Duration, urlsOnly bool) error {
 	c := &http.Client{Timeout: timeout}
 	if !urlsOnly {
 		log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	}
 
-	fs, err := getFiles(c, src, dir)
+	fs, err := getFiles(c, federalRevenue, dir)
 	if err != nil {
 		return err
 	}

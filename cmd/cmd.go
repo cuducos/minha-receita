@@ -102,7 +102,7 @@ var downloadCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return download.Download(download.FederalRevenue, dir, dur, urlsOnly)
+		return download.Download(dir, dur, urlsOnly)
 	},
 }
 
