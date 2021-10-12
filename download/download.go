@@ -16,7 +16,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
+const FederalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
 const listOfCNAE = "https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"
 const retries = 10
 
@@ -54,13 +54,13 @@ func getURLs(client *http.Client, src string) ([]string, error) {
 	return urls, nil
 }
 
-func getFiles(client *http.Client, dir string) ([]file, error) {
+func getFiles(client *http.Client, src, dir string) ([]file, error) {
 	fs := []file{{
 		url:  listOfCNAE,
 		path: filepath.Join(dir, "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"),
 	}}
 
-	urls, err := getURLs(client, federalRevenue)
+	urls, err := getURLs(client, src)
 	if err != nil {
 		return fs, err
 	}
@@ -194,13 +194,13 @@ func newDownloader(c *http.Client, fs []file) (*downloader, error) {
 }
 
 // Download all the files (might take several minutes).
-func Download(dir string, timeout time.Duration, urlsOnly bool) error {
+func Download(src, dir string, timeout time.Duration, urlsOnly bool) error {
 	c := &http.Client{Timeout: timeout}
 	if !urlsOnly {
 		log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	}
 
-	fs, err := getFiles(c, dir)
+	fs, err := getFiles(c, src, dir)
 	if err != nil {
 		return err
 	}
