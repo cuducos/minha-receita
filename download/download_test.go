@@ -57,7 +57,7 @@ func TestGetURLs(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
 
-	got, err := getURLs(ts.Client(), federalRevenue)
+	got, err := getURLs(ts.Client(), ts.URL)
 	if err != nil {
 		t.Errorf("Expected getURLs to run withour errors, got: %v:", err)
 		return
@@ -77,7 +77,7 @@ func TestGetFiles(t *testing.T) {
 	defer os.RemoveAll(tmp)
 
 	expected := 38
-	got, err := getFiles(ts.Client(), tmp)
+	got, err := getFiles(ts.Client(), ts.URL, tmp)
 	if err != nil {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
 		return
