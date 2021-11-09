@@ -23,9 +23,10 @@ func newRelicApp() *newrelic.Application {
 	return app
 }
 
-func newRelicHandle(app *newrelic.Application, pth string, f func(http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
+func newRelicHandle(app *newrelic.Application, pth string, f http.HandlerFunc) (string, http.HandlerFunc) {
 	if app == nil {
 		return pth, f
 	}
+
 	return newrelic.WrapHandleFunc(app, pth, f)
 }
