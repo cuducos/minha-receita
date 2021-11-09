@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/cuducos/go-cnpj"
-
 	"github.com/cuducos/minha-receita/db"
 )
 
@@ -23,7 +22,7 @@ type errorMessage struct {
 }
 
 // messageResponse takes a text message and a HTP status, wraps the message into a
-// JSON output and writes it toghether with the proper headers to a response.
+// JSON output and writes it together with the proper headers to a response.
 func messageResponse(w http.ResponseWriter, s int, m string) {
 	w.WriteHeader(s)
 	if m == "" {
