@@ -16,7 +16,7 @@ type PostgreSQL struct {
 	schema string
 }
 
-// Close ends the conection with the database.
+// Close ends the connection with the database.
 func (p *PostgreSQL) Close() {
 	p.conn.Close()
 }
