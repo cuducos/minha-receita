@@ -25,6 +25,8 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 	}
 
 	t := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
+
+	var a *archivedCSV
 	for _, z := range r.File {
 		if z.Name != t {
 			continue
@@ -41,10 +43,15 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 
 		c := csv.NewReader(f)
 		c.Comma = s
-		return &archivedCSV{p, c, []io.Closer{f, r}}, nil
+		a = &archivedCSV{p, c, []io.Closer{f, r}}
+		break
 	}
 
-	return nil, fmt.Errorf("could not find file %s in the archive %s", t, p)
+	if a == nil {
+		return nil, fmt.Errorf("could not find file %s in the archive %s", t, p)
+	}
+
+	return a, nil
 }
 
 func (a *archivedCSV) read() ([]string, error) {
