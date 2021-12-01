@@ -22,7 +22,7 @@ func TestArchivedCSV(t *testing.T) {
 			t.Errorf("error creating archived CSV for the test: %s", err)
 		}
 		for {
-			line, err := z.Read()
+			line, err := z.read()
 			if err == io.EOF {
 				break
 			}

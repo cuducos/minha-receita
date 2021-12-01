@@ -47,7 +47,7 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 	return nil, fmt.Errorf("could not find file %s in the archive %s", t, p)
 }
 
-func (a *archivedCSV) Read() ([]string, error) {
+func (a *archivedCSV) read() ([]string, error) {
 	return a.reader.Read()
 }
 
@@ -69,7 +69,7 @@ func archivedCSVToMap(p string, s rune) (map[int]string, error) {
 	defer z.close()
 
 	for {
-		l, err := z.Read()
+		l, err := a.read()
 		if err == io.EOF {
 			break
 		}
