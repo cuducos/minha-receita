@@ -1,3 +1,13 @@
+// These functions allow the project to accomplish two things:
+// * convert strings from the CSV files to other formats (e.g. int, float32,
+//   time.Time);
+// * differentiate empty values (such as 0 for int) from missing values.
+//
+// This is achieved using pointers, so we have nil as a marker for missing
+// value.
+// Since our use case involves serving this data in JSON file, this is crucial
+// so we can use `null` when there is no value, and "0" when the value of an
+// integer, for example, is 0.
 package transform
 
 import (
@@ -34,6 +44,8 @@ func toFloat(v string) (*float32, error) {
 	return &f32, nil
 }
 
+// toTime expects a date as string in the format YYYYMMDD (that is the format
+// used by the Federal Revenue in their CSV files).
 func toTime(v string) (*time.Time, error) {
 	if v == "" {
 		return nil, nil
