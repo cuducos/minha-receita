@@ -5,7 +5,9 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const separator = ';'
@@ -22,7 +24,12 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 		return nil, fmt.Errorf("error opening archive %s: %w", p, err)
 	}
 
+	t := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
 	for _, z := range r.File {
+		if z.Name != t {
+			continue
+		}
+
 		if z.FileInfo().IsDir() {
 			continue
 		}
@@ -37,7 +44,7 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 		return &archivedCSV{p, c, []io.Closer{f, r}}, nil
 	}
 
-	return nil, fmt.Errorf("could not find a file in the archive %s", p)
+	return nil, fmt.Errorf("could not find file %s in the archive %s", t, p)
 }
 
 func (a *archivedCSV) Read() ([]string, error) {
