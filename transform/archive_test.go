@@ -54,7 +54,13 @@ func TestArchivedCSVToMap(t *testing.T) {
 	expected[0] = "SEM MOTIVO"
 	expected[1] = "EXTINCAO POR ENCERRAMENTO LIQUIDACAO VOLUNTARIA"
 
-	got, err := archivedCSVToMap(path, separator)
+	z, err := newArchivedCSV(path, separator)
+	if err != nil {
+		t.Errorf("expected no error creating an archivedCSV with %s, got %s", path, err)
+	}
+	defer z.close()
+
+	got, err := z.toMap()
 	if err != nil {
 		t.Errorf("expected no error with %s, got %s", path, err)
 	}

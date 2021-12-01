@@ -60,26 +60,20 @@ func (a *archivedCSV) close() error {
 	return nil
 }
 
-func archivedCSVToMap(p string, s rune) (map[int]string, error) {
+func (a *archivedCSV) toMap() (map[int]string, error) {
 	m := make(map[int]string)
-	z, err := newArchivedCSV(p, s)
-	if err != nil {
-		return m, fmt.Errorf("error reading archived CSV %s: %w", p, err)
-	}
-	defer z.close()
-
 	for {
 		l, err := a.read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return m, fmt.Errorf("error reading CSV from %s: %w", p, err)
+			return m, fmt.Errorf("error reading CSV from %s: %w", a.path, err)
 		}
 
 		i, err := strconv.Atoi(l[0])
 		if err != nil {
-			return m, fmt.Errorf("error converting key %s to int in %s: %w", l[0], p, err)
+			return m, fmt.Errorf("error converting key %s to int in %s: %w", l[0], a.path, err)
 		}
 
 		m[i] = l[1]
