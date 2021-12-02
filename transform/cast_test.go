@@ -80,42 +80,43 @@ func TestToFloat(t *testing.T) {
 	})
 }
 
-func TestToTime(t *testing.T) {
-	t.Run("successful *time.Time casting", func(t *testing.T) {
+func TestToDate(t *testing.T) {
+	t.Run("successful date casting", func(t *testing.T) {
 		v := "19940717"
-		expected, err := time.Parse("20060102", v)
+		d, err := time.Parse(dateInputFormat, v)
 		if err != nil {
-			t.Errorf("could not create a time.Time for the test")
+			t.Errorf("could not create a date for the test")
 		}
+		expected := date{&d}
 
 		tc := []struct {
 			value    string
-			expected *time.Time
+			expected date
 		}{
-			{v, &expected},
-			{"", nil},
+			{v, expected},
+			{"", date{nil}},
 		}
 		for _, c := range tc {
-			got, err := toTime(c.value)
+			got, err := toDate(c.value)
 			if err != nil {
-				t.Errorf("expected no errors when converting %s to *time.Time, got %s", c.value, err)
+				t.Errorf("expected no errors when converting %s to date, got %s", c.value, err)
 			}
-			if c.expected != nil {
-				if *got != *c.expected {
-					t.Errorf("got %q, expected %q", *got, *c.expected)
+			if c.expected.time != nil {
+				if *got.time != *c.expected.time {
+					t.Errorf("got %q, expected %q", *got.time, *c.expected.time)
 				}
 			} else {
 				if got != c.expected {
-					t.Errorf("got %q, expected nil", *got)
+					t.Errorf("got %q, expected nil", *got.time)
 				}
 			}
 		}
 	})
 
-	t.Run("unsuccessful *time.Time casting", func(t *testing.T) {
-		_, err := toTime("foobar")
+	t.Run("unsuccessful date casting", func(t *testing.T) {
+		_, err := toDate("foobar")
 		if err == nil {
-			t.Errorf("expected a error when converting foobar to *time.Time, got nil")
+			t.Errorf("expected a error when converting foobar to date, got nil")
 		}
 	})
 }

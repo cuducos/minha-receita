@@ -44,17 +44,17 @@ func toFloat(v string) (*float32, error) {
 	return &f32, nil
 }
 
-// toTime expects a date as string in the format YYYYMMDD (that is the format
+// toDate expects a date as string in the format YYYYMMDD (that is the format
 // used by the Federal Revenue in their CSV files).
-func toTime(v string) (*time.Time, error) {
+func toDate(v string) (date, error) {
 	if v == "" {
-		return nil, nil
+		return date{nil}, nil
 	}
 
-	t, err := time.Parse("20060102", v)
+	t, err := time.Parse(dateInputFormat, v)
 	if err != nil {
-		return nil, fmt.Errorf("error converting %s to Time: %w", v, err)
+		return date{nil}, fmt.Errorf("error converting %s to Time: %w", v, err)
 	}
 
-	return &t, nil
+	return date{&t}, nil
 }
