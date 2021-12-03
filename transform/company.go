@@ -3,6 +3,7 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -213,12 +214,7 @@ func (c *company) toJSON(outDir string) (string, error) {
 		return "", fmt.Errorf("error creating %s: %w", filepath.Dir(p), err)
 	}
 
-	f, err := os.Create(p)
-	if err != nil {
-		return "", fmt.Errorf("error creating %s: %w", p, err)
-	}
-	_, err = f.Write(b)
-	if err != nil {
+	if err := ioutil.WriteFile(p, b, 0644); err != nil {
 		return "", fmt.Errorf("error writing to %s: %w", p, err)
 	}
 	return p, nil
