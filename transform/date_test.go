@@ -1,12 +1,15 @@
 package transform
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestDate(t *testing.T) {
 	t.Run("successful date", func(t *testing.T) {
-		d := date{}
+		var d date
+		json.Unmarshal([]byte(`"1967-06-30"`), &d)
 
-		d.UnmarshalJSON([]byte("\"1967-06-30\""))
 		if d.time.Year() != 1967 {
 			t.Errorf("expected year to be 1967, got %d", d.time.Year())
 		}
