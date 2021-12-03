@@ -87,27 +87,27 @@ func TestToDate(t *testing.T) {
 		if err != nil {
 			t.Errorf("could not create a date for the test")
 		}
-		expected := date{&d}
+		expected := date(d)
 
 		tc := []struct {
 			value    string
-			expected date
+			expected *date
 		}{
-			{v, expected},
-			{"", date{nil}},
+			{v, &expected},
+			{"", nil},
 		}
 		for _, c := range tc {
 			got, err := toDate(c.value)
 			if err != nil {
 				t.Errorf("expected no errors when converting %s to date, got %s", c.value, err)
 			}
-			if c.expected.time != nil {
-				if *got.time != *c.expected.time {
-					t.Errorf("got %q, expected %q", *got.time, *c.expected.time)
+			if c.expected != nil {
+				if *got != *c.expected {
+					t.Errorf("got %q, expected %q", time.Time(*got), time.Time(*c.expected))
 				}
 			} else {
 				if got != c.expected {
-					t.Errorf("got %q, expected nil", *got.time)
+					t.Errorf("got %q, expected nil", time.Time(*got))
 				}
 			}
 		}

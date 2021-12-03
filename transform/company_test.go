@@ -47,16 +47,18 @@ func TestNewCompany(t *testing.T) {
 	identificadorMatrizFilial := 2
 	situacaoCadastral := 2
 	descricaoSituacaoCadastral := "ATIVA"
-	dataSituacaoCadastral, err := time.Parse(dateInputFormat, row[6])
+	dataSituacaoCadastralAsTime, err := time.Parse(dateInputFormat, row[6])
 	if err != nil {
 		t.Errorf("error creating DataSituacaoCadastral for expected company: %w", err)
 	}
+	dataSituacaoCadastral := date(dataSituacaoCadastralAsTime)
 	motivoSituacaoCadastral := 0
 	descricaoMotivoSituacaoCadastral := "SEM MOTIVO"
-	dataInicioAtividade, err := time.Parse(dateInputFormat, row[10])
+	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, row[10])
 	if err != nil {
 		t.Errorf("error creating DataInicioAtividade for expected company: %w", err)
 	}
+	dataInicioAtividade := date(dataInicioAtividadeAsTime)
 	codigoCNAEFiscal := 6204000
 	CodigoMunicipio := 9701
 
@@ -66,12 +68,12 @@ func TestNewCompany(t *testing.T) {
 		NomeFantasia:                     "REGIONAL BRASILIA-DF",
 		SituacaoCadastral:                &situacaoCadastral,
 		DescricaoSituacaoCadastral:       &descricaoSituacaoCadastral,
-		DataSituacaoCadastral:            date{&dataSituacaoCadastral},
+		DataSituacaoCadastral:            &dataSituacaoCadastral,
 		MotivoSituacaoCadastral:          &motivoSituacaoCadastral,
 		DescricaoMotivoSituacaoCadastral: &descricaoMotivoSituacaoCadastral,
 		NomeCidadeNoExterior:             "",
 		Pais:                             "",
-		DataInicioAtividade:              date{&dataInicioAtividade},
+		DataInicioAtividade:              &dataInicioAtividade,
 		CNAEFiscal:                       &codigoCNAEFiscal,
 		DescricaoTipoDeLogradouro:        "AVENIDA",
 		Logradouro:                       "L2 SGAN",
@@ -86,7 +88,7 @@ func TestNewCompany(t *testing.T) {
 		Telefone2:                        "",
 		Fax:                              "",
 		SituacaoEspecial:                 "",
-		DataSituacaoEspecial:             date{nil},
+		DataSituacaoEspecial:             nil,
 		CNAESecundarios: []CNAE{
 			{Codigo: 6201501},
 			{Codigo: 6202300},
@@ -137,11 +139,11 @@ func TestNewCompany(t *testing.T) {
 		)
 	}
 
-	if *got.DataSituacaoCadastral.time != *expected.DataSituacaoCadastral.time {
+	if *got.DataSituacaoCadastral != *expected.DataSituacaoCadastral {
 		t.Errorf(
 			"expected DataSituacaoCadastral to be %s, got %s",
-			*expected.DataSituacaoCadastral.time,
-			*got.DataSituacaoCadastral.time,
+			time.Time(*expected.DataSituacaoCadastral),
+			time.Time(*got.DataSituacaoCadastral),
 		)
 	}
 
@@ -165,11 +167,11 @@ func TestNewCompany(t *testing.T) {
 		t.Errorf("expected Pais to be %s, got %s", expected.Pais, got.Pais)
 	}
 
-	if *got.DataInicioAtividade.time != *expected.DataInicioAtividade.time {
+	if *got.DataInicioAtividade != *expected.DataInicioAtividade {
 		t.Errorf(
 			"expected DataInicioAtividade to be %s, got %s",
-			*expected.DataInicioAtividade.time,
-			*got.DataInicioAtividade.time,
+			time.Time(*expected.DataInicioAtividade),
+			time.Time(*got.DataInicioAtividade),
 		)
 	}
 
@@ -221,11 +223,16 @@ func TestNewCompany(t *testing.T) {
 func TestCompanyToJson(t *testing.T) {
 	d := t.TempDir()
 
-	dataInicioAtividade, err := time.Parse(dateInputFormat, "19670630")
+	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, "19670630")
 	if err != nil {
 		t.Errorf("error creating DataInicioAtividade for expected company: %w", err)
 	}
-	c := company{CNPJ: "33683111000280", DataInicioAtividade: date{&dataInicioAtividade}}
+	dataInicioAtividade := date(dataInicioAtividadeAsTime)
+	c := company{
+		CNPJ:                 "33683111000280",
+		DataInicioAtividade:  &dataInicioAtividade,
+		DataSituacaoEspecial: nil,
+	}
 
 	p, err := c.toJSON(d)
 	if err != nil {
@@ -238,10 +245,13 @@ func TestCompanyToJson(t *testing.T) {
 	}
 
 	got := string(b)
-	if !strings.Contains(got, "\"cnpj\":\"33683111000280\"") {
+	if !strings.Contains(got, `"cnpj":"33683111000280"`) {
 		t.Errorf("expected to find %s in a CNPJ field in %s", c.CNPJ, got)
 	}
-	if !strings.Contains(got, "\"1967-06-30\"") {
-		t.Errorf("expected to find \"1967-06-30\" in JSON %s", got)
+	if !strings.Contains(got, `"1967-06-30"`) {
+		t.Errorf("expected to find 1967-06-30 in JSON %s", got)
+	}
+	if !strings.Contains(got, `"data_situacao_especial":null`) {
+		t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
 	}
 }

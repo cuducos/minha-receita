@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type CNAE struct {
@@ -18,15 +17,15 @@ type CNAE struct {
 
 // TODO this will be used further, it is here just to document the expected output ATM
 type Socio struct {
-	IdentificadorDeSocio                 int       `json:"identificador_de_socio"`
-	NomeSocio                            string    `json:"nome_socio"`
-	CNPJCPFDoSocio                       string    `json:"cnpj_cpf_do_socio"`
-	CodigoQualificacaoSocio              int       `json:"codigo_qualificacao_socio"`
-	PercentualCapitalSocial              float32   `json:"percentual_capital_social"`
-	DataEntradaSociedade                 time.Time `json:"data_entrada_sociedade"`
-	CPFRepresentanteLegal                string    `json:"cpf_representante_legal"`
-	NomeRepresentanteLegal               string    `json:"nome_representante_legal"`
-	CodigoQualificacaoRepresentanteLegal *int      `json:"codigo_qualificacao_representante_legal"`
+	IdentificadorDeSocio                 int     `json:"identificador_de_socio"`
+	NomeSocio                            string  `json:"nome_socio"`
+	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio"`
+	CodigoQualificacaoSocio              int     `json:"codigo_qualificacao_socio"`
+	PercentualCapitalSocial              float32 `json:"percentual_capital_social"`
+	DataEntradaSociedade                 *date   `json:"data_entrada_sociedade"`
+	CPFRepresentanteLegal                string  `json:"cpf_representante_legal"`
+	NomeRepresentanteLegal               string  `json:"nome_representante_legal"`
+	CodigoQualificacaoRepresentanteLegal *int    `json:"codigo_qualificacao_representante_legal"`
 }
 
 type company struct {
@@ -36,12 +35,12 @@ type company struct {
 	NomeFantasia                     string  `json:"nome_fantasia"`
 	SituacaoCadastral                *int    `json:"situacao_cadastral"`
 	DescricaoSituacaoCadastral       *string `json:"descricao_situacao_cadastral"`
-	DataSituacaoCadastral            date    `json:"data_situacao_cadastral"`
+	DataSituacaoCadastral            *date   `json:"data_situacao_cadastral"`
 	MotivoSituacaoCadastral          *int    `json:"motivo_situacao_cadastral"`
 	DescricaoMotivoSituacaoCadastral *string `json:"descricao_motivo_situacao_cadastral"`
 	NomeCidadeNoExterior             string  `json:"nome_cidade_no_exterior"`
 	Pais                             string  `json:"pais"`
-	DataInicioAtividade              date    `json:"data_inicio_atividade"`
+	DataInicioAtividade              *date   `json:"data_inicio_atividade"`
 	CNAEFiscal                       *int    `json:"cnae_fiscal"`
 	CNAEFiscalDescricao              string  `json:"cnae_fiscal_descricao"`
 	DescricaoTipoDeLogradouro        string  `json:"descricao_tipo_de_logradouro"`
@@ -57,7 +56,7 @@ type company struct {
 	Telefone2                        string  `json:"ddd_telefone_2"`
 	Fax                              string  `json:"ddd_fax"`
 	SituacaoEspecial                 string  `json:"situacao_especial"`
-	DataSituacaoEspecial             date    `json:"data_situacao_especial"`
+	DataSituacaoEspecial             *date   `json:"data_situacao_especial"`
 	CNAESecundarios                  []CNAE  `json:"cnaes_secundarios"`
 
 	// TODO this will be used further, it is here just to document the expected output ATM
@@ -71,8 +70,8 @@ type company struct {
 	// TODO backward compatibility
 	// DescricaoPorte             string    `json:"descricao_porte"`
 	// OpcaoPeloSimples           *bool      `json:"opcao_pelo_mei"`
-	// DataOpcaoPeloSimples       date `json:"data_opcao_pelo_simples"`
-	// DataExclusaoDoSimples      date `json:"data_exclusao_do_simples"`
+	// DataOpcaoPeloSimples       *date `json:"data_opcao_pelo_simples"`
+	// DataExclusaoDoSimples      *date `json:"data_exclusao_do_simples"`
 	// OpcaoPeloMei               *bool      `json:"opcao_pelo_mei"`
 	// QuadroSocietario           []Socio    `json:"qsa"`
 }
