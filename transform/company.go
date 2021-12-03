@@ -197,7 +197,7 @@ func newCompany(row []string, motives map[int]string) (company, error) {
 	return c, nil
 }
 
-func (c *company) toJSON(d string, s *semaphore) (string, error) {
+func (c *company) toJSON(d string) (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
@@ -211,11 +211,6 @@ func (c *company) toJSON(d string, s *semaphore) (string, error) {
 	err = os.Mkdir(filepath.Dir(p), 0755)
 	if err != nil {
 		return "", fmt.Errorf("error creating %s: %w", filepath.Dir(p), err)
-	}
-
-	if s != nil {
-		s.Get()
-		defer s.Release()
 	}
 
 	f, err := os.Create(p)

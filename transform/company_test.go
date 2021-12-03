@@ -227,7 +227,7 @@ func TestCompanyToJson(t *testing.T) {
 	}
 	c := company{CNPJ: "33683111000280", DataInicioAtividade: date{&dataInicioAtividade}}
 
-	p, err := c.toJSON(d, nil)
+	p, err := c.toJSON(d)
 	if err != nil {
 		t.Errorf("expected no error in converting %s to JSON, got %s", cnpj.Mask(c.CNPJ), err)
 	}
