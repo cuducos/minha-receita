@@ -197,7 +197,7 @@ func newCompany(row []string, motives map[int]string) (company, error) {
 	return c, nil
 }
 
-func (c *company) toJSON(d string) (string, error) {
+func (c *company) toJSON(outDir string) (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
@@ -207,7 +207,7 @@ func (c *company) toJSON(d string) (string, error) {
 		return "", fmt.Errorf("error while getting the file path for %s: %w", c.CNPJ, err)
 	}
 
-	p := filepath.Join(d, n)
+	p := filepath.Join(outDir, n)
 	err = os.Mkdir(filepath.Dir(p), 0755)
 	if err != nil {
 		return "", fmt.Errorf("error creating %s: %w", filepath.Dir(p), err)
