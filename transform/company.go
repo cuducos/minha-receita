@@ -209,7 +209,7 @@ func (c *company) toJSON(outDir string) (string, error) {
 	}
 
 	p := filepath.Join(outDir, n)
-	err = os.Mkdir(filepath.Dir(p), 0755)
+	err = os.MkdirAll(filepath.Dir(p), 0755)
 	if err != nil {
 		return "", fmt.Errorf("error creating %s: %w", filepath.Dir(p), err)
 	}
