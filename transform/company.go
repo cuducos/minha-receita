@@ -115,7 +115,7 @@ func (c *company) cnaeSecundarios(v string) error {
 	return nil
 }
 
-func motivoSituacaoCadastral(c *company, motives map[int]string, v string) error {
+func (c *company) motivoSituacaoCadastral(motives map[int]string, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse MotivoSituacaoCadastral %s: %w", v, err)
@@ -163,7 +163,7 @@ func newCompany(row []string, motives map[int]string) (company, error) {
 	}
 	c.DataSituacaoCadastral = dataSituacaoCadastral
 
-	if err := motivoSituacaoCadastral(&c, motives, row[7]); err != nil {
+	if err := c.motivoSituacaoCadastral(motives, row[7]); err != nil {
 		return c, fmt.Errorf("error trying to parse MotivoSituacaoCadastral: %w", err)
 	}
 
