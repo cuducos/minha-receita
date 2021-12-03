@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
-const dateInputFormat = "20060102"
-const dateOutputFormat = "2006-01-02"
+const (
+	dateInputFormat  = "20060102"
+	dateOutputFormat = "2006-01-02"
+)
 
 type date time.Time
 
