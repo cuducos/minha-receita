@@ -10,6 +10,7 @@ import (
 type task struct {
 	source  *source
 	queue   chan []string
+	paths   chan string
 	errors  chan error
 	bar     *progressbar.ProgressBar
 	motives map[int]string
@@ -39,53 +40,62 @@ func (t *task) loadMotives(d string, s rune) error {
 
 func (t *task) produceRows() {
 	for _, r := range t.source.readers {
-		go t.rowsFrom(r)
-	}
-}
-
-func (t *task) rowsFrom(a *archivedCSV) {
-	for {
-		r, err := a.read()
-		if err == io.EOF {
-			break
-		}
-		t.queue <- r
+		go func(t *task, a *archivedCSV) {
+			for {
+				r, err := a.read()
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					t.errors <- err
+					continue
+				}
+				t.queue <- r
+			}
+		}(t, r)
 	}
 }
 
 func (t *task) consumeRows() {
 	for r := range t.queue {
-		t.consumeRow(r)
+		c, err := newCompany(r, t.motives)
+		if err != nil {
+			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
+			continue
+		}
+		p, err := c.toJSON(t.source.dir)
+		if err != nil {
+			t.errors <- fmt.Errorf("error getting the JSON bytes for %v: %w", c, err)
+			continue
+		}
+		t.paths <- p
 	}
-}
-
-func (t *task) consumeRow(r []string) {
-	c, err := newCompany(r, t.motives)
-	if err != nil {
-		t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
-		return
-	}
-
-	_, err = c.toJSON(t.source.dir)
-	if err != nil {
-		t.errors <- fmt.Errorf("error getting the JSON bytes for %v: %w", c, err)
-		return
-	}
-	t.errors <- nil
 }
 
 func (t *task) run(m int) error {
 	defer t.source.close()
-	go t.produceRows()
+	t.produceRows()
 	for i := 0; i < m; i++ {
 		go t.consumeRows()
 	}
-	for i := int64(0); i < t.source.totalLines; i++ {
-		if err := <-t.errors; err != nil {
-			return fmt.Errorf("error while consuming row: %w", err)
+	var c int64
+	for {
+		select {
+		case err := <-t.errors:
+			close(t.queue)
+			close(t.paths)
+			close(t.errors)
+			return err
+		case <-t.paths:
+			c++
+			if c == t.source.totalLines {
+				close(t.queue)
+				close(t.paths)
+				close(t.errors)
+				return nil
+			}
 		}
 	}
-	return nil
 }
 
 func newTask(d string, t sourceType) (*task, error) {
