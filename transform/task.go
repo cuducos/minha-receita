@@ -48,7 +48,7 @@ func (t *task) produceRows() {
 				}
 				if err != nil {
 					t.errors <- err
-					continue
+					break // do not proceed in case of errors.
 				}
 				t.queue <- r
 			}
@@ -61,12 +61,12 @@ func (t *task) consumeRows() {
 		c, err := newCompany(r, t.motives)
 		if err != nil {
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
-			continue
+			break
 		}
 		p, err := c.toJSON(t.source.dir)
 		if err != nil {
 			t.errors <- fmt.Errorf("error getting the JSON bytes for %v: %w", c, err)
-			continue
+			break
 		}
 		t.paths <- p
 	}
@@ -78,20 +78,18 @@ func (t *task) run(m int) error {
 	for i := 0; i < m; i++ {
 		go t.consumeRows()
 	}
-	var c int64
+	defer func() {
+		close(t.queue)
+		close(t.paths)
+		close(t.errors)
+	}()
 	for {
 		select {
 		case err := <-t.errors:
-			close(t.queue)
-			close(t.paths)
-			close(t.errors)
 			return err
 		case <-t.paths:
-			c++
-			if c == t.source.totalLines {
-				close(t.queue)
-				close(t.paths)
-				close(t.errors)
+			t.bar.Add(1)
+			if t.bar.IsFinished() {
 				return nil
 			}
 		}
@@ -106,6 +104,9 @@ func newTask(d string, t sourceType) (*task, error) {
 	o := task{
 		source: s,
 		bar:    progressbar.Default(s.totalLines),
+		queue:  make(chan []string),
+		paths:  make(chan string),
+		errors: make(chan error),
 	}
 	o.loadMotives(d, separator)
 	return &o, nil
