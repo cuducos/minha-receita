@@ -9,11 +9,11 @@ import (
 
 type task struct {
 	source  *source
+	lookups lookups
 	queue   chan []string
 	paths   chan string
 	errors  chan error
 	bar     *progressbar.ProgressBar
-	motives map[int]string
 }
 
 func (t *task) loadMotives(d string, s rune) error {
@@ -31,7 +31,7 @@ func (t *task) loadMotives(d string, s rune) error {
 		return fmt.Errorf("error loading archived CSV to build a map: %w", err)
 	}
 	defer z.close()
-	t.motives, err = z.toMap()
+	t.lookups.motives, err = z.toMap()
 	if err != nil {
 		return fmt.Errorf("error creating motives lookup map: %w", err)
 	}
@@ -58,7 +58,7 @@ func (t *task) produceRows() {
 
 func (t *task) consumeRows() {
 	for r := range t.queue {
-		c, err := newCompany(r, t.motives)
+		c, err := newCompany(r, t.lookups)
 		if err != nil {
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
 			break

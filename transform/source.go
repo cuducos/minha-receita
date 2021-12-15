@@ -5,6 +5,21 @@ import (
 	"io"
 )
 
+type sourceType string
+
+const (
+	venue         sourceType = "ESTABELE"
+	motive                   = "MOTICSV"
+	main                     = "EMPRECSV"
+	city                     = "MUNICCSV"
+	cnae                     = "CNAECSV"
+	country                  = "PAISCSV"
+	nature                   = "NATJUCSV"
+	partner                  = "SOCIOCSV"
+	qualification            = "QUALSCSV"
+	simple                   = "SIMPLES"
+)
+
 type lineCount struct {
 	total int64
 	err   error

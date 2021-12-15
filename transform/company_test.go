@@ -49,14 +49,14 @@ func TestNewCompany(t *testing.T) {
 	descricaoSituacaoCadastral := "ATIVA"
 	dataSituacaoCadastralAsTime, err := time.Parse(dateInputFormat, row[6])
 	if err != nil {
-		t.Errorf("error creating DataSituacaoCadastral for expected company: %w", err)
+		t.Errorf("error creating DataSituacaoCadastral for expected company: %s", err)
 	}
 	dataSituacaoCadastral := date(dataSituacaoCadastralAsTime)
 	motivoSituacaoCadastral := 0
 	descricaoMotivoSituacaoCadastral := "SEM MOTIVO"
 	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, row[10])
 	if err != nil {
-		t.Errorf("error creating DataInicioAtividade for expected company: %w", err)
+		t.Errorf("error creating DataInicioAtividade for expected company: %s", err)
 	}
 	dataInicioAtividade := date(dataInicioAtividadeAsTime)
 	codigoCNAEFiscal := 6204000
@@ -104,12 +104,13 @@ func TestNewCompany(t *testing.T) {
 	}
 	defer z.close()
 
-	motives, err := z.toMap()
+	var lookups lookups
+	lookups.motives, err = z.toMap()
 	if err != nil {
 		t.Errorf("error creating motives lookup table: %s", err)
 	}
 
-	got, err := newCompany(row, motives)
+	got, err := newCompany(row, lookups)
 	if err != nil {
 		t.Errorf("expected no errors, got %v", err)
 	}
@@ -225,7 +226,7 @@ func TestCompanyToJson(t *testing.T) {
 
 	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, "19670630")
 	if err != nil {
-		t.Errorf("error creating DataInicioAtividade for expected company: %w", err)
+		t.Errorf("error creating DataInicioAtividade for expected company: %s", err)
 	}
 	dataInicioAtividade := date(dataInicioAtividadeAsTime)
 	c := company{
