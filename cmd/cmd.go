@@ -47,11 +47,9 @@ Downloads the required ZIP and Excel files.
 The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
-const parseHelper = `
-Parse the fixed-width files from the Federal Revenue into CSV files.
-
-Three compressed CSVs are created: empresa.csv.gz, socio.csv.gz and
-cnae_secundarias.csv.gz.`
+const transformHelper = `
+Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
+files) into a a group of JSON files, 1 per CNPJ.`
 
 var dir string
 var urlsOnly bool
@@ -106,15 +104,15 @@ var downloadCmd = &cobra.Command{
 	},
 }
 
-var parseCmd = &cobra.Command{
-	Use:   "parse",
-	Short: "Parse the fixed-width files from the Federal Revenue into CSV files",
-	Long:  parseHelper,
+var transformCmd = &cobra.Command{
+	Use:   "transform",
+	Short: "Transforms the CSV files into a group of JSON files, 1 per CNPJ",
+	Long:  transformHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := assertDirExists(); err != nil {
 			return err
 		}
-		return transform.Parse(dir)
+		return transform.Transform(dir)
 	},
 }
 
@@ -153,10 +151,10 @@ var importCmd = &cobra.Command{
 func CLI() *cobra.Command {
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
 	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
-	for _, c := range []*cobra.Command{downloadCmd, parseCmd, importCmd} {
+	for _, c := range []*cobra.Command{downloadCmd, transformCmd, importCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
 	}
-	for _, c := range []*cobra.Command{apiCmd, downloadCmd, parseCmd, createCmd, dropCmd, importCmd} {
+	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, importCmd} {
 		rootCmd.AddCommand(c)
 	}
 	return rootCmd
