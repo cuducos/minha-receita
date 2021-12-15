@@ -51,7 +51,7 @@ type company struct {
 	CEP                              string  `json:"cep"`
 	UF                               string  `json:"uf"`
 	CodigoMunicipio                  *int    `json:"codigio_municipio"`
-	Municipio                        string  `json:"municipio"`
+	Municipio                        *string `json:"municipio"`
 	Telefone1                        string  `json:"ddd_telefone_1"`
 	Telefone2                        string  `json:"ddd_telefone_2"`
 	Fax                              string  `json:"ddd_fax"`
@@ -164,11 +164,9 @@ func newCompany(row []string, l lookups) (company, error) {
 	}
 	c.CNAEFiscal = codigoCNAEFiscal
 
-	codigoMunicipio, err := toInt(row[20])
-	if err != nil {
+	if err := c.municipio(l, row[20]); err != nil {
 		return c, fmt.Errorf("error trying to parse CodigoMunicipio %s: %w", row[20], err)
 	}
-	c.CodigoMunicipio = codigoMunicipio
 
 	dataSituacaoEspecial, err := toDate(row[29])
 	if err != nil {

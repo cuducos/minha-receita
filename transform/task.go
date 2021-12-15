@@ -16,28 +16,6 @@ type task struct {
 	bar     *progressbar.ProgressBar
 }
 
-func (t *task) loadMotives(d string, s rune) error {
-	ls, err := PathsForSource(motives, d)
-	if err != nil {
-		return fmt.Errorf("cannot find files for motives: %w", err)
-	}
-
-	if len(ls) < 1 {
-		return fmt.Errorf("cannot find files for motives: %w", err)
-	}
-
-	z, err := newArchivedCSV(ls[0], s)
-	if err != nil {
-		return fmt.Errorf("error loading archived CSV to build a map: %w", err)
-	}
-	defer z.close()
-	t.lookups.motives, err = z.toLookup()
-	if err != nil {
-		return fmt.Errorf("error creating motives lookup map: %w", err)
-	}
-	return nil
-}
-
 func (t *task) produceRows() {
 	for _, r := range t.source.readers {
 		go func(t *task, a *archivedCSV) {
@@ -101,13 +79,17 @@ func newTask(d string, t sourceType) (*task, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for %s from %s: %w", string(t), d, err)
 	}
-	o := task{
-		source: s,
-		bar:    progressbar.Default(s.totalLines),
-		queue:  make(chan []string),
-		paths:  make(chan string),
-		errors: make(chan error),
+	l, err := newLookups(d)
+	if err != nil {
+		return nil, fmt.Errorf("error creating look up tables from %s: %w", d, err)
 	}
-	o.loadMotives(d, separator)
+	o := task{
+		source:  s,
+		lookups: l,
+		bar:     progressbar.Default(s.totalLines),
+		queue:   make(chan []string),
+		paths:   make(chan string),
+		errors:  make(chan error),
+	}
 	return &o, nil
 }
