@@ -49,8 +49,8 @@ func TestArchivedCSV(t *testing.T) {
 	})
 }
 
-func TestArchivedCSVToMap(t *testing.T) {
-	expected := make(map[int]string)
+func TestArchivedCSVToLookup(t *testing.T) {
+	expected := make(lookup)
 	expected[0] = "SEM MOTIVO"
 	expected[1] = "EXTINCAO POR ENCERRAMENTO LIQUIDACAO VOLUNTARIA"
 
