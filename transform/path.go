@@ -13,21 +13,6 @@ import (
 var InvalidCNPJError = errors.New("Invalid CNPJ")
 var InvalidPathError = errors.New("Invalid path for a CNPJ JSON file")
 
-type sourceType string
-
-const (
-	venue         sourceType = "ESTABELE"
-	motive                   = "MOTICSV"
-	main                     = "EMPRECSV"
-	city                     = "MUNICCSV"
-	cnae                     = "CNAECSV"
-	country                  = "PAISCSV"
-	nature                   = "NATJUCSV"
-	partner                  = "SOCIOCSV"
-	qualification            = "QUALSCSV"
-	simple                   = "SIMPLES"
-)
-
 func PathsForSource(t sourceType, dir string) ([]string, error) {
 	var ls []string
 

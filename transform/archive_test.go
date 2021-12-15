@@ -49,8 +49,8 @@ func TestArchivedCSV(t *testing.T) {
 	})
 }
 
-func TestArchivedCSVToMap(t *testing.T) {
-	expected := make(map[int]string)
+func TestArchivedCSVToLookup(t *testing.T) {
+	expected := make(lookup)
 	expected[0] = "SEM MOTIVO"
 	expected[1] = "EXTINCAO POR ENCERRAMENTO LIQUIDACAO VOLUNTARIA"
 
@@ -60,7 +60,7 @@ func TestArchivedCSVToMap(t *testing.T) {
 	}
 	defer z.close()
 
-	got, err := z.toMap()
+	got, err := z.toLookup()
 	if err != nil {
 		t.Errorf("expected no error with %s, got %s", path, err)
 	}

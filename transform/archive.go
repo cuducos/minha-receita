@@ -66,7 +66,7 @@ func (a *archivedCSV) close() error {
 	return nil
 }
 
-func (a *archivedCSV) toMap() (map[int]string, error) {
+func (a *archivedCSV) toLookup() (lookup, error) {
 	m := make(map[int]string)
 	for {
 		l, err := a.read()
