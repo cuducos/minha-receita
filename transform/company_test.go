@@ -61,6 +61,7 @@ func TestNewCompany(t *testing.T) {
 	dataInicioAtividade := date(dataInicioAtividadeAsTime)
 	codigoCNAEFiscal := 6204000
 	CodigoMunicipio := 9701
+	municipio := "BRASILIA"
 
 	expected := company{
 		CNPJ:                             "33683111000280",
@@ -83,7 +84,7 @@ func TestNewCompany(t *testing.T) {
 		CEP:                              "70836900",
 		UF:                               "DF",
 		CodigoMunicipio:                  &CodigoMunicipio,
-		Municipio:                        "",
+		Municipio:                        &municipio,
 		Telefone1:                        "",
 		Telefone2:                        "",
 		Fax:                              "",
@@ -98,16 +99,9 @@ func TestNewCompany(t *testing.T) {
 		},
 	}
 
-	z, err := newArchivedCSV(filepath.Join("..", "testdata", "F.K03200$Z.D11009.MOTICSV.zip"), separator)
+	lookups, err := newLookups(filepath.Join("..", "testdata"))
 	if err != nil {
-		t.Errorf("error creating archivedCSV for: %s", err)
-	}
-	defer z.close()
-
-	var lookups lookups
-	lookups.motives, err = z.toLookup()
-	if err != nil {
-		t.Errorf("error creating motives lookup table: %s", err)
+		t.Errorf("expected no errors creating look up tables, got %v", err)
 	}
 
 	got, err := newCompany(row, lookups)
@@ -198,6 +192,14 @@ func TestNewCompany(t *testing.T) {
 
 	if got.CEP != expected.CEP {
 		t.Errorf("expected CEP to be %s, got %s", expected.CEP, got.CEP)
+	}
+
+	if *got.CodigoMunicipio != *expected.CodigoMunicipio {
+		t.Errorf("expected CodigoMunicipio to be %d, got %d", *expected.CodigoMunicipio, *got.CodigoMunicipio)
+	}
+
+	if *got.Municipio != *expected.Municipio {
+		t.Errorf("expected Municipio to be %s, got %s", *expected.Municipio, *got.Municipio)
 	}
 
 	if got.UF != expected.UF {
