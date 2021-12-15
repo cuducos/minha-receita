@@ -14,8 +14,9 @@ A URI de acesso será `postgres://minhareceita:minhareceita@localhost:5432/minha
 
 ## Download dos dados
 
-
 O comando `download` baixa dados do servidor da Receita Federal, que é lento e instável. Quando um download falha, nenhum arquivo é salvo (ou seja, não fica, no diretório, um arquivo pela metade; pode-se assumir que os arquivos restantes são íntegros e não precisam ser baixados novamente). Por esse motivo pode ser esperado que a barra de progresso de download recue (quando um arquivo de download falha, retiramos os bytes baixados da barra de download, pois na nova tentativa o download começa do zero).
+
+O comando aceita um opção `--source-directory` (ou `-s`) com um diretório onde serão salvos os arquivos originais da Receita Federal. O padrão é `data/`.
 
 Caso o download falhe, é recomendado variar as configurações explicadas no `--help`, por exemplo:
 
@@ -25,9 +26,26 @@ Caso o download falhe, é recomendado variar as configurações explicadas no `-
 * rodar o comando de download sucessivas vezes com a opção `--skip` (ou `-x`) para baixar apenas os arquivos que estão faltando
 * por fim, pode-se apenas listar as URLs para download dos arquivos com `--urls-only` (ou `-u`) e tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.)
 
-Na sequência, o comando `transform` transforma os arquivos para o formato JSON (utilizado pela API web) e em um CSV unificado (utilizado para fazer a carga no banco de dados).
+### Exemplos de uso
 
-Para especificar onde ficam esses arquivos, os comandos aceitam como argumento:
+Sem Docker:
+
+```console
+$ minha-receita download --urls-only
+$ minha-receita download --timeout 1h42m12s
+```
+
+Com Docker:
+
+```console
+$ docker-compose run --rm minha-receita download --source-directory /mnt/data/
+```
+
+## Tratamento dos dados
+
+O comando `transform` transforma os arquivos para o formato JSON (utilizado pela API web) e em um CSV unificado (utilizado para fazer a carga no banco de dados).
+
+Para especificar onde ficam esses arquivos, o comando aceita como argumento:
 
 * `--source-directory` (ou `-s`) com um diretório onde serão salvos os arquivos originais da Receita Federal
 * `--out-directory` (ou `-o` com um diretório onde serão criados arquivos JSON e CSV gerados pela Minha Receita
@@ -39,15 +57,12 @@ O padrão para ambos é `data/`.
 Sem Docker:
 
 ```console
-$ minha-receita download --urls-only
-$ minha-receita download --timeout 1h42m12s
 $ minha-receita transform
 ```
 
 Com Docker:
 
 ```console
-$ docker-compose run --rm minha-receita download --source-directory /mnt/data/
 $ docker-compose run --rm minha-receita transform --output-directory /mnt/data/ --source-directory /mnt/data/
 ```
 
@@ -57,7 +72,11 @@ Primeiro é necessário criar as tabelas no banco de dados, para isso utilize o 
 
 Caso seja necessário limpar o banco de dados para começar um novo carregamento de dados, é possível excluir as tabelas com comando `drop`.
 
+<<<<<<< HEAD
 Para importar os dados, utilize o comando `import` — esse comando pode demorar horas, dependendo do equipamento.
+=======
+Para importar os dados, utilize o comando `import` — esse comando pode demorar horas, dependendo do equipamento. Esse comando também aceita a opção `--directory` ou `-d` para especificar um local diferente do padrão onde encontrar os arquivos JSON gerados com o comando `transform`.
+>>>>>>> b4a2ddf (Updates the docs with the new design of the source code)
 
 ### Questões de privacidade
 
