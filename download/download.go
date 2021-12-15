@@ -17,7 +17,6 @@ import (
 )
 
 const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
-const listOfCNAE = "https://cnae.ibge.gov.br/images/concla/documentacao/CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"
 const retries = 10
 
 type file struct {
@@ -55,16 +54,11 @@ func getURLs(client *http.Client, src string) ([]string, error) {
 }
 
 func getFiles(client *http.Client, src, dir string) ([]file, error) {
-	fs := []file{{
-		url:  listOfCNAE,
-		path: filepath.Join(dir, "CNAE_Subclasses_2_3_Estrutura_Detalhada.xlsx"),
-	}}
-
+	var fs []file
 	urls, err := getURLs(client, src)
 	if err != nil {
 		return fs, err
 	}
-
 	for _, u := range urls {
 		fs = append(fs, file{url: u, path: filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])})
 	}
@@ -84,14 +78,6 @@ type size struct {
 }
 
 func (d *downloader) getSize(ch chan<- size, url string) {
-	// We use a HTTP HEAD request to get the file size, but IBGE server does
-	// not respond properly to that. Thus, as a temporary workaround we just
-	// hardcoded the current file size (checked manually after downloading it)
-	if url == listOfCNAE {
-		ch <- size{size: 137216}
-		return
-	}
-
 	r, err := d.client.Head(url)
 	if err != nil {
 		ch <- size{err: fmt.Errorf("Error sending a HTTP HEAD request to %s: %s", url, err)}
