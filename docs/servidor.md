@@ -2,7 +2,7 @@
 
 ## Download dos dados
 
-O comando `download` faz o download dos arquivos necessários para alimentar o banco de dados. Na sequência, o comando `parse` transforma os arquivos para o formato CSV. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
+O comando `download` faz o download dos arquivos necessários para alimentar o banco de dados. Na sequência, o comando `transform` transforma os arquivos para o formato JSON. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
 
 O comando `download` baixa dados do servidor da Receita Federal, que é lento e instável. Quando um download falha, nenhum arquivo é salvo (ou seja, não fica, no diretório, um arquivo pela metade; pode-se assumir que os arquivos restantes são íntegros e não precisam ser baixados novamente). Por esse motivo pode ser esperado que a barra de progresso de download recue (quando um arquivo de download falha, retiramos os bytes baixados da barra de download, pois na nova tentativa o download começa do zero).
 
@@ -37,7 +37,7 @@ Primeiro é necessário criar as tabelas no banco de dados, para isso utlize o c
 
 Caso seja necessário limpar o banco de dados para começar um novo carregamento de dados, é possível excluir as tabelas com comando `drop`.
 
-Para importar os dados, utilize o comando `import` — esse comando pode demorar horas, depdendendo do equipamento. Esse comando também aceita a opção `--directory` ou `-d` para especificar um local diferente do padrão onde encontrar os arquivos.
+Para importar os dados, utilize o comando `import` — esse comando pode demorar horas, dependendo do equipamento. Esse comando também aceita a opção `--directory` ou `-d` para especificar um local diferente do padrão onde encontrar os arquivos JSON gerados com o comando `transform`.
 
 ### Questões de privacidade
 
