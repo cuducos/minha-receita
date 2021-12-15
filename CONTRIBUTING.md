@@ -1,12 +1,65 @@
-# Contribuindo com a Minha Receita 
+# Contribuindo com a Minha Receita
 
+Escreva testes e rode os testes.
 
-Escreva testes, rode os testes e reconstrua os containers para saber se está tudo certo. Se for utilizar Docker, copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário.
+Se for utilizar Docker,  copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário. E lembre-se de reconstruir os _containers_ para saber se está tudo certo antes de fazer um _commit_.
 
 ```console
+$ gofmt ./
 $ go test ./...
 $ docker-compose build
 ```
+
+## Arquitetura
+
+Todos os dados manipulados por esse pacote vem da [Receita Federal](https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj).
+
+### Número do CNPJ e estrutura do pacote `transform`
+
+#### Contexto
+
+Um número de CNPJ tem 3 partes, e isso é importante pois influencia a forma que a Receita Federal disponibiliza os dados:
+
+* base
+* ordem
+* dígitos verificadores
+
+Por exemplo, em `19.131.243/0001-97` o número base é `19.131.243`, a ordem é `0001` e `97` são os dígitos verificadores.
+
+Uma mesma pessoa jurídica tem sempre a mesma base, e só varia a ordem (nas filiais dessa mesma pessoa jurídica, por exemplo), e os dígitos verificadores.
+
+#### Dados
+
+O grosso dos dados está nos arquivos CSV de estabelecimentos que tem `ESTABELE` como sufixo.
+
+##### Dados que tem o CNPJ base (8 primeiros dígitos do número de CNPJ) como chave
+
+* Arquivos CSV com o sufixo `EMPRECSV` tem o básico dos dados, como razão social, natureza jurídica e porte.
+* Arquivos CSV com o sufixo `SOCIOCSV` tem informações sobre o quadro societário de cada pessoa jurídica.
+* Arquivos CSV com o sufixo `SIMPLES` tem informações sobre adesão das pessoas jurídicas ao Simples.
+
+##### Dados com outras chaves
+
+Na leitura desses arquivos existem campos que contém um código numérico, mas sem descrição do significado (por exemplo, temos o código 9701 para o município de Brasília). Esses arquivos são chamados de tabelas de _look up_:
+
+* Arquivos CSV com o sufixo `CNAECSV` com descrição dos CNAEs
+* Arquivos CSV com o sufixo `MOTICSV` com descrição dos motivos cadastrais
+* Arquivos CSV com o sufixo `MUNICCSV` com o nome dos municípios
+* Arquivos CSV com o sufixo `PAISCSV` com o nome dos países
+* Arquivos CSV com o sufixo `NATJUCSV` com o nome da natureza jurídica
+* Arquivos CSV com o sufixo `QUALSCSV` com a descrição da qualificação de cada pessoa do quadro societário
+
+#### Estratégia
+
+A etapa de transformação dos dados cria um diretório por CNPJ base, e, dentro dele, um arquivo JSON por pessoa jurídica. Por exemplo, para p CNPJ `19.131.243/0001-97` teremos um arquivo `19131243/19131243000197.json`.
+
+1. Ler os arquivos CSV com o sufixo `EMPRECSV` e criar um arquivo JSON por CNPJ completo
+    1. Incorporar nessa leitura as informações das tabelas de _look up_ `CNAECSV`, `MOTICSV`, `MUNICCSV` e `PAISCSV`
+1. Ler os arquivos CSV com sufixo `EMPRECSV` e enriquecer os arquivos JSON com essas informações
+    1. Incorporar nessa leitura as informações da tabela de _look up_ `NATJUCSV`
+1. Ler os arquivos CSV com sufixo `SOCIOCSV` e enriquecer os arquivos JSON com essas informações
+    1. Incorporar nessa leitura as informações da tabela de _look up_ `QUALSCSV`
+1. Ler os arquivos CSV com sufixo `SIMPLER` e enriquecer os arquivos JSON com essas informações
 
 ## Documentação
 
