@@ -105,7 +105,7 @@ func TestNewCompany(t *testing.T) {
 	defer z.close()
 
 	var lookups lookups
-	lookups.motives, err = z.toMap()
+	lookups.motives, err = z.toLookup()
 	if err != nil {
 		t.Errorf("error creating motives lookup table: %s", err)
 	}

@@ -31,7 +31,7 @@ func (t *task) loadMotives(d string, s rune) error {
 		return fmt.Errorf("error loading archived CSV to build a map: %w", err)
 	}
 	defer z.close()
-	t.lookups.motives, err = z.toMap()
+	t.lookups.motives, err = z.toLookup()
 	if err != nil {
 		return fmt.Errorf("error creating motives lookup map: %w", err)
 	}

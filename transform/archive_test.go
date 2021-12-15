@@ -60,7 +60,7 @@ func TestArchivedCSVToMap(t *testing.T) {
 	}
 	defer z.close()
 
-	got, err := z.toMap()
+	got, err := z.toLookup()
 	if err != nil {
 		t.Errorf("expected no error with %s, got %s", path, err)
 	}
