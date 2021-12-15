@@ -48,7 +48,7 @@ func getURLs(client *http.Client, src string) ([]string, error) {
 			return
 		}
 		if strings.HasSuffix(h, ".zip") {
-			urls = append(urls, h)
+			urls = append(urls, strings.ReplaceAll(h, "https//", "https://"))
 		}
 	})
 	return urls, nil
