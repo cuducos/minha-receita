@@ -2,7 +2,7 @@ site_name: Minha Receita
 repo_url: https://github.com/cuducos/minha-receita
 edit_uri: edit/main/docs/
 theme:
-  language: en
+  language: pt
   name: material
   logo: favicon.svg
   favicon: favicon.svg

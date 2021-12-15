@@ -2,7 +2,7 @@
 
 A API web tem apenas dois _endpoints_:
 
-## `POST /`
+## `GET /<número do CNPJ>`
 
 | Caminho da URL | Tipo de requisição | Código esperado na resposta | Conteúdo esperado na resposta |
 |---|---|---|---|
