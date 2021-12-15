@@ -25,7 +25,7 @@ $ docker-compose run --rm minha-receita parse --directory /mnt/data/
 
 ## Carregamento do banco de dados
 
-Primeiro é necessário criar as tabelas no banco de dados, para isso utlize o comando `create`.
+Primeiro é necessário criar as tabelas no banco de dados, para isso utilize o comando `create`.
 
 Caso seja necessário limpar o banco de dados para começar um novo carregamento de dados, é possível excluir as tabelas com comando `drop`.
 

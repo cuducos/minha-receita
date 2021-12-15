@@ -13,7 +13,7 @@ _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certe
 
 ### Requisitos e instalação sem Docker
 
-* [Go](https://golang.org/) versão 1.15
+* [Go](https://golang.org/) versão 1.16
 * Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
 * Variável de ambiente`POSTGRES_URI` com credenciais de acesso a um banco de dados PostgreSQL (como no exemplo `.env.sample`)
 
@@ -42,14 +42,14 @@ Todas as configurações podem ser passadas via variáveis de ambiente e estão 
 
 ### Exemplo
 
-Sem Docker:
+Sem Docker, por exemplo:
 
 ```console
 $ minha-receita --help
 $ minha-receita api --help
 ```
 
-Com Docker:
+Com Docker, por exemplo:
 
 ```console
 $ docker-compose run --rm minha-receita --help
