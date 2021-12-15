@@ -69,14 +69,8 @@ func TestGetFiles(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
 
-	tmp, err := ioutil.TempDir("", "minha-receita")
-	if err != nil {
-		t.Errorf("Could not create a temporary directory for tests: %v", err)
-		return
-	}
-	defer os.RemoveAll(tmp)
-
-	expected := 38
+	tmp := t.TempDir()
+	expected := 37
 	got, err := getFiles(ts.Client(), ts.URL, tmp)
 	if err != nil {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
@@ -92,9 +86,6 @@ func TestGetFiles(t *testing.T) {
 		}
 		if g := filepath.Base(f.path); !strings.HasSuffix(f.url, g) {
 			t.Errorf("Unexpected file name for %s: %s", f.url, g)
-		}
-		if !arrayContains(expectedURLs, f.url) && f.url != listOfCNAE {
-			t.Errorf("Unexpected URL in getFiles result: %s", f.url)
 		}
 	}
 }
@@ -219,15 +210,6 @@ func assertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
 	for k := range diff {
 		t.Errorf("%q appears %d in the first array, but %d in the second array", k, c1[k], c2[k])
 	}
-}
-
-func arrayContains(a []string, v string) bool {
-	for _, s := range a {
-		if s == v {
-			return true
-		}
-	}
-	return false
 }
 
 func loadFixture(t *testing.T) (*os.File, int64) {
