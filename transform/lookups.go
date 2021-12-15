@@ -18,13 +18,14 @@ func newLookup(p string) (lookup, error) {
 }
 
 type lookups struct {
-	motives lookup
-	cities  lookup
+	motives   lookup
+	cities    lookup
+	countries lookup
 }
 
 func newLookups(d string) (lookups, error) {
 	var ls []lookup
-	srcs := []sourceType{motives, cities}
+	srcs := []sourceType{motives, cities, countries}
 	for _, src := range srcs {
 		paths, err := PathsForSource(src, d)
 		if err != nil {
@@ -41,7 +42,7 @@ func newLookups(d string) (lookups, error) {
 	if len(ls) != len(srcs) {
 		return lookups{}, fmt.Errorf("error creating look up tables, expected %d items, got %d", len(srcs), len(ls))
 	}
-	return lookups{ls[0], ls[1]}, nil
+	return lookups{ls[0], ls[1], ls[2]}, nil
 }
 
 func (c *company) motivoSituacaoCadastral(l lookups, v string) error {
@@ -56,6 +57,22 @@ func (c *company) motivoSituacaoCadastral(l lookups, v string) error {
 	c.MotivoSituacaoCadastral = i
 	if s != "" {
 		c.DescricaoMotivoSituacaoCadastral = &s
+	}
+	return nil
+}
+
+func (c *company) pais(l lookups, v string) error {
+	i, err := toInt(v)
+	if err != nil {
+		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
+	}
+	if i == nil {
+		return nil
+	}
+	s := l.countries[*i]
+	c.CodigoPais = i
+	if s != "" {
+		c.Pais = &s
 	}
 	return nil
 }

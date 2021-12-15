@@ -39,7 +39,8 @@ type company struct {
 	MotivoSituacaoCadastral          *int    `json:"motivo_situacao_cadastral"`
 	DescricaoMotivoSituacaoCadastral *string `json:"descricao_motivo_situacao_cadastral"`
 	NomeCidadeNoExterior             string  `json:"nome_cidade_no_exterior"`
-	Pais                             string  `json:"pais"`
+	CodigoPais                       *int    `json:"codigo_pais"`
+	Pais                             *string `json:"pais"`
 	DataInicioAtividade              *date   `json:"data_inicio_atividade"`
 	CNAEFiscal                       *int    `json:"cnae_fiscal"`
 	CNAEFiscalDescricao              string  `json:"cnae_fiscal_descricao"`
@@ -119,7 +120,6 @@ func newCompany(row []string, l lookups) (company, error) {
 	c.CNPJ = row[0] + row[1] + row[2]
 	c.NomeFantasia = row[4]
 	c.NomeCidadeNoExterior = row[8]
-	c.Pais = row[9]
 	c.DescricaoTipoDeLogradouro = row[13]
 	c.Logradouro = row[14]
 	c.Numero = row[15]
@@ -150,6 +150,10 @@ func newCompany(row []string, l lookups) (company, error) {
 
 	if err := c.motivoSituacaoCadastral(l, row[7]); err != nil {
 		return c, fmt.Errorf("error trying to parse MotivoSituacaoCadastral: %w", err)
+	}
+
+	if err := c.pais(l, row[9]); err != nil {
+		return c, fmt.Errorf("error trying to parse CodigoPais: %w", err)
 	}
 
 	dataInicioAtividade, err := toDate(row[10])

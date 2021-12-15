@@ -73,7 +73,8 @@ func TestNewCompany(t *testing.T) {
 		MotivoSituacaoCadastral:          &motivoSituacaoCadastral,
 		DescricaoMotivoSituacaoCadastral: &descricaoMotivoSituacaoCadastral,
 		NomeCidadeNoExterior:             "",
-		Pais:                             "",
+		CodigoPais:                       nil,
+		Pais:                             nil,
 		DataInicioAtividade:              &dataInicioAtividade,
 		CNAEFiscal:                       &codigoCNAEFiscal,
 		DescricaoTipoDeLogradouro:        "AVENIDA",
@@ -158,8 +159,12 @@ func TestNewCompany(t *testing.T) {
 		t.Errorf("expected NomeCidadeNoExterior to be %s, got %s", expected.NomeCidadeNoExterior, got.NomeCidadeNoExterior)
 	}
 
-	if got.Pais != expected.Pais {
-		t.Errorf("expected Pais to be %s, got %s", expected.Pais, got.Pais)
+	if got.CodigoPais != nil {
+		t.Errorf("expected CodigoPais to be nil, got %d", *got.CodigoPais)
+	}
+
+	if got.Pais != nil {
+		t.Errorf("expected Pais to be nil, got %s", *got.Pais)
 	}
 
 	if *got.DataInicioAtividade != *expected.DataInicioAtividade {
