@@ -17,7 +17,7 @@ type task struct {
 }
 
 func (t *task) loadMotives(d string, s rune) error {
-	ls, err := PathsForSource(motive, d)
+	ls, err := PathsForSource(motives, d)
 	if err != nil {
 		return fmt.Errorf("cannot find files for motives: %w", err)
 	}

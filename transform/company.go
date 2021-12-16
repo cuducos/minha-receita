@@ -10,13 +10,13 @@ import (
 	"strings"
 )
 
-type CNAE struct {
+type cnae struct {
 	Codigo    int    `json:"codigo"`
 	Descricao string `json:"descricao"`
 }
 
 // TODO this will be used further, it is here just to document the expected output ATM
-type Socio struct {
+type partner struct {
 	IdentificadorDeSocio                 int     `json:"identificador_de_socio"`
 	NomeSocio                            string  `json:"nome_socio"`
 	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio"`
@@ -57,7 +57,7 @@ type company struct {
 	Fax                              string  `json:"ddd_fax"`
 	SituacaoEspecial                 string  `json:"situacao_especial"`
 	DataSituacaoEspecial             *date   `json:"data_situacao_especial"`
-	CNAESecundarios                  []CNAE  `json:"cnaes_secundarios"`
+	CNAESecundarios                  []cnae  `json:"cnaes_secundarios"`
 
 	// TODO this will be used further, it is here just to document the expected output ATM
 	// RazaoSocial               string  `json:"razao_social"`
@@ -109,7 +109,7 @@ func (c *company) cnaeSecundarios(v string) error {
 		if err != nil {
 			return fmt.Errorf("error converting %s to int: %w", v, err)
 		}
-		c.CNAESecundarios = append(c.CNAESecundarios, CNAE{Codigo: i})
+		c.CNAESecundarios = append(c.CNAESecundarios, cnae{Codigo: i})
 	}
 	return nil
 }

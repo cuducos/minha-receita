@@ -198,10 +198,10 @@ func assertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
 	c1 := make(map[string]int)
 	c2 := make(map[string]int)
 	for _, v := range a1 {
-		c1[v] += 1
+		c1[v]++
 	}
 	for _, v := range a2 {
-		c2[v] += 1
+		c2[v]++
 	}
 
 	diff := make(map[string]struct{})

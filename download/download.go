@@ -159,11 +159,10 @@ func (d *downloader) download(ch chan<- error, f file, a int) {
 			time.Sleep(time.Duration(int(math.Pow(float64(2), float64(a)))) * time.Second)
 			d.download(ch, f, a+1)
 			return
-		} else {
-			err = fmt.Errorf("After %d attempts, could not download %s: %c", retries, f.url, err)
-			ch <- err
-			return
 		}
+		err = fmt.Errorf("After %d attempts, could not download %s: %c", retries, f.url, err)
+		ch <- err
+		return
 	}
 	ch <- nil
 }

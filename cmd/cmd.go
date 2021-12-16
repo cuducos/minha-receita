@@ -59,14 +59,14 @@ func assertDirExists() error {
 	var err error
 	i, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		return fmt.Errorf("Directory %s does not exist.", dir)
+		return fmt.Errorf("directory %s does not exist", dir)
 	}
 	if err != nil {
 		return err
 	}
 
 	if !i.Mode().IsDir() {
-		return fmt.Errorf("%s is not a directory.", dir)
+		return fmt.Errorf("%s is not a directory", dir)
 	}
 
 	return nil

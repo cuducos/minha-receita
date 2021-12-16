@@ -8,16 +8,16 @@ import (
 type sourceType string
 
 const (
-	venue         sourceType = "ESTABELE"
-	motive                   = "MOTICSV"
-	main                     = "EMPRECSV"
-	city                     = "MUNICCSV"
-	cnae                     = "CNAECSV"
-	country                  = "PAISCSV"
-	nature                   = "NATJUCSV"
-	partner                  = "SOCIOCSV"
-	qualification            = "QUALSCSV"
-	simple                   = "SIMPLES"
+	venues         sourceType = "ESTABELE"
+	motives                   = "MOTICSV"
+	main                      = "EMPRECSV"
+	cities                    = "MUNICCSV"
+	cnaes                     = "CNAECSV"
+	countries                 = "PAISCSV"
+	natures                   = "NATJUCSV"
+	partners                  = "SOCIOCSV"
+	qualifications            = "QUALSCSV"
+	simple                    = "SIMPLES"
 )
 
 type lineCount struct {

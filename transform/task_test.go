@@ -11,14 +11,14 @@ import (
 
 func TestTaskRun(t *testing.T) {
 	d := t.TempDir()
-	ls, err := PathsForSource(venue, filepath.Join("..", "testdata"))
+	ls, err := PathsForSource(venues, filepath.Join("..", "testdata"))
 	if err != nil {
-		t.Errorf("expected no error finding paths for %s, got %s", string(venue), err)
+		t.Errorf("expected no error finding paths for %s, got %s", string(venues), err)
 	}
 	for _, f := range ls {
 		copyFile(f, d)
 	}
-	p, err := newTask(d, venue)
+	p, err := newTask(d, venues)
 	if err != nil {
 		t.Errorf("expected no error creating task, got %s", err)
 	}

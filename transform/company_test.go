@@ -89,7 +89,7 @@ func TestNewCompany(t *testing.T) {
 		Fax:                              "",
 		SituacaoEspecial:                 "",
 		DataSituacaoEspecial:             nil,
-		CNAESecundarios: []CNAE{
+		CNAESecundarios: []cnae{
 			{Codigo: 6201501},
 			{Codigo: 6202300},
 			{Codigo: 6203100},
