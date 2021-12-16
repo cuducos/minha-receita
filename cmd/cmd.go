@@ -51,9 +51,11 @@ const transformHelper = `
 Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
 files) into a a group of JSON files, 1 per CNPJ.`
 
-var dir string
-var urlsOnly bool
-var timeout string
+var (
+	dir      string
+	urlsOnly bool
+	timeout  string
+)
 
 func assertDirExists() error {
 	var err error
@@ -72,6 +74,15 @@ func assertDirExists() error {
 	return nil
 }
 
+func loadDatabaseURI() string {
+	u := os.Getenv("POSTGRES_URI")
+	if u == "" {
+		fmt.Fprintf(os.Stderr, "Please, set an environmental variable POSTGRES_URI with the credentials for the PostgreSQL database.\n")
+		os.Exit(1)
+	}
+	return u
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "minha-receita <command>",
 	Short: "Minha Receita toolbox.",
@@ -83,7 +94,7 @@ var apiCmd = &cobra.Command{
 	Short: "Spins up the web API",
 	Long:  apiHelper,
 	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL()
+		pg := db.NewPostgreSQL(loadDatabaseURI())
 		api.Serve(&pg)
 	},
 }
@@ -120,9 +131,10 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Creates the required tables in PostgreSQL",
 	Long:  "Creates the required tables in PostgreSQL, using the environment variable POSTGRES_URI to connect to the database.",
-	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL()
-		pg.CreateTables()
+	RunE: func(_ *cobra.Command, _ []string) error {
+		pg := db.NewPostgreSQL(loadDatabaseURI())
+		defer pg.Close()
+		return pg.CreateTable()
 	},
 }
 
@@ -130,9 +142,10 @@ var dropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops the tables in PostgreSQL",
 	Long:  "Drops the tables in PostgreSQL, using the environment variable POSTGRES_URI to connect to the database.",
-	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL()
-		pg.DropTables()
+	RunE: func(_ *cobra.Command, _ []string) error {
+		pg := db.NewPostgreSQL(loadDatabaseURI())
+		defer pg.Close()
+		return pg.DropTable()
 	},
 }
 
@@ -140,10 +153,11 @@ var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "Imports the generated CSV and the Excel files into PostgreSQL",
 	Long:  "Reads the compressed CSV and Excel files from a directory and copy their contents to the PostgreSQL tables, using the environment variable POSTGRES_URI to connect to the database.",
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		assertDirExists()
-		pg := db.NewPostgreSQL()
-		pg.ImportData(dir)
+		pg := db.NewPostgreSQL(loadDatabaseURI())
+		defer pg.Close()
+		return pg.ImportData(dir)
 	},
 }
 

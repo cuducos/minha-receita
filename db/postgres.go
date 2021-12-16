@@ -1,110 +1,151 @@
 package db
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"embed"
 	"fmt"
 	"log"
 	"os"
-	"sync"
+	"os/exec"
+	"path/filepath"
+	"text/template"
 
+	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/transform"
 	"github.com/go-pg/pg/v10"
 )
 
+//go:embed postgres
+var sql embed.FS
+
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	conn   *pg.DB
-	schema string
+	conn          *pg.DB
+	uri           string
+	schema        string
+	TableName     string
+	IDFieldName   string
+	JSONFieldName string
 }
 
-// Close ends the connection with the database.
-func (p *PostgreSQL) Close() {
-	p.conn.Close()
+// Close closes the PostgreSQL connection
+func (p *PostgreSQL) Close() { p.conn.Close() }
+
+// TableFullName is the name of the schame and table in dot-notation.
+func (p *PostgreSQL) TableFullName() string {
+	return fmt.Sprintf("%s.%s", p.schema, p.TableName)
 }
 
-// GetCompany returns a `Company` based on a CNPJ number.
-func (p *PostgreSQL) GetCompany(num string) (Company, error) {
-	c, err := getCompany(p.conn, num)
+func (p *PostgreSQL) sqlFromTemplate(n string) (string, error) {
+	t, err := template.ParseFS(sql, filepath.Join("postgres", n))
 	if err != nil {
-		log.Output(2, fmt.Sprintf("ERROR: %v", err))
-		return c, err
+		return "", fmt.Errorf("error parsing %s template: %w", n, err)
 	}
-	return c, nil
+	var b bytes.Buffer
+	if err = t.Execute(&b, p); err != nil {
+		return "", fmt.Errorf("error rendering %s template: %w", n, err)
+	}
+	return b.String(), nil
 }
 
-// CreateTables creates the required database tables.
-func (p *PostgreSQL) CreateTables() {
-	var wg sync.WaitGroup
-	src := getSources(p.schema)
-	wg.Add(len(src))
-	for _, s := range src {
-		go createTable(p.conn, &wg, s)
+// GetCompany returns the JSON of a company based on a CNPJ number.
+func (p *PostgreSQL) GetCompany(n string) (string, error) {
+	sql, err := p.sqlFromTemplate("select.sql")
+	if err != nil {
+		return "", fmt.Errorf("error loading template: %w", err)
 	}
-	wg.Wait()
+	var r struct {
+		ID   string
+		JSON string
+	}
+	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
+		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(n), sql, err)
+	}
+	return r.JSON, nil
 }
 
-// DropTables drops the database tables created by `CreateTables`.
-func (p *PostgreSQL) DropTables() {
-	var wg sync.WaitGroup
-	src := getSources(p.schema)
-	wg.Add(len(src))
-	for _, s := range src {
-		go dropTable(p.conn, &wg, s)
+// CreateTable creates the required database table.
+func (p *PostgreSQL) CreateTable() error {
+	sql, err := p.sqlFromTemplate("create.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
 	}
-	wg.Wait()
+	log.Output(2, fmt.Sprintf("Creating table %s…", p.TableFullName()))
+	if _, err := p.conn.Exec(sql); err != nil {
+		return fmt.Errorf("error creating table with: %s\n%w", sql, err)
+	}
+	log.Output(2, "Done!")
+	return nil
 }
 
-// ImportData reads data from compresed CSV and Excel files and import it.
-func (p *PostgreSQL) ImportData(dir string) {
-	c := make(chan error)
-	src := getSources(p.schema)
-	for _, s := range src {
-		if s.name == "cnae" {
-			go importCNAEXls(p.conn, c, s, dir)
-		} else {
-			go copyFrom(p.conn, c, s, dir)
-		}
+// DropTable drops the database table created by `CreateTable`.
+func (p *PostgreSQL) DropTable() error {
+	sql, err := p.sqlFromTemplate("drop.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
+	}
+	log.Output(2, fmt.Sprintf("Dropping table %s…", p.TableFullName()))
+	if _, err := p.conn.Exec(sql); err != nil {
+		return fmt.Errorf("error dropping table with: %s\n%w", sql, err)
+	}
+	log.Output(2, "Done!")
+	return nil
+}
+
+// ImportData reads data from JSON directory and imports it.
+func (p *PostgreSQL) ImportData(dir string) error {
+	src := filepath.Join(dir, transform.CSVPath)
+	log.Output(2, fmt.Sprintf("Importing data from %s to %s…", src, p.TableFullName()))
+
+	f, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("error opening csv %s: %w", src, err)
+	}
+	defer f.Close()
+
+	r, err := gzip.NewReader(f)
+	if err != nil {
+		return fmt.Errorf("error reading gzip %s: %w", src, err)
+	}
+	defer r.Close()
+
+	var out bytes.Buffer
+	cmd := exec.Command(
+		"psql",
+		p.uri,
+		"-c",
+		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, p.TableFullName()),
+	)
+	cmd.Stdin = r
+	cmd.Stderr = &out
+	err = cmd.Run()
+
+	if err != nil {
+		return fmt.Errorf("error while importing %s to %s: %s\n%w", src, p.TableFullName(), out.String(), err)
 	}
 
-	hasErr := false
-	for i := 0; i < len(src); i++ {
-		err := <-c
-		if err != nil {
-			hasErr = true
-			log.Output(2, fmt.Sprintf("%s", err))
-		}
-	}
-	if hasErr {
-		os.Exit(1)
-	}
+	log.Output(2, fmt.Sprintf("Done! Imported data from %s to %s.", src, p.TableFullName()))
+	return nil
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL() PostgreSQL {
-	u := os.Getenv("POSTGRES_URI")
-	if u == "" {
-		fmt.Fprintf(os.Stderr, "Please, set an environmental variable POSTGRES_URI with the credentials for the PostgreSQL database.\n")
+func NewPostgreSQL(u string) PostgreSQL {
+	opt, err := pg.ParseURL(u)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to parse POSTGRES_URI %s: %s", u, err)
 		os.Exit(1)
 	}
-
 	s := os.Getenv("POSTGRES_SCHEMA")
 	if s == "" {
 		log.Output(2, "No POSTGRES_SCHEMA environment variable found, using public.")
 		s = "public"
 	}
-
-	opt, err := pg.ParseURL(u)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to parse POSTGRES_URI: %v\n", err)
-		os.Exit(1)
-	}
-
-	var p PostgreSQL
-	p.schema = s
-	p.conn = pg.Connect(opt)
+	p := PostgreSQL{pg.Connect(opt), u, s, tableName, idFieldName, jsonFieldName}
 	if err := p.conn.Ping(context.Background()); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not connect to PostgreSQL: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Could not connect to PostgreSQL: %s", err)
 		os.Exit(1)
 	}
-
 	return p
 }

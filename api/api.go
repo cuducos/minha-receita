@@ -94,18 +94,13 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c, err := app.db.GetCompany(cnpj.Unmask(v))
+	s, err := app.db.GetCompany(cnpj.Unmask(v))
 	if err != nil {
 		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	s, err := c.JSON()
-	if err != nil {
-		messageResponse(w, http.StatusInternalServerError, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(v)))
-		return
-	}
 	io.WriteString(w, s)
 }
 
