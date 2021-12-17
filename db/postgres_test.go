@@ -7,7 +7,16 @@ import (
 )
 
 func TestPostgresDB(t *testing.T) {
-	pg := NewPostgreSQL(os.Getenv("TEST_POSTGRES_URI"))
+	u := os.Getenv("TEST_POSTGRES_URI")
+	if u == "" {
+		t.Errorf("expected a posgres uri at TEST_POSTGRES_URI, found nothing")
+		return
+	}
+	pg, err := NewPostgreSQL(u)
+	if err != nil {
+		t.Errorf("expected no error connecting to postgres, got %s", err)
+		return
+	}
 	defer pg.Close()
 	if err := pg.CreateTable(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)

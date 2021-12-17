@@ -93,9 +93,13 @@ var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Spins up the web API",
 	Long:  apiHelper,
-	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL(loadDatabaseURI())
+	RunE: func(_ *cobra.Command, _ []string) error {
+		pg, err := db.NewPostgreSQL(loadDatabaseURI())
+		if err != nil {
+			return err
+		}
 		api.Serve(&pg)
+		return nil
 	},
 }
 
@@ -132,7 +136,10 @@ var createCmd = &cobra.Command{
 	Short: "Creates the required tables in PostgreSQL",
 	Long:  "Creates the required tables in PostgreSQL, using the environment variable POSTGRES_URI to connect to the database.",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		pg := db.NewPostgreSQL(loadDatabaseURI())
+		pg, err := db.NewPostgreSQL(loadDatabaseURI())
+		if err != nil {
+			return err
+		}
 		defer pg.Close()
 		return pg.CreateTable()
 	},
@@ -143,7 +150,10 @@ var dropCmd = &cobra.Command{
 	Short: "Drops the tables in PostgreSQL",
 	Long:  "Drops the tables in PostgreSQL, using the environment variable POSTGRES_URI to connect to the database.",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		pg := db.NewPostgreSQL(loadDatabaseURI())
+		pg, err := db.NewPostgreSQL(loadDatabaseURI())
+		if err != nil {
+			return err
+		}
 		defer pg.Close()
 		return pg.DropTable()
 	},
@@ -155,7 +165,10 @@ var importCmd = &cobra.Command{
 	Long:  "Reads the compressed CSV and Excel files from a directory and copy their contents to the PostgreSQL tables, using the environment variable POSTGRES_URI to connect to the database.",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		assertDirExists()
-		pg := db.NewPostgreSQL(loadDatabaseURI())
+		pg, err := db.NewPostgreSQL(loadDatabaseURI())
+		if err != nil {
+			return err
+		}
 		defer pg.Close()
 		return pg.ImportData(dir)
 	},

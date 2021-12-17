@@ -16,10 +16,6 @@ import (
 
 type mockDatabase struct{}
 
-func (mockDatabase) CreateTable() error        { return nil }
-func (mockDatabase) DropTable() error          { return nil }
-func (mockDatabase) ImportData(_ string) error { return nil }
-func (mockDatabase) Close()                    {}
 func (mockDatabase) GetCompany(n string) (string, error) {
 	n = cnpj.Unmask(n)
 	if n != "19131243000197" {
