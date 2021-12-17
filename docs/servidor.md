@@ -1,5 +1,17 @@
 # Servidor
 
+## Banco de dados
+
+O projeto requer um banco de dados PostgreSQL e suas credenciais devem estar em uma variável de ambiente chamada `POSTGRES_URI`.
+
+Caso deseje usar o Docker Compose do projeto para subir uma instância do banco de dados:
+
+```console
+$ docker-compose up -d postgres
+```
+
+E configure o acesso com `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable`.
+
 ## Download dos dados
 
 O comando `download` faz o download dos arquivos necessários para alimentar o banco de dados. Na sequência, o comando `transform` transforma os arquivos para o formato JSON. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
