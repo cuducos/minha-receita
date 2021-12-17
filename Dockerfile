@@ -1,4 +1,4 @@
-FROM golang:1.16.7-buster as build
+FROM golang:1.16.12-bullseye as build
 WORKDIR /minha-receita
 ADD go.* ./
 ADD main.go .
