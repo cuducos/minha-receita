@@ -94,11 +94,11 @@ func TestNewCompany(t *testing.T) {
 		SituacaoEspecial:                 "",
 		DataSituacaoEspecial:             nil,
 		CNAESecundarios: []cnae{
-			{Codigo: 6201501},
-			{Codigo: 6202300},
-			{Codigo: 6203100},
-			{Codigo: 6209100},
-			{Codigo: 6311900},
+			{Codigo: 6201501, Descricao: "Desenvolvimento de programas de computador sob encomenda"},
+			{Codigo: 6202300, Descricao: "Desenvolvimento e licenciamento de programas de computador customizáveis"},
+			{Codigo: 6203100, Descricao: "Desenvolvimento e licenciamento de programas de computador não-customizáveis"},
+			{Codigo: 6209100, Descricao: "Suporte técnico, manutenção e outros serviços em tecnologia da informação"},
+			{Codigo: 6311900, Descricao: "Tratamento de dados, provedores de serviços de aplicação e serviços de hospedagem na internet"},
 		},
 	}
 
@@ -217,20 +217,15 @@ func TestNewCompany(t *testing.T) {
 		t.Errorf("expected UF to be %s, got %s", expected.UF, got.UF)
 	}
 
-	if got.CNAESecundarios[0].Codigo != 6201501 {
-		t.Errorf("expected CNAESecundarios[0] to be 6201501, got %d", got.CNAESecundarios[0].Codigo)
-	}
-	if got.CNAESecundarios[1].Codigo != 6202300 {
-		t.Errorf("expected CNAESecundarios[1] to be 6202300, got %d", got.CNAESecundarios[1].Codigo)
-	}
-	if got.CNAESecundarios[2].Codigo != 6203100 {
-		t.Errorf("expected CNAESecundarios[2] to be 6203100, got %d", got.CNAESecundarios[2].Codigo)
-	}
-	if got.CNAESecundarios[3].Codigo != 6209100 {
-		t.Errorf("expected CNAESecundarios[3] to be 6209100, got %d", got.CNAESecundarios[3].Codigo)
-	}
-	if got.CNAESecundarios[4].Codigo != 6311900 {
-		t.Errorf("expected CNAESecundarios[4] to be 6311900, got %d", got.CNAESecundarios[4].Codigo)
+	for i, v := range got.CNAESecundarios {
+		if v.Codigo != expected.CNAESecundarios[i].Codigo {
+			t.Errorf("expected CNAESecundarios[%d].Codigo to be %d, got %d", i, expected.CNAESecundarios[i].Codigo, v.Codigo)
+		}
+
+		if v.Descricao != expected.CNAESecundarios[i].Descricao {
+			t.Errorf("expected CNAESecundarios[%d].Descricao to be %s, got %s", i, expected.CNAESecundarios[i].Descricao, v.Descricao)
+		}
+
 	}
 }
 
