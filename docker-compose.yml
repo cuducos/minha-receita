@@ -7,18 +7,22 @@ services:
       - 8000:8000
     env_file:
       - .env
-    depends_on:
-      - postgres
     volumes:
       - ./data:/mnt/data
 
-  postgres:
-    image: postgres:11.4-alpine
+  postgres_test:
+    image: postgres:12.5-alpine
     ports:
-      - 5432:5432
-    environment:
+      - 5555:5432
+    environment: &credentials
       POSTGRES_PASSWORD: minhareceita
       POSTGRES_USER: minhareceita
       POSTGRES_DB: minhareceita
+
+  postgres:
+    image: postgres:12.5-alpine
+    ports:
+      - 5432:5432
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    environment: *credentials
