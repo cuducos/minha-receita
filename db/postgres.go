@@ -13,8 +13,18 @@ import (
 	"text/template"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/cuducos/minha-receita/transform"
+	"github.com/cuducos/minha-receita/csv"
 	"github.com/go-pg/pg/v10"
+)
+
+const (
+	tableName = "cnpj"
+
+	// IDFieldName is the name of the primary key column in PostgreSQL, i.e. the CNPJ.
+	IDFieldName = "id"
+
+	// JSONFieldName is the name of the column in PostgreSQL with the JSON content.
+	JSONFieldName = "json"
 )
 
 //go:embed postgres
@@ -96,7 +106,7 @@ func (p *PostgreSQL) DropTable() error {
 
 // ImportData reads data from JSON directory and imports it.
 func (p *PostgreSQL) ImportData(dir string) error {
-	src := filepath.Join(dir, transform.CSVPath)
+	src := filepath.Join(dir, csv.Path)
 	log.Output(2, fmt.Sprintf("Importing data from %s to %s…", src, p.TableFullName()))
 
 	f, err := os.Open(src)
@@ -131,21 +141,19 @@ func (p *PostgreSQL) ImportData(dir string) error {
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL(u string) PostgreSQL {
+func NewPostgreSQL(u string) (PostgreSQL, error) {
 	opt, err := pg.ParseURL(u)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to parse POSTGRES_URI %s: %s", u, err)
-		os.Exit(1)
+		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", u, err)
 	}
 	s := os.Getenv("POSTGRES_SCHEMA")
 	if s == "" {
 		log.Output(2, "No POSTGRES_SCHEMA environment variable found, using public.")
 		s = "public"
 	}
-	p := PostgreSQL{pg.Connect(opt), u, s, tableName, idFieldName, jsonFieldName}
+	p := PostgreSQL{pg.Connect(opt), u, s, tableName, IDFieldName, JSONFieldName}
 	if err := p.conn.Ping(context.Background()); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not connect to PostgreSQL: %s", err)
-		os.Exit(1)
+		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}
-	return p
+	return p, nil
 }

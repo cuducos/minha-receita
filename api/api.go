@@ -13,8 +13,11 @@ import (
 	"strings"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/cuducos/minha-receita/db"
 )
+
+type database interface {
+	GetCompany(string) (string, error)
+}
 
 // errorMessage is a helper to serialize an error message to JSON.
 type errorMessage struct {
@@ -38,7 +41,7 @@ func messageResponse(w http.ResponseWriter, s int, m string) {
 }
 
 type api struct {
-	db db.Database
+	db database
 }
 
 func (app api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
@@ -113,7 +116,7 @@ func (app api) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serve spins up the HTTP server.
-func Serve(db db.Database) {
+func Serve(db database) {
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Output(2, "No PORT environment variable found, using 8000.")
