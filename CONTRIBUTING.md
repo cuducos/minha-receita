@@ -1,14 +1,43 @@
 # Contribuindo com a Minha Receita
 
-Escreva testes e rode os testes.
-
-Se for utilizar Docker,  copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário. E lembre-se de reconstruir os _containers_ para saber se está tudo certo antes de fazer um _commit_.
+Escreva testes e rode os testes, use autoformatação e _linter_:
 
 ```console
 $ gofmt ./
+$ golint .
 $ go test ./...
-$ docker-compose build
 ```
+
+Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_POSTGRES_URI` como no exemplo em `.env`.
+
+## Docker
+
+### Apenas para o banco de dados
+
+Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
+
+```console
+$ docker-compose up -d postgres
+```
+
+Existe também um banco de dados para teste, que não persiste dados:
+
+```console
+$ docker-compose up -d postgres_test
+```
+
+As configurações padrão desses bancos são:
+
+| Serviço | Ambiente | Variável de ambiente | Valor |
+|---|---|---|---|
+| `postgrtes` | Desenvolvimento | `POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
+| `postgres_test` | Testes | `TEST_POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
+
+### Rodando o projeto todo com Docker
+
+Se for utilizar Docker para rodar o projeto todo,  copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário.
+
+O banco de dados de sua escolha (padrão, que persiste dados; ou de testes, que não persiste dados) tem que ser [iniciado isoladamente](#apenas-para-o-banco-de-dados).
 
 ## Arquitetura
 
