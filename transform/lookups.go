@@ -21,11 +21,12 @@ type lookups struct {
 	motives   lookup
 	cities    lookup
 	countries lookup
+	cnaes     lookup
 }
 
 func newLookups(d string) (lookups, error) {
 	var ls []lookup
-	srcs := []sourceType{motives, cities, countries}
+	srcs := []sourceType{motives, cities, countries, cnaes}
 	for _, src := range srcs {
 		paths, err := PathsForSource(src, d)
 		if err != nil {
@@ -42,7 +43,7 @@ func newLookups(d string) (lookups, error) {
 	if len(ls) != len(srcs) {
 		return lookups{}, fmt.Errorf("error creating look up tables, expected %d items, got %d", len(srcs), len(ls))
 	}
-	return lookups{ls[0], ls[1], ls[2]}, nil
+	return lookups{ls[0], ls[1], ls[2], ls[3]}, nil
 }
 
 func (c *company) motivoSituacaoCadastral(l lookups, v string) error {
@@ -89,6 +90,22 @@ func (c *company) municipio(l lookups, v string) error {
 	c.CodigoMunicipio = i
 	if s != "" {
 		c.Municipio = &s
+	}
+	return nil
+}
+
+func (c *company) cnae(l lookups, v string) error {
+	i, err := toInt(v)
+	if err != nil {
+		return fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
+	}
+	if i == nil {
+		return nil
+	}
+	s := l.cnaes[*i]
+	c.CNAEFiscal = i
+	if s != "" {
+		c.CNAEFiscalDescricao = &s
 	}
 	return nil
 }
