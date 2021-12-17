@@ -43,7 +43,7 @@ type company struct {
 	Pais                             *string `json:"pais"`
 	DataInicioAtividade              *date   `json:"data_inicio_atividade"`
 	CNAEFiscal                       *int    `json:"cnae_fiscal"`
-	CNAEFiscalDescricao              string  `json:"cnae_fiscal_descricao"`
+	CNAEFiscalDescricao              *string `json:"cnae_fiscal_descricao"`
 	DescricaoTipoDeLogradouro        string  `json:"descricao_tipo_de_logradouro"`
 	Logradouro                       string  `json:"logradouro"`
 	Numero                           string  `json:"numero"`
@@ -162,11 +162,9 @@ func newCompany(row []string, l lookups) (company, error) {
 	}
 	c.DataInicioAtividade = dataInicioAtividade
 
-	codigoCNAEFiscal, err := toInt(row[11])
-	if err != nil {
+	if err := c.cnae(l, row[11]); err != nil {
 		return c, fmt.Errorf("error trying to parse CNAEFiscal %s: %w", row[11], err)
 	}
-	c.CNAEFiscal = codigoCNAEFiscal
 
 	if err := c.municipio(l, row[20]); err != nil {
 		return c, fmt.Errorf("error trying to parse CodigoMunicipio %s: %w", row[20], err)
