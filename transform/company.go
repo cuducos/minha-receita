@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -104,13 +103,13 @@ func (c *company) situacaoCadastral(v string) error {
 	return nil
 }
 
-func (c *company) cnaeSecundarios(v string) error {
+func (c *company) cnaeSecundarios(l lookups, v string) error {
 	for _, n := range strings.Split(v, ",") {
-		i, err := strconv.Atoi(n)
+		cnae, err := newCnae(l, n)
 		if err != nil {
-			return fmt.Errorf("error converting %s to int: %w", v, err)
+			return fmt.Errorf("error getting cnae description %w", err)
 		}
-		c.CNAESecundarios = append(c.CNAESecundarios, cnae{Codigo: i})
+		c.CNAESecundarios = append(c.CNAESecundarios, cnae)
 	}
 	return nil
 }
@@ -176,7 +175,7 @@ func newCompany(row []string, l lookups) (company, error) {
 	}
 	c.DataSituacaoEspecial = dataSituacaoEspecial
 
-	if err = c.cnaeSecundarios(row[12]); err != nil {
+	if err = c.cnaeSecundarios(l, row[12]); err != nil {
 		return c, fmt.Errorf("error parsing to parse CNAESecundarios %s: %w", row[12], err)
 	}
 
@@ -203,4 +202,16 @@ func (c *company) toJSON(outDir string) (string, error) {
 		return "", fmt.Errorf("error writing to %s: %w", p, err)
 	}
 	return p, nil
+}
+
+func newCnae(l lookups, v string) (cnae, error) {
+	i, err := toInt(v)
+	if err != nil {
+		return cnae{}, fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
+	}
+	if i == nil {
+		return cnae{}, nil
+	}
+	s := l.cnaes[*i]
+	return cnae{Codigo: *i, Descricao: s}, nil
 }

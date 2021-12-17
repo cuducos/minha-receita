@@ -95,17 +95,13 @@ func (c *company) municipio(l lookups, v string) error {
 }
 
 func (c *company) cnae(l lookups, v string) error {
-	i, err := toInt(v)
+	cnae, err := newCnae(l, v)
 	if err != nil {
-		return fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
+		return err
 	}
-	if i == nil {
-		return nil
-	}
-	s := l.cnaes[*i]
-	c.CNAEFiscal = i
-	if s != "" {
-		c.CNAEFiscalDescricao = &s
+	c.CNAEFiscal = &cnae.Codigo
+	if cnae.Descricao != "" {
+		c.CNAEFiscalDescricao = &cnae.Descricao
 	}
 	return nil
 }
