@@ -60,6 +60,7 @@ func TestNewCompany(t *testing.T) {
 	}
 	dataInicioAtividade := date(dataInicioAtividadeAsTime)
 	codigoCNAEFiscal := 6204000
+	codigoCNAEFiscalDescricao := "Consultoria em tecnologia da informação"
 	CodigoMunicipio := 9701
 	municipio := "BRASILIA"
 
@@ -77,6 +78,7 @@ func TestNewCompany(t *testing.T) {
 		Pais:                             nil,
 		DataInicioAtividade:              &dataInicioAtividade,
 		CNAEFiscal:                       &codigoCNAEFiscal,
+		CNAEFiscalDescricao:              &codigoCNAEFiscalDescricao,
 		DescricaoTipoDeLogradouro:        "AVENIDA",
 		Logradouro:                       "L2 SGAN",
 		Numero:                           "601",
@@ -153,6 +155,10 @@ func TestNewCompany(t *testing.T) {
 
 	if *got.CNAEFiscal != codigoCNAEFiscal {
 		t.Errorf("expected CNAEFiscal to be %d, got %d", codigoCNAEFiscal, *got.CNAEFiscal)
+	}
+
+	if *got.CNAEFiscalDescricao != codigoCNAEFiscalDescricao {
+		t.Errorf("expected CNAEFiscalDescricao to be %s, got %s", codigoCNAEFiscalDescricao, *got.CNAEFiscalDescricao)
 	}
 
 	if got.NomeCidadeNoExterior != expected.NomeCidadeNoExterior {

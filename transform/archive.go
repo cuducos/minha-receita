@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 const separator = ';'
@@ -82,6 +84,10 @@ func (a *archivedCSV) toLookup() (lookup, error) {
 			return m, fmt.Errorf("error converting key %s to int in %s: %w", l[0], a.path, err)
 		}
 
+		l[1], err = charmap.ISO8859_1.NewDecoder().String(l[1])
+		if err != nil {
+			return m, fmt.Errorf("encoding error in text %s from %s: %w", l[0], a.path, err)
+		}
 		m[i] = l[1]
 	}
 	return m, nil
