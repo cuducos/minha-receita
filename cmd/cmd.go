@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/cuducos/minha-receita/api"
+	"github.com/cuducos/minha-receita/csv"
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/download"
 	"github.com/cuducos/minha-receita/transform"
@@ -41,7 +42,9 @@ Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
 const transformHelper = `
 Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
-files) into a a group of JSON files, 1 per CNPJ.`
+files) into a a group of JSON files, 1 per CNPJ, joining information from all
+other source CSV files. Also, creates a CSV ready for the PostgreSQL copy
+command.`
 
 const defaultPort = "8000"
 
@@ -140,7 +143,7 @@ var downloadCmd = &cobra.Command{
 
 var transformCmd = &cobra.Command{
 	Use:   "transform",
-	Short: "Transforms the CSV files into a group of JSON files, 1 per CNPJ",
+	Short: "Transforms the CSV files into a group of JSON files, and creates a CSV for PostgreSQL copy command.",
 	Long:  transformHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := assertDirExists(srcDir); err != nil {
@@ -149,7 +152,10 @@ var transformCmd = &cobra.Command{
 		if err := assertDirExists(outDir); err != nil {
 			return err
 		}
-		return transform.Transform(srcDir, outDir)
+		if err := transform.Transform(srcDir, outDir); err != nil {
+			return err
+		}
+		return csv.CreateCSV(outDir)
 	},
 }
 

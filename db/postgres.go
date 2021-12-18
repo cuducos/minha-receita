@@ -17,15 +17,7 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-const (
-	tableName = "cnpj"
-
-	// IDFieldName is the name of the primary key column in PostgreSQL, i.e. the CNPJ.
-	IDFieldName = "id"
-
-	// JSONFieldName is the name of the column in PostgreSQL with the JSON content.
-	JSONFieldName = "json"
-)
+const tableName = "cnpj"
 
 //go:embed postgres
 var sql embed.FS
@@ -146,7 +138,7 @@ func NewPostgreSQL(u, s string) (PostgreSQL, error) {
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", u, err)
 	}
-	p := PostgreSQL{pg.Connect(opt), u, s, tableName, IDFieldName, JSONFieldName}
+	p := PostgreSQL{pg.Connect(opt), u, s, tableName, csv.IDFieldName, csv.JSONFieldName}
 	if err := p.conn.Ping(context.Background()); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}
