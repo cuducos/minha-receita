@@ -2,29 +2,29 @@ package db
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"embed"
+	"encoding/csv"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/cuducos/minha-receita/csv"
+	"github.com/cuducos/minha-receita/transform"
 	"github.com/go-pg/pg/v10"
+	"github.com/schollz/progressbar/v3"
 )
 
 const (
-	tableName = "cnpj"
-
-	// IDFieldName is the name of the primary key column in PostgreSQL, i.e. the CNPJ.
-	IDFieldName = "id"
-
-	// JSONFieldName is the name of the column in PostgreSQL with the JSON content.
-	JSONFieldName = "json"
+	tableName       = "cnpj"
+	idFieldName     = "id"
+	jsonFieldName   = "json"
+	batchSize       = 2048
+	pgCopyProcesses = 128
 )
 
 //go:embed postgres
@@ -60,16 +60,18 @@ func (p *PostgreSQL) sqlFromTemplate(n string) (string, error) {
 	return b.String(), nil
 }
 
+type row struct {
+	ID   string
+	JSON string
+}
+
 // GetCompany returns the JSON of a company based on a CNPJ number.
 func (p *PostgreSQL) GetCompany(n string) (string, error) {
 	sql, err := p.sqlFromTemplate("select.sql")
 	if err != nil {
 		return "", fmt.Errorf("error loading template: %w", err)
 	}
-	var r struct {
-		ID   string
-		JSON string
-	}
+	var r row
 	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
 		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(n), sql, err)
 	}
@@ -104,40 +106,107 @@ func (p *PostgreSQL) DropTable() error {
 	return nil
 }
 
-// ImportData reads data from JSON directory and imports it.
-func (p *PostgreSQL) ImportData(dir string) error {
-	src := filepath.Join(dir, csv.Path)
-	log.Output(2, fmt.Sprintf("Importing data from %s to %s…", src, p.TableFullName()))
-
-	f, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("error opening csv %s: %w", src, err)
+func (p *PostgreSQL) copy(batch []row) error {
+	var data bytes.Buffer
+	w := csv.NewWriter(&data)
+	w.Write([]string{idFieldName, jsonFieldName})
+	for _, r := range batch {
+		w.Write([]string{r.ID, r.JSON})
 	}
-	defer f.Close()
-
-	r, err := gzip.NewReader(f)
-	if err != nil {
-		return fmt.Errorf("error reading gzip %s: %w", src, err)
-	}
-	defer r.Close()
+	w.Flush()
 
 	var out bytes.Buffer
 	cmd := exec.Command(
 		"psql",
 		p.uri,
 		"-c",
-		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, p.TableFullName()),
+		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, tableName),
 	)
-	cmd.Stdin = r
+	cmd.Stdin = &data
 	cmd.Stderr = &out
-	err = cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error while importing data to postgres %s: %w", out.String(), err)
+	}
+	return nil
+}
 
-	if err != nil {
-		return fmt.Errorf("error while importing %s to %s: %s\n%w", src, p.TableFullName(), out.String(), err)
+type importTask struct {
+	queue  chan string
+	errors chan error
+	done   chan struct{}
+	bar    *progressbar.ProgressBar
+}
+
+func (p *PostgreSQL) batchCreator(t *importTask) {
+	var idx int
+	batch := make([]row, batchSize) // fixed size to make it quicker
+	for pth := range t.queue {
+		n, err := transform.CNPJForPath(pth)
+		if err != nil {
+			t.errors <- fmt.Errorf("error getting cnpj for path %s: %w", pth, err)
+			return
+		}
+		b, err := ioutil.ReadFile(pth)
+		if err != nil {
+			t.errors <- fmt.Errorf("error reading %s: %w", pth, err)
+			return
+		}
+		batch[idx] = row{n, strings.TrimSpace(string(b))}
+		idx++
+
+		if idx == batchSize {
+			if err := p.copy(batch); err != nil {
+				t.errors <- fmt.Errorf("error calling copy command: %w", err)
+				return
+			}
+			t.bar.Add(len(batch))
+			batch = make([]row, batchSize)
+			idx = 0
+		}
 	}
 
-	log.Output(2, fmt.Sprintf("Done! Imported data from %s to %s.", src, p.TableFullName()))
-	return nil
+	// remove zero-values from the remaining batch before calling pgCopy
+	var c []row
+	for _, r := range batch {
+		if r.ID == "" {
+			break
+		}
+		c = append(c, r)
+	}
+	if len(c) > 0 {
+		if err := p.copy(c); err != nil {
+			t.errors <- fmt.Errorf("error calling copy command: %w", err)
+		}
+		t.bar.Add(len(c))
+	}
+	t.done <- struct{}{}
+}
+
+// ImportData reads data from JSON directory and imports it.
+func (p *PostgreSQL) ImportData(dir string) error {
+	t := importTask{
+		make(chan string),
+		make(chan error),
+		make(chan struct{}),
+		progressbar.Default(-1, "Writing CNPJ data to PostgreSQL"),
+	}
+	for i := 0; i < pgCopyProcesses; i++ {
+		go p.batchCreator(&t)
+	}
+	go allJSONFiles(dir, t.queue, t.errors)
+
+	var c int
+	for {
+		select {
+		case err := <-t.errors:
+			return fmt.Errorf("error running import data: %w", err)
+		case <-t.done:
+			c++
+			if c == pgCopyProcesses {
+				return nil
+			}
+		}
+	}
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
@@ -146,7 +215,7 @@ func NewPostgreSQL(u, s string) (PostgreSQL, error) {
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", u, err)
 	}
-	p := PostgreSQL{pg.Connect(opt), u, s, tableName, IDFieldName, JSONFieldName}
+	p := PostgreSQL{pg.Connect(opt), u, s, tableName, idFieldName, jsonFieldName}
 	if err := p.conn.Ping(context.Background()); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}

@@ -41,7 +41,8 @@ Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
 const transformHelper = `
 Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
-files) into a a group of JSON files, 1 per CNPJ.`
+files) into a a group of JSON files, 1 per CNPJ, joining information from all
+other source CSV files.`
 
 const defaultPort = "8000"
 
@@ -91,7 +92,7 @@ func loadDatabaseURI() (string, error) {
 
 var rootCmd = &cobra.Command{
 	Use:   "minha-receita <command>",
-	Short: "Minha Receita toolbox.",
+	Short: "Minha Receita toolbox",
 	Long:  help,
 }
 
@@ -140,7 +141,7 @@ var downloadCmd = &cobra.Command{
 
 var transformCmd = &cobra.Command{
 	Use:   "transform",
-	Short: "Transforms the CSV files into a group of JSON files, 1 per CNPJ",
+	Short: "Transforms the CSV files into a group of JSON files",
 	Long:  transformHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := assertDirExists(srcDir); err != nil {
@@ -189,7 +190,7 @@ var dropCmd = &cobra.Command{
 
 var importCmd = &cobra.Command{
 	Use:   "import",
-	Short: "Imports the generated CSV into PostgreSQL",
+	Short: "Imports the data to PostgreSQL",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := assertDirExists(outDir); err != nil {
 			return err
