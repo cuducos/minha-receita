@@ -30,7 +30,6 @@ type source struct {
 	files      []string
 	readers    []*archivedCSV
 	totalLines int64
-	counter    chan lineCount
 }
 
 func (s *source) createReaders() error {
@@ -65,7 +64,7 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV) {
+func (s *source) countLinesFor(a *archivedCSV, q chan<- lineCount) {
 	var t int64
 	for {
 		_, err := a.read()
@@ -73,28 +72,29 @@ func (s *source) countLinesFor(a *archivedCSV) {
 			break
 		}
 		if err != nil {
-			s.counter <- lineCount{0, err}
+			q <- lineCount{0, err}
 			return
 		}
 		t++
 	}
-	s.counter <- lineCount{t, nil}
+	q <- lineCount{t, nil}
 }
 
 func (s *source) countLines() error {
+	q := make(chan lineCount)
 	for _, r := range s.readers {
-		go s.countLinesFor(r)
+		go s.countLinesFor(r, q)
 	}
 
 	for range s.readers {
-		r := <-s.counter
+		r := <-q
 		if r.err != nil {
 			return fmt.Errorf("error counting lines: %w", r.err)
 		}
 		s.totalLines += r.total
 	}
 
-	close(s.counter)
+	close(q)
 	s.resetReaders()
 	return nil
 }
@@ -105,7 +105,7 @@ func newSource(t sourceType, d string) (*source, error) {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
 	}
 
-	s := source{dir: d, files: ls, counter: make(chan lineCount)}
+	s := source{dir: d, files: ls}
 	s.createReaders()
 	s.countLines()
 	return &s, nil
