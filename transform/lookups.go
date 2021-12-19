@@ -21,15 +21,16 @@ func newLookup(p string) (lookup, error) {
 }
 
 type lookups struct {
-	motives   lookup
-	cities    lookup
-	countries lookup
-	cnaes     lookup
+	motives        lookup
+	cities         lookup
+	countries      lookup
+	cnaes          lookup
+	qualifications lookup
 }
 
 func newLookups(d string) (lookups, error) {
 	var ls []lookup
-	srcs := []sourceType{motives, cities, countries, cnaes}
+	srcs := []sourceType{motives, cities, countries, cnaes, qualifications}
 	for _, src := range srcs {
 		paths, err := PathsForSource(src, d)
 		if err != nil {
@@ -46,7 +47,7 @@ func newLookups(d string) (lookups, error) {
 	if len(ls) != len(srcs) {
 		return lookups{}, fmt.Errorf("error creating look up tables, expected %d items, got %d", len(srcs), len(ls))
 	}
-	return lookups{ls[0], ls[1], ls[2], ls[3]}, nil
+	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4]}, nil
 }
 
 func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
@@ -130,6 +131,33 @@ func (c *company) cnaes(l *lookups, p, s string) error {
 			return fmt.Errorf("error trying to parse CNAESecundarios %s: %w", n, err)
 		}
 		c.CNAESecundarios = append(c.CNAESecundarios, a)
+	}
+	return nil
+}
+
+func (p *partner) qualificacaoSocio(l *lookups, q, r string) error {
+	i, err := toInt(q)
+	if err != nil {
+		return fmt.Errorf("error trying to parse CodigoQualificacaoSocio %s: %w", q, err)
+	}
+	j, err := toInt(r)
+	if err != nil {
+		return fmt.Errorf("error trying to parse CodigoQualificacaoRepresentanteLegal %s: %w", r, err)
+	}
+	if i == nil && j == nil {
+		return nil
+	}
+
+	s := l.qualifications[*i]
+	p.CodigoQualificacaoSocio = i
+	if s != "" {
+		p.QualificaoSocio = &s
+	}
+
+	t := l.qualifications[*j]
+	p.CodigoQualificacaoRepresentanteLegal = j
+	if t != "" {
+		p.QualificacaoRepresentanteLegal = &s
 	}
 	return nil
 }

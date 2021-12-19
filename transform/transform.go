@@ -12,5 +12,8 @@ func Transform(dir string) error {
 	if err != nil {
 		return fmt.Errorf("error creating new task for %s in %s: %w", string(venues), dir, err)
 	}
-	return t.run(maxFilesOpened)
+	if err := t.run(maxFilesOpened); err != nil {
+		return err
+	}
+	return addPartners(dir, t.lookups)
 }
