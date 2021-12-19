@@ -269,3 +269,22 @@ func TestCompanyToJson(t *testing.T) {
 		t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
 	}
 }
+
+func TestCompanyFromJson(t *testing.T) {
+	d := t.TempDir()
+	c := company{CNPJ: "33683111000280", QuadroSocietario: []partner{{CNPJCPFDoSocio: "42"}}}
+	p, err := c.toJSON(d)
+	got, err := companyFromJSON(p)
+	if err != nil {
+		t.Errorf("expected no error creating a company from json, got %s", err)
+	}
+	if got.CNPJ != c.CNPJ {
+		t.Errorf("expected cnpj to be %s, got %s", c.CNPJ, got.CNPJ)
+	}
+	if got.QuadroSocietario[0].CNPJCPFDoSocio != c.QuadroSocietario[0].CNPJCPFDoSocio {
+		t.Errorf("expected cnpj/cpf to be %s, got %s",
+			c.QuadroSocietario[0].CNPJCPFDoSocio,
+			got.QuadroSocietario[0].CNPJCPFDoSocio,
+		)
+	}
+}

@@ -15,19 +15,6 @@ type cnae struct {
 	Descricao string `json:"descricao"`
 }
 
-// TODO this will be used further, it is here just to document the expected output ATM
-type partner struct {
-	IdentificadorDeSocio                 int     `json:"identificador_de_socio"`
-	NomeSocio                            string  `json:"nome_socio"`
-	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio"`
-	CodigoQualificacaoSocio              int     `json:"codigo_qualificacao_socio"`
-	PercentualCapitalSocial              float32 `json:"percentual_capital_social"`
-	DataEntradaSociedade                 *date   `json:"data_entrada_sociedade"`
-	CPFRepresentanteLegal                string  `json:"cpf_representante_legal"`
-	NomeRepresentanteLegal               string  `json:"nome_representante_legal"`
-	CodigoQualificacaoRepresentanteLegal *int    `json:"codigo_qualificacao_representante_legal"`
-}
-
 type company struct {
 	// Fields from the venues dataset
 	CNPJ                             string  `json:"cnpj"`
@@ -74,7 +61,7 @@ type company struct {
 	// DataOpcaoPeloSimples       *date `json:"data_opcao_pelo_simples"`
 	// DataExclusaoDoSimples      *date `json:"data_exclusao_do_simples"`
 	// OpcaoPeloMei               *bool      `json:"opcao_pelo_mei"`
-	// QuadroSocietario           []Socio    `json:"qsa"`
+	QuadroSocietario []partner `json:"qsa"`
 }
 
 func (c *company) situacaoCadastral(v string) error {
@@ -148,7 +135,7 @@ func newCompany(row []string, l lookups) (company, error) {
 	}
 	c.DataSituacaoCadastral = dataSituacaoCadastral
 
-	if err := c.motivoSituacaoCadastral(l, row[7]); err != nil {
+	if err := c.motivoSituacaoCadastral(&l, row[7]); err != nil {
 		return c, fmt.Errorf("error trying to parse MotivoSituacaoCadastral: %w", err)
 	}
 
@@ -162,11 +149,11 @@ func newCompany(row []string, l lookups) (company, error) {
 	}
 	c.DataInicioAtividade = dataInicioAtividade
 
-	if err := c.cnae(l, row[11]); err != nil {
+	if err := c.cnae(&l, row[11]); err != nil {
 		return c, fmt.Errorf("error trying to parse CNAEFiscal %s: %w", row[11], err)
 	}
 
-	if err := c.municipio(l, row[20]); err != nil {
+	if err := c.municipio(&l, row[20]); err != nil {
 		return c, fmt.Errorf("error trying to parse CodigoMunicipio %s: %w", row[20], err)
 	}
 
@@ -203,4 +190,16 @@ func (c *company) toJSON(outDir string) (string, error) {
 		return "", fmt.Errorf("error writing to %s: %w", p, err)
 	}
 	return p, nil
+}
+
+func companyFromJSON(p string) (company, error) {
+	j, err := ioutil.ReadFile(p)
+	if err != nil {
+		return company{}, fmt.Errorf("error reading %s: %w", p, err)
+	}
+	var c company
+	if err := json.Unmarshal(j, &c); err != nil {
+		return company{}, fmt.Errorf("error unmarshaling %s: %w", p, err)
+	}
+	return c, nil
 }

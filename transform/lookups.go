@@ -46,7 +46,7 @@ func newLookups(d string) (lookups, error) {
 	return lookups{ls[0], ls[1], ls[2], ls[3]}, nil
 }
 
-func (c *company) motivoSituacaoCadastral(l lookups, v string) error {
+func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse MotivoSituacaoCadastral %s: %w", v, err)
@@ -78,7 +78,7 @@ func (c *company) pais(l lookups, v string) error {
 	return nil
 }
 
-func (c *company) municipio(l lookups, v string) error {
+func (c *company) municipio(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoMunicipio %s: %w", v, err)
@@ -94,7 +94,7 @@ func (c *company) municipio(l lookups, v string) error {
 	return nil
 }
 
-func (c *company) cnae(l lookups, v string) error {
+func (c *company) cnae(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
