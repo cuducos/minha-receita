@@ -114,17 +114,13 @@ func newPartner(l *lookups, r []string) (partner, error) {
 	return p, nil
 }
 
-type pendingPartner struct {
-	path    string
-	partner partner
-}
-
 type partnersTask struct {
-	dir     string
-	lookups *lookups
-	queue   chan pendingPartner
-	errors  chan error
-	bar     *progressbar.ProgressBar
+	dir        string
+	lookups    *lookups
+	success    chan struct{}
+	errors     chan error
+	bar        *progressbar.ProgressBar
+	filesMutex mapMutex
 }
 
 func (t *partnersTask) addPartner(r []string) {
@@ -144,19 +140,24 @@ func (t *partnersTask) addPartner(r []string) {
 		return
 	}
 	for _, f := range ls {
-		t.queue <- pendingPartner{f, p}
+		go func(t *partnersTask, f string, p partner) {
+			t.filesMutex.lock(f)
+			defer t.filesMutex.unlock(f)
+
+			c, err := companyFromJSON(f)
+			if err != nil {
+				t.errors <- fmt.Errorf("error reading company from %s: %w", f, err)
+			}
+			c.QuadroSocietario = append(c.QuadroSocietario, p)
+			f, err = c.toJSON(t.dir)
+			if err != nil {
+				t.errors <- err
+				return
+			}
+			t.success <- struct{}{}
+		}(t, f, p)
 	}
 	return
-}
-
-func (t *partnersTask) updateCompanyJSON(p pendingPartner) error {
-	c, err := companyFromJSON(p.path)
-	if err != nil {
-		return fmt.Errorf("error reading company from %s: %w", p.path, err)
-	}
-	c.QuadroSocietario = append(c.QuadroSocietario, p.partner)
-	_, err = c.toJSON(t.dir)
-	return err
 }
 
 func addPartners(dir string, l *lookups) error {
@@ -167,11 +168,12 @@ func addPartners(dir string, l *lookups) error {
 	defer s.close()
 
 	t := partnersTask{
-		dir:     dir,
-		lookups: l,
-		queue:   make(chan pendingPartner),
-		errors:  make(chan error),
-		bar:     progressbar.Default(s.totalLines),
+		dir:        dir,
+		lookups:    l,
+		success:    make(chan struct{}),
+		errors:     make(chan error),
+		bar:        progressbar.Default(s.totalLines),
+		filesMutex: newMapMutex(),
 	}
 	for _, r := range s.readers {
 		go func(t *partnersTask, a *archivedCSV) {
@@ -190,18 +192,16 @@ func addPartners(dir string, l *lookups) error {
 	}
 
 	defer func() {
-		close(t.queue)
+		close(t.success)
 		close(t.errors)
 	}()
 
 	for {
 		select {
 		case err := <-t.errors:
+			fmt.Println(err)
 			return err
-		case p := <-t.queue:
-			if err := t.updateCompanyJSON(p); err != nil {
-				return err
-			}
+		case <-t.success:
 			t.bar.Add(1)
 			if t.bar.IsFinished() {
 				return nil
