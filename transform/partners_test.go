@@ -13,7 +13,7 @@ func TestAddPartners(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected to error creating a json, got %s", err)
 	}
-	for _, src := range []sourceType{partners, motives, cities, countries, cnaes} {
+	for _, src := range []sourceType{partners, motives, cities, countries, cnaes, qualifications} {
 		ls, err := PathsForSource(src, filepath.Join("..", "testdata"))
 		if err != nil {
 			t.Errorf("expected no error finding paths for %s, got %s", string(src), err)
@@ -38,6 +38,7 @@ func TestAddPartners(t *testing.T) {
 
 	identificadorDeSocio := 2
 	codigoQualificacaoSocio := 10
+	qualificaoSocio := "Diretor"
 	dataEntradaSociedade, err := toDate("20161208")
 	if err != nil {
 		t.Errorf("expected no error creating expedted date, got %s", err)
@@ -50,7 +51,7 @@ func TestAddPartners(t *testing.T) {
 		NomeSocio:                            "ANTONIO DE PADUA FERREIRA PASSOS",
 		CNPJCPFDoSocio:                       "***595901**",
 		CodigoQualificacaoSocio:              &codigoQualificacaoSocio,
-		QualificaoSocio:                      nil,
+		QualificaoSocio:                      &qualificaoSocio,
 		DataEntradaSociedade:                 dataEntradaSociedade,
 		CodigoPais:                           nil,
 		Pais:                                 nil,
@@ -89,7 +90,7 @@ func TestAddPartners(t *testing.T) {
 			*got.CodigoQualificacaoSocio,
 		)
 	}
-	if got.QualificaoSocio != expected.QualificaoSocio {
+	if *got.QualificaoSocio != *expected.QualificaoSocio {
 		t.Errorf("expected QualificaoSocio to be %s, got %s", *expected.QualificaoSocio, *got.QualificaoSocio)
 	}
 	if *got.DataEntradaSociedade != *expected.DataEntradaSociedade {

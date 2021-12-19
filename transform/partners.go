@@ -84,33 +84,22 @@ func newPartner(l *lookups, r []string) (partner, error) {
 		return partner{}, fmt.Errorf("error parsing IdentificadorDeSocio %s: %w", r[1], err)
 	}
 
-	codigoQualificacaoSocio, err := toInt(r[4])
-	if err != nil {
-		return partner{}, fmt.Errorf("error parsing CodigoQualificacaoSocio %s: %w", r[4], err)
-	}
-
 	dataEntradaSociedade, err := toDate(r[5])
 	if err != nil {
 		return partner{}, fmt.Errorf("error parsing DataEntradaSociedade %s: %w", r[5], err)
 	}
 
-	codigoQualificacaoRepresentanteLegal, err := toInt(r[9])
-	if err != nil {
-		return partner{}, fmt.Errorf("error parsing CodigoQualificacaoRepresentanteLegal %s: %w", r[9], err)
-	}
-
 	p := partner{
-		IdentificadorDeSocio:                 identificadorDeSocio,
-		NomeSocio:                            r[2],
-		CNPJCPFDoSocio:                       r[3],
-		CodigoQualificacaoSocio:              codigoQualificacaoSocio,
-		DataEntradaSociedade:                 dataEntradaSociedade,
-		CPFRepresentanteLegal:                r[7],
-		NomeRepresentanteLegal:               r[8],
-		CodigoQualificacaoRepresentanteLegal: codigoQualificacaoRepresentanteLegal,
+		IdentificadorDeSocio:   identificadorDeSocio,
+		NomeSocio:              r[2],
+		CNPJCPFDoSocio:         r[3],
+		DataEntradaSociedade:   dataEntradaSociedade,
+		CPFRepresentanteLegal:  r[7],
+		NomeRepresentanteLegal: r[8],
 	}
 	p.pais(l, r[6])
 	p.faixaEtaria(r[10])
+	p.qualificacaoSocio(l, r[4], r[9])
 	return p, nil
 }
 
