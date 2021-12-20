@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+var companyNameClenupRegex = regexp.MustCompile(`(\D)(\d{3})(\d{5})(\d{3})$`) // maks CPF from in MEI names
+
+func companyNameClenup(n string) string {
+	return strings.TrimSpace(companyNameClenupRegex.ReplaceAllString(n, "$1***$3***"))
+}
+
 type cnae struct {
 	Codigo    int    `json:"codigo"`
 	Descricao string `json:"descricao"`
@@ -117,7 +123,7 @@ func (c *company) cnaeSecundarios(l lookups, v string) error {
 func newCompany(row []string, l lookups) (company, error) {
 	var c company
 	c.CNPJ = row[0] + row[1] + row[2]
-	c.NomeFantasia = row[4]
+	c.NomeFantasia = companyNameClenup(row[4])
 	c.NomeCidadeNoExterior = row[8]
 	c.DescricaoTipoDeLogradouro = row[13]
 	c.Logradouro = row[14]
