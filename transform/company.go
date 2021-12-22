@@ -21,6 +21,18 @@ type cnae struct {
 	Descricao string `json:"descricao"`
 }
 
+func newCnae(l lookups, v string) (cnae, error) {
+	i, err := toInt(v)
+	if err != nil {
+		return cnae{}, fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
+	}
+	if i == nil {
+		return cnae{}, nil
+	}
+	s := l.cnaes[*i]
+	return cnae{Codigo: *i, Descricao: s}, nil
+}
+
 // TODO this will be used further, it is here just to document the expected output ATM
 type partner struct {
 	IdentificadorDeSocio                 int     `json:"identificador_de_socio"`
@@ -209,16 +221,4 @@ func (c *company) toJSON(outDir string) (string, error) {
 		return "", fmt.Errorf("error writing to %s: %w", p, err)
 	}
 	return p, nil
-}
-
-func newCnae(l lookups, v string) (cnae, error) {
-	i, err := toInt(v)
-	if err != nil {
-		return cnae{}, fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
-	}
-	if i == nil {
-		return cnae{}, nil
-	}
-	s := l.cnaes[*i]
-	return cnae{Codigo: *i, Descricao: s}, nil
 }
