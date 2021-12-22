@@ -15,7 +15,7 @@ func TestPathsForSource(t *testing.T) {
 	}{
 		{venues, []string{filepath.Join(dir, "K3241.K03200Y8.D11009.ESTABELE.zip")}},
 		{motives, []string{filepath.Join(dir, "F.K03200$Z.D11009.MOTICSV.zip")}},
-		{main, []string{
+		{base_cpnj, []string{
 			filepath.Join(dir, "K3241.K03200Y5.D11009.EMPRECSV.zip"),
 			filepath.Join(dir, "K3241.K03200Y8.D11009.EMPRECSV.zip"),
 		}},

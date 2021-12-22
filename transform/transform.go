@@ -15,5 +15,11 @@ func Transform(dir string) error {
 	if err := t.run(maxFilesOpened); err != nil {
 		return err
 	}
-	return addPartners(dir, &t.lookups)
+	if err := addPartners(dir, &t.lookups); err != nil {
+		return err
+	}
+	if err := addBaseCPNJ(dir, &t.lookups); err != nil {
+		return err
+	}
+	return nil
 }

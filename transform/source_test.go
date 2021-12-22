@@ -6,7 +6,7 @@ import (
 )
 
 func TestSource(t *testing.T) {
-	s, err := newSource(main, filepath.Join("..", "testdata"))
+	s, err := newSource(base_cpnj, filepath.Join("..", "testdata"))
 
 	if err != nil {
 		t.Errorf("expected no error creating a source, got: %s", err)

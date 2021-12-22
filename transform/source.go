@@ -10,7 +10,7 @@ type sourceType string
 const (
 	venues         sourceType = "ESTABELE"
 	motives                   = "MOTICSV"
-	main                      = "EMPRECSV"
+	base_cpnj                 = "EMPRECSV"
 	cities                    = "MUNICCSV"
 	cnaes                     = "CNAECSV"
 	countries                 = "PAISCSV"
