@@ -9,7 +9,7 @@ import (
 
 type task struct {
 	source  *source
-	lookups lookups
+	lookups *lookups
 	queue   chan []string
 	paths   chan string
 	errors  chan error
@@ -85,7 +85,7 @@ func newTask(d string, t sourceType) (*task, error) {
 	}
 	o := task{
 		source:  s,
-		lookups: l,
+		lookups: &l,
 		bar:     progressbar.Default(s.totalLines),
 		queue:   make(chan []string),
 		paths:   make(chan string),

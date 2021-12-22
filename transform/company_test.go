@@ -107,7 +107,7 @@ func TestNewCompany(t *testing.T) {
 		t.Errorf("expected no errors creating look up tables, got %v", err)
 	}
 
-	got, err := newCompany(row, lookups)
+	got, err := newCompany(row, &lookups)
 	if err != nil {
 		t.Errorf("expected no errors, got %v", err)
 	}

@@ -1,6 +1,9 @@
 package transform
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type lookup map[int]string
 
@@ -46,7 +49,7 @@ func newLookups(d string) (lookups, error) {
 	return lookups{ls[0], ls[1], ls[2], ls[3]}, nil
 }
 
-func (c *company) motivoSituacaoCadastral(l lookups, v string) error {
+func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse MotivoSituacaoCadastral %s: %w", v, err)
@@ -62,7 +65,7 @@ func (c *company) motivoSituacaoCadastral(l lookups, v string) error {
 	return nil
 }
 
-func (c *company) pais(l lookups, v string) error {
+func (c *company) pais(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
@@ -78,7 +81,7 @@ func (c *company) pais(l lookups, v string) error {
 	return nil
 }
 
-func (c *company) municipio(l lookups, v string) error {
+func (c *company) municipio(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoMunicipio %s: %w", v, err)
@@ -94,14 +97,39 @@ func (c *company) municipio(l lookups, v string) error {
 	return nil
 }
 
-func (c *company) cnae(l lookups, v string) error {
-	cnae, err := newCnae(l, v)
+type cnae struct {
+	Codigo    int    `json:"codigo"`
+	Descricao string `json:"descricao"`
+}
+
+func newCnae(l *lookups, v string) (cnae, error) {
+	i, err := toInt(v)
 	if err != nil {
-		return err
+		return cnae{}, fmt.Errorf("error trying to parse cnae %s: %w", v, err)
 	}
-	c.CNAEFiscal = &cnae.Codigo
-	if cnae.Descricao != "" {
-		c.CNAEFiscalDescricao = &cnae.Descricao
+	if i == nil {
+		return cnae{}, nil
+	}
+	s := l.cnaes[*i]
+	return cnae{Codigo: *i, Descricao: s}, nil
+}
+
+func (c *company) cnaes(l *lookups, p, s string) error {
+	a, err := newCnae(l, p)
+	if err != nil {
+		return fmt.Errorf("error trying to parse CNAEFiscal %s: %w", p, err)
+	}
+	c.CNAEFiscal = &a.Codigo
+	if a.Descricao != "" {
+		c.CNAEFiscalDescricao = &a.Descricao
+	}
+
+	for _, n := range strings.Split(s, ",") {
+		a, err := newCnae(l, n)
+		if err != nil {
+			return fmt.Errorf("error trying to parse CNAESecundarios %s: %w", n, err)
+		}
+		c.CNAESecundarios = append(c.CNAESecundarios, a)
 	}
 	return nil
 }

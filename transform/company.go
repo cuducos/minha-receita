@@ -16,23 +16,6 @@ func companyNameClenup(n string) string {
 	return strings.TrimSpace(companyNameClenupRegex.ReplaceAllString(n, "$1***$3***"))
 }
 
-type cnae struct {
-	Codigo    int    `json:"codigo"`
-	Descricao string `json:"descricao"`
-}
-
-func newCnae(l lookups, v string) (cnae, error) {
-	i, err := toInt(v)
-	if err != nil {
-		return cnae{}, fmt.Errorf("error trying to parse CNAE %s: %w", v, err)
-	}
-	if i == nil {
-		return cnae{}, nil
-	}
-	s := l.cnaes[*i]
-	return cnae{Codigo: *i, Descricao: s}, nil
-}
-
 // TODO this will be used further, it is here just to document the expected output ATM
 type partner struct {
 	IdentificadorDeSocio                 int     `json:"identificador_de_socio"`
@@ -122,18 +105,7 @@ func (c *company) situacaoCadastral(v string) error {
 	return nil
 }
 
-func (c *company) cnaeSecundarios(l lookups, v string) error {
-	for _, n := range strings.Split(v, ",") {
-		cnae, err := newCnae(l, n)
-		if err != nil {
-			return fmt.Errorf("error getting cnae description %w", err)
-		}
-		c.CNAESecundarios = append(c.CNAESecundarios, cnae)
-	}
-	return nil
-}
-
-func newCompany(row []string, l lookups) (company, error) {
+func newCompany(row []string, l *lookups) (company, error) {
 	var c company
 	c.CNPJ = row[0] + row[1] + row[2]
 	c.NomeFantasia = companyNameClenup(row[4])
@@ -180,8 +152,8 @@ func newCompany(row []string, l lookups) (company, error) {
 	}
 	c.DataInicioAtividade = dataInicioAtividade
 
-	if err := c.cnae(l, row[11]); err != nil {
-		return c, fmt.Errorf("error trying to parse CNAEFiscal %s: %w", row[11], err)
+	if err := c.cnaes(l, row[11], row[12]); err != nil {
+		return c, fmt.Errorf("error trying to parse cnae: %w", err)
 	}
 
 	if err := c.municipio(l, row[20]); err != nil {
@@ -193,10 +165,6 @@ func newCompany(row []string, l lookups) (company, error) {
 		return c, fmt.Errorf("error trying to parse DataSituacaoEspecial %s: %w", row[20], err)
 	}
 	c.DataSituacaoEspecial = dataSituacaoEspecial
-
-	if err = c.cnaeSecundarios(l, row[12]); err != nil {
-		return c, fmt.Errorf("error parsing to parse CNAESecundarios %s: %w", row[12], err)
-	}
 
 	return c, nil
 }
