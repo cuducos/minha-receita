@@ -13,7 +13,7 @@ func TestAddPartners(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected to error creating a json, got %s", err)
 	}
-	for _, src := range []sourceType{partners, motives, cities, countries, cnaes, qualifications} {
+	for _, src := range []sourceType{partners, motives, cities, countries, cnaes, qualifications, natures} {
 		ls, err := PathsForSource(src, filepath.Join("..", "testdata"))
 		if err != nil {
 			t.Errorf("expected no error finding paths for %s, got %s", string(src), err)

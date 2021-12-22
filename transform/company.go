@@ -48,6 +48,7 @@ type company struct {
 	CNAESecundarios                  []cnae   `json:"cnaes_secundarios"`
 	RazaoSocial                      string   `json:"razao_social"`
 	CodigoNaturezaJuridica           *int     `json:"codigo_natureza_juridica"`
+	NaturezaJuridica                 *string  `json:"natureza_juridica"`
 	QualificacaoDoResponsavel        *int     `json:"qualificacao_do_responsavel"`
 	CapitalSocial                    *float32 `json:"capital_social"`
 	CodigoPorte                      *int     `json:"codigo_porte"`

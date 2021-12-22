@@ -35,7 +35,7 @@ func addBaseCPNJ(dir string, l *lookups) error {
 				if err != nil {
 					return fmt.Errorf("error reading company from %s: %w", f, err)
 				}
-				err = c.fillMain(t)
+				err = c.fillMain(t, l)
 				if err != nil {
 					return fmt.Errorf("error filling company from %s: %w", f, err)
 				}
@@ -49,7 +49,7 @@ func addBaseCPNJ(dir string, l *lookups) error {
 	return nil
 }
 
-func (c *company) fillMain(data []string) error {
+func (c *company) fillMain(data []string, l *lookups) error {
 	c.RazaoSocial = data[1]
 	codigoNaturezaJuridica, err := toInt(data[2])
 	if err != nil {
@@ -75,6 +75,10 @@ func (c *company) fillMain(data []string) error {
 		return fmt.Errorf("error trying to parse EnteFederativoResponsavel%s: %w", data[2], err)
 	}
 	c.EnteFederativoResponsavel = enteFederativoResponsavel
+	natures := l.natures[*c.CodigoNaturezaJuridica]
+	if natures != "" {
+		c.NaturezaJuridica = &natures
+	}
 	return nil
 }
 
