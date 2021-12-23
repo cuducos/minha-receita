@@ -21,12 +21,11 @@ func PathsForSource(t sourceType, dir string) ([]string, error) {
 		return ls, err
 	}
 
-	s := strings.ToLower(string(t) + ".zip")
 	for _, f := range r {
 		if f.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(strings.ToLower(f.Name()), s) {
+		if strings.Contains(strings.ToLower(f.Name()), strings.ToLower(string(t))) {
 			ls = append(ls, filepath.Join(dir, f.Name()))
 		}
 	}
