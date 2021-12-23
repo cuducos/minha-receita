@@ -15,5 +15,8 @@ func Transform(srcDir, outDir string) error {
 	if err := t.run(maxFilesOpened); err != nil {
 		return err
 	}
-	return addPartners(srcDir, outDir, t.lookups)
+	if err := addPartners(srcDir, outDir, t.lookups); err != nil {
+		return err
+	}
+	return addSimplesToCompanies(outDir)
 }

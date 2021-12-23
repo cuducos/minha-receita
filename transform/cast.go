@@ -47,10 +47,32 @@ func toFloat(v string) (*float32, error) {
 	return &f32, nil
 }
 
+func toBool(v string) *bool {
+	v = strings.ToUpper(v)
+	var b bool
+	switch v {
+	case "S":
+		b = true
+	case "N":
+		b = false
+	default:
+		return nil
+	}
+	return &b
+}
+
 // toDate expects a date as string in the format YYYYMMDD (that is the format
 // used by the Federal Revenue in their CSV files).
 func toDate(v string) (*date, error) {
-	if v == "" {
+	onlyZeros := func(s string) bool {
+		v, err := strconv.Atoi(s)
+		if err != nil {
+			return false
+		}
+		return 0 == v
+	}
+
+	if v == "" || onlyZeros(v) {
 		return nil, nil
 	}
 

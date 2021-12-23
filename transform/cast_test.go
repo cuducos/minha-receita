@@ -80,6 +80,32 @@ func TestToFloat(t *testing.T) {
 	})
 }
 
+func TestToBool(t *testing.T) {
+	expectedTrue := true
+	expectedFalse := false
+	tc := []struct {
+		value    string
+		expected *bool
+	}{
+		{"S", &expectedTrue},
+		{"s", &expectedTrue},
+		{"N", &expectedFalse},
+		{"n", &expectedFalse},
+		{"", nil},
+		{" ", nil},
+		{"42", nil},
+	}
+	for _, c := range tc {
+		got := toBool(c.value)
+		if got == nil && c.expected != nil {
+			t.Errorf("expected %s to be nil, got %t", c.value, *got)
+		}
+		if got != nil && *got != *c.expected {
+			t.Errorf("expected %s to be %t, got %t", c.value, *c.expected, *got)
+		}
+	}
+}
+
 func TestToDate(t *testing.T) {
 	t.Run("successful date casting", func(t *testing.T) {
 		v := "19940717"
@@ -95,6 +121,7 @@ func TestToDate(t *testing.T) {
 		}{
 			{v, &expected},
 			{"", nil},
+			{"00000000", nil},
 		}
 		for _, c := range tc {
 			got, err := toDate(c.value)

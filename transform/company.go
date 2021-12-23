@@ -18,35 +18,42 @@ func companyNameClenup(n string) string {
 
 type company struct {
 	// Fields from the venues dataset
-	CNPJ                             string  `json:"cnpj"`
-	IdentificadorMatrizFilial        *int    `json:"identificador_matriz_filial"`
-	NomeFantasia                     string  `json:"nome_fantasia"`
-	SituacaoCadastral                *int    `json:"situacao_cadastral"`
-	DescricaoSituacaoCadastral       *string `json:"descricao_situacao_cadastral"`
-	DataSituacaoCadastral            *date   `json:"data_situacao_cadastral"`
-	MotivoSituacaoCadastral          *int    `json:"motivo_situacao_cadastral"`
-	DescricaoMotivoSituacaoCadastral *string `json:"descricao_motivo_situacao_cadastral"`
-	NomeCidadeNoExterior             string  `json:"nome_cidade_no_exterior"`
-	CodigoPais                       *int    `json:"codigo_pais"`
-	Pais                             *string `json:"pais"`
-	DataInicioAtividade              *date   `json:"data_inicio_atividade"`
-	CNAEFiscal                       *int    `json:"cnae_fiscal"`
-	CNAEFiscalDescricao              *string `json:"cnae_fiscal_descricao"`
-	DescricaoTipoDeLogradouro        string  `json:"descricao_tipo_de_logradouro"`
-	Logradouro                       string  `json:"logradouro"`
-	Numero                           string  `json:"numero"`
-	Complemento                      string  `json:"complemento"`
-	Bairro                           string  `json:"bairro"`
-	CEP                              string  `json:"cep"`
-	UF                               string  `json:"uf"`
-	CodigoMunicipio                  *int    `json:"codigio_municipio"`
-	Municipio                        *string `json:"municipio"`
-	Telefone1                        string  `json:"ddd_telefone_1"`
-	Telefone2                        string  `json:"ddd_telefone_2"`
-	Fax                              string  `json:"ddd_fax"`
-	SituacaoEspecial                 string  `json:"situacao_especial"`
-	DataSituacaoEspecial             *date   `json:"data_situacao_especial"`
-	CNAESecundarios                  []cnae  `json:"cnaes_secundarios"`
+	CNPJ                             string    `json:"cnpj"`
+	IdentificadorMatrizFilial        *int      `json:"identificador_matriz_filial"`
+	NomeFantasia                     string    `json:"nome_fantasia"`
+	SituacaoCadastral                *int      `json:"situacao_cadastral"`
+	DescricaoSituacaoCadastral       *string   `json:"descricao_situacao_cadastral"`
+	DataSituacaoCadastral            *date     `json:"data_situacao_cadastral"`
+	MotivoSituacaoCadastral          *int      `json:"motivo_situacao_cadastral"`
+	DescricaoMotivoSituacaoCadastral *string   `json:"descricao_motivo_situacao_cadastral"`
+	NomeCidadeNoExterior             string    `json:"nome_cidade_no_exterior"`
+	CodigoPais                       *int      `json:"codigo_pais"`
+	Pais                             *string   `json:"pais"`
+	DataInicioAtividade              *date     `json:"data_inicio_atividade"`
+	CNAEFiscal                       *int      `json:"cnae_fiscal"`
+	CNAEFiscalDescricao              *string   `json:"cnae_fiscal_descricao"`
+	DescricaoTipoDeLogradouro        string    `json:"descricao_tipo_de_logradouro"`
+	Logradouro                       string    `json:"logradouro"`
+	Numero                           string    `json:"numero"`
+	Complemento                      string    `json:"complemento"`
+	Bairro                           string    `json:"bairro"`
+	CEP                              string    `json:"cep"`
+	UF                               string    `json:"uf"`
+	CodigoMunicipio                  *int      `json:"codigio_municipio"`
+	Municipio                        *string   `json:"municipio"`
+	Telefone1                        string    `json:"ddd_telefone_1"`
+	Telefone2                        string    `json:"ddd_telefone_2"`
+	Fax                              string    `json:"ddd_fax"`
+	SituacaoEspecial                 string    `json:"situacao_especial"`
+	DataSituacaoEspecial             *date     `json:"data_situacao_especial"`
+	OpcaoPeloSimples                 *bool     `json:"opcao_pelo_simples"`
+	DataOpcaoPeloSimples             *date     `json:"data_opcao_pelo_simples"`
+	DataExclusaoDoSimples            *date     `json:"data_exclusao_do_simples"`
+	OpcaoPeloMEI                     *bool     `json:"opcao_pelo_mei"`
+	DataOpcaoPeloMEI                 *date     `json:"data_opcao_pelo_mei"`
+	DataExclusaoDoMEI                *date     `json:"data_exclusao_do_mei"`
+	QuadroSocietario                 []partner `json:"qsa"`
+	CNAESecundarios                  []cnae    `json:"cnaes_secundarios"`
 
 	// TODO this will be used further, it is here just to document the expected output ATM
 	// RazaoSocial               string  `json:"razao_social"`
@@ -55,14 +62,7 @@ type company struct {
 	// CapitalSocial             *float32 `json:"capital_social"`
 	// Porte                     *int     `json:"porte"`
 	// EnteFederativoResponsavel *int     `json:"ente_federativo_responsavel"`
-
-	// TODO backward compatibility
 	// DescricaoPorte             string    `json:"descricao_porte"`
-	// OpcaoPeloSimples           *bool      `json:"opcao_pelo_mei"`
-	// DataOpcaoPeloSimples       *date `json:"data_opcao_pelo_simples"`
-	// DataExclusaoDoSimples      *date `json:"data_exclusao_do_simples"`
-	// OpcaoPeloMei               *bool      `json:"opcao_pelo_mei"`
-	QuadroSocietario []partner `json:"qsa"`
 }
 
 func (c *company) situacaoCadastral(v string) error {
