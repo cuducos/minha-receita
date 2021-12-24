@@ -7,13 +7,13 @@ import (
 const maxFilesOpened = 512 // TODO how to optimize this number?
 
 // Transform the downloaded files for company venues creating a JSON file per CNPJ
-func Transform(dir string) error {
-	t, err := newTask(dir, venues)
+func Transform(srcDir, outDir string) error {
+	t, err := newTask(srcDir, outDir)
 	if err != nil {
-		return fmt.Errorf("error creating new task for %s in %s: %w", string(venues), dir, err)
+		return fmt.Errorf("error creating new task for venues in %s: %w", srcDir, err)
 	}
 	if err := t.run(maxFilesOpened); err != nil {
 		return err
 	}
-	return addPartners(dir, t.lookups)
+	return addPartners(srcDir, outDir, t.lookups)
 }

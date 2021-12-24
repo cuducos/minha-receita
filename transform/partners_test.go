@@ -27,7 +27,7 @@ func TestAddPartners(t *testing.T) {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 		return
 	}
-	if err := addPartners(d, &l); err != nil {
+	if err := addPartners(d, d, &l); err != nil {
 		t.Errorf("expected no errors adding partners, got %s", err)
 		return
 	}

@@ -2,17 +2,14 @@ package api
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func newRelicApp() *newrelic.Application {
-	k := os.Getenv("NEW_RELIC_LICENSE_KEY")
+func newRelicApp(k string) *newrelic.Application {
 	if k == "" {
 		return nil
 	}
-
 	app, err := newrelic.NewApplication(
 		newrelic.ConfigAppName("Minha Receita"),
 		newrelic.ConfigLicense(k),

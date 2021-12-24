@@ -131,7 +131,7 @@ func addPartner(l *lookups, dir string, r []string) error {
 }
 
 type partnersTask struct {
-	dir     string
+	outDir  string
 	lookups *lookups
 	queues  []chan []string
 	success chan struct{}
@@ -141,7 +141,7 @@ type partnersTask struct {
 
 func (t *partnersTask) consumeShard(n int) {
 	for r := range t.queues[n] {
-		if err := addPartner(t.lookups, t.dir, r); err != nil {
+		if err := addPartner(t.lookups, t.outDir, r); err != nil {
 			t.errors <- fmt.Errorf("error processing partner %v: %w", r, err)
 			continue
 		}
@@ -149,15 +149,15 @@ func (t *partnersTask) consumeShard(n int) {
 	}
 }
 
-func addPartners(dir string, l *lookups) error {
-	s, err := newSource(partners, dir)
+func addPartners(srcDir, outDir string, l *lookups) error {
+	s, err := newSource(partners, srcDir)
 	if err != nil {
 		return fmt.Errorf("error creating source for partners: %w", err)
 	}
 	defer s.close()
 
 	t := partnersTask{
-		dir:     dir,
+		outDir:  outDir,
 		lookups: l,
 		success: make(chan struct{}),
 		errors:  make(chan error),
