@@ -3,7 +3,6 @@ package download
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -71,7 +70,7 @@ func TestGetFiles(t *testing.T) {
 
 	tmp := t.TempDir()
 	expected := 37
-	got, err := getFiles(ts.Client(), ts.URL, tmp)
+	got, err := getFiles(ts.Client(), ts.URL, tmp, false)
 	if err != nil {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
 		return
@@ -94,18 +93,12 @@ func TestNewDownloader(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
 
-	tmp, err := ioutil.TempDir("", "minha-receita")
-	if err != nil {
-		t.Errorf("Could not create a temporary directory for tests: %v", err)
-		return
-	}
-	defer os.RemoveAll(tmp)
-
+	tmp := t.TempDir()
 	fs := []file{
 		{ts.URL + "/file1.html", filepath.Join(tmp, "file1.html")},
 		{ts.URL + "/file2.html", filepath.Join(tmp, "file2.html")},
 	}
-	d, err := newDownloader(ts.Client(), fs)
+	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
 		t.Errorf("Expected newDownloader to return a downloader, got: %v", err)
 	}
@@ -129,18 +122,12 @@ func TestDownloadAll(t *testing.T) {
 	f, s := loadFixture(t)
 	defer f.Close()
 
-	tmp, err := ioutil.TempDir("", "minha-receita")
-	if err != nil {
-		t.Errorf("Could not create a temporary directory for tests: %v", err)
-		return
-	}
-	defer os.RemoveAll(tmp)
-
+	tmp := t.TempDir()
 	fs := []file{
 		{ts.URL + "/file1.html", filepath.Join(tmp, "file1.html")},
 		{ts.URL + "/file2.html", filepath.Join(tmp, "file2.html")},
 	}
-	d, err := newDownloader(ts.Client(), fs)
+	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
 		t.Errorf("Expected newDownloader to return a downloader, got: %v", err)
 	}
