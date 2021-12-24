@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"errors"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -31,46 +30,85 @@ func TestPathsForSource(t *testing.T) {
 	}
 }
 
-func TestPathFor(t *testing.T) {
-	tt := []struct {
-		cnpj string
-		path string
-		err  error
-	}{
-		{"19131243000197", "19131243/000197.json", nil},
-		{"19.131.243/0001-97", "19131243/000197.json", nil},
-		{"foobar", "", ErrInvalidCNPJ},
-		{"12345678901234", "", ErrInvalidCNPJ},
-		{"12.345.678/9012-34", "", ErrInvalidCNPJ},
-	}
-	for _, c := range tt {
-		got, err := PathForCNPJ(c.cnpj)
-		if got != c.path {
-			t.Errorf("expected path for %s to be %s, got %s", c.cnpj, c.path, got)
+func TestPathForCNPJ(t *testing.T) {
+	t.Run("successful", func(t *testing.T) {
+		tt := []struct {
+			cnpj     string
+			expected string
+		}{
+			{"19131243000197", "19/131/243/000197.json"},
+			{"19.131.243/0001-97", "19/131/243/000197.json"},
 		}
-		if !errors.Is(err, c.err) {
-			t.Errorf("expected %v as an error for %s, got %v", c.err, c.cnpj, err)
+		for _, c := range tt {
+			got, err := PathForCNPJ(c.cnpj)
+			if got != c.expected {
+				t.Errorf("expected path for %s to be %s, got %s", c.cnpj, c.expected, got)
+			}
+			if err != nil {
+				t.Errorf("expected no error for %s, got %s", c.cnpj, err)
+			}
 		}
-	}
+	})
+	t.Run("with error", func(t *testing.T) {
+		tt := []string{
+			"foobar",
+			"12345678901234",
+			"12.345.678/9012-34",
+		}
+		for _, c := range tt {
+			_, err := PathForCNPJ(c)
+			if err == nil {
+				t.Errorf("expected an error for %s, got nil", c)
+			}
+		}
+	})
 }
 
-func TestCNPJFor(t *testing.T) {
-	tt := []struct {
-		path string
-		cnpj string
-		err  error
-	}{
-		{"19131243/000197.json", "19131243000197", nil},
-		{"/home/user/data/19131243/000197.json", "19131243000197", nil},
-		{"19/131.json", "", ErrInvalidPath},
-	}
-	for _, c := range tt {
-		got, err := CNPJForPath(c.path)
-		if got != c.cnpj {
-			t.Errorf("expected cnpj for %s to be %s, got %s", c.path, c.cnpj, got)
+func TestPathForBaseCNPJ(t *testing.T) {
+	t.Run("successful", func(t *testing.T) {
+		b := "19131243"
+		expected := "19/131/243"
+		got, err := pathForBaseCNPJ(b)
+		if got != expected {
+			t.Errorf("expected path for %s to be %s, got %s", b, expected, got)
 		}
-		if !errors.Is(err, c.err) {
-			t.Errorf("expected %v as an error for %s, got %v", c.err, c.path, err)
+		if err != nil {
+			t.Errorf("expected no error for %s, got %s", b, err)
 		}
-	}
+	})
+	t.Run("with error", func(t *testing.T) {
+		b := "19.131.243"
+		_, err := pathForBaseCNPJ(b)
+		if err == nil {
+			t.Errorf("expected error for %s, got nil", b)
+		}
+	})
+}
+
+func TestCNPJForPath(t *testing.T) {
+	t.Run("successful", func(t *testing.T) {
+		tt := []struct {
+			path     string
+			expected string
+		}{
+			{"19/131/243/000197.json", "19131243000197"},
+			{"/home/user/data/19/131/243/000197.json", "19131243000197"},
+		}
+		for _, c := range tt {
+			got, err := CNPJForPath(c.path)
+			if got != c.expected {
+				t.Errorf("expected cnpj for %s to be %s, got %s", c.path, c.expected, got)
+			}
+			if err != nil {
+				t.Errorf("expected no error for %s, got %v", c.path, err)
+			}
+		}
+	})
+	t.Run("with error", func(t *testing.T) {
+		c := "19/131.json"
+		_, err := CNPJForPath(c)
+		if err == nil {
+			t.Errorf("expected an error for %s, got nil", c)
+		}
+	})
 }
