@@ -1,21 +1,16 @@
 package transform
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/cuducos/go-cnpj"
 )
 
-// ErrInvalidCNPJ is raised when a string value is not a valid CNPJ number.
-var ErrInvalidCNPJ = errors.New("invalid CNPJ")
-
-// ErrInvalidPath is raised when a path does not correspond to the path of a
-// valid CNPJ.
-var ErrInvalidPath = errors.New("invalid path for a CNPJ JSON file")
+var nonDigits = regexp.MustCompile(`\D`)
 
 // PathsForSource lists files for a given `sourceType` in a directory `dir`.
 func PathsForSource(t sourceType, dir string) ([]string, error) {
@@ -41,24 +36,31 @@ func PathsForSource(t sourceType, dir string) ([]string, error) {
 // PathForCNPJ creates the file path for a JSON file related to a CNPJ.
 func PathForCNPJ(c string) (string, error) {
 	if !cnpj.IsValid(c) {
-		return "", fmt.Errorf("Error finding file path for %s: %w", c, ErrInvalidCNPJ)
+		return "", fmt.Errorf("error finding file path for %s: invalid cnpj", c)
 	}
 
-	c = cnpj.Unmask(c)
-	return c[:8] + string(os.PathSeparator) + c[8:] + ".json", nil
+	c = cnpj.Mask(c)
+	p := nonDigits.Split(cnpj.Mask(c), 5)
+	n := p[3] + p[4] + ".json"
+	return strings.Join(append(p[:3], n), string(os.PathSeparator)), nil
+}
+
+func pathForBaseCNPJ(s string) (string, error) {
+	if len(s) != 8 {
+		return "", fmt.Errorf("invalid base cnpj: %s", s)
+	}
+	return filepath.Join(s[:2], s[2:5], s[5:]), nil
 }
 
 // CNPJForPath creates a CNPJ from a path of a JSON file related to a CNPJ.
-func CNPJForPath(p string) (string, error) {
-	c := strings.Split(p, string(os.PathSeparator))
-	if len(c) < 2 {
-		return "", fmt.Errorf("Error finding the CNPJ for %s: %w", p, ErrInvalidPath)
+func CNPJForPath(f string) (string, error) {
+	p := strings.Split(f, string(os.PathSeparator))
+	if len(p) < 4 {
+		return "", fmt.Errorf("error finding the cnpj for %s: invalid path", f)
 	}
-
-	r := c[len(c)-2] + strings.TrimSuffix(c[len(c)-1], filepath.Ext(p))
-	if !cnpj.IsValid(r) {
-		return "", fmt.Errorf("Error finding the CNPJ for %s: %w", p, ErrInvalidPath)
+	c := strings.TrimSuffix(strings.Join(p[len(p)-4:], ""), filepath.Ext(f))
+	if !cnpj.IsValid(c) {
+		return "", fmt.Errorf("error finding the cnpj for %s: invalid resulting cnpj", f)
 	}
-
-	return r, nil
+	return c, nil
 }

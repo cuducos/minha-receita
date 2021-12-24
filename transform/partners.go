@@ -108,7 +108,11 @@ func addPartner(l *lookups, dir string, r []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating partner for %v: %w", r, err)
 	}
-	ls, err := filepath.Glob(filepath.Join(dir, r[0], "*.json"))
+	b, err := pathForBaseCNPJ(r[0])
+	if err != nil {
+		return fmt.Errorf("error getting the path for %s: %w", r[0], err)
+	}
+	ls, err := filepath.Glob(filepath.Join(dir, b, "*.json"))
 	if err != nil {
 		return fmt.Errorf("error in the glob pattern: %w", err)
 	}
