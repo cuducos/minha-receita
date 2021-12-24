@@ -141,15 +141,10 @@ func (p *PostgreSQL) ImportData(dir string) error {
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL(u string) (PostgreSQL, error) {
+func NewPostgreSQL(u, s string) (PostgreSQL, error) {
 	opt, err := pg.ParseURL(u)
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", u, err)
-	}
-	s := os.Getenv("POSTGRES_SCHEMA")
-	if s == "" {
-		log.Output(2, "No POSTGRES_SCHEMA environment variable found, using public.")
-		s = "public"
 	}
 	p := PostgreSQL{pg.Connect(opt), u, s, tableName, IDFieldName, JSONFieldName}
 	if err := p.conn.Ping(context.Background()); err != nil {

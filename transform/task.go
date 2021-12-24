@@ -10,6 +10,7 @@ import (
 type task struct {
 	source  *source
 	lookups *lookups
+	outDir  string
 	queue   chan []string
 	paths   chan string
 	errors  chan error
@@ -41,7 +42,7 @@ func (t *task) consumeRows() {
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
 			break
 		}
-		p, err := c.toJSON(t.source.dir)
+		p, err := c.toJSON(t.outDir)
 		if err != nil {
 			t.errors <- fmt.Errorf("error getting the JSON bytes for %v: %w", c, err)
 			break
@@ -74,22 +75,23 @@ func (t *task) run(m int) error {
 	}
 }
 
-func newTask(d string, t sourceType) (*task, error) {
-	s, err := newSource(t, d)
+func newTask(srcDir, outDir string) (*task, error) {
+	v, err := newSource(venues, srcDir)
 	if err != nil {
-		return nil, fmt.Errorf("error creating a source for %s from %s: %w", string(t), d, err)
+		return nil, fmt.Errorf("error creating a source for venues from %s: %w", srcDir, err)
 	}
-	l, err := newLookups(d)
+	l, err := newLookups(srcDir)
 	if err != nil {
-		return nil, fmt.Errorf("error creating look up tables from %s: %w", d, err)
+		return nil, fmt.Errorf("error creating look up tables from %s: %w", srcDir, err)
 	}
-	o := task{
-		source:  s,
+	t := task{
+		source:  v,
+		outDir:  outDir,
 		lookups: &l,
-		bar:     progressbar.Default(s.totalLines),
+		bar:     progressbar.Default(v.totalLines),
 		queue:   make(chan []string),
 		paths:   make(chan string),
 		errors:  make(chan error),
 	}
-	return &o, nil
+	return &t, nil
 }

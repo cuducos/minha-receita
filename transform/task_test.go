@@ -20,7 +20,7 @@ func TestTaskRun(t *testing.T) {
 			copyFile(f, d)
 		}
 	}
-	p, err := newTask(d, venues)
+	p, err := newTask(d, d)
 	if err != nil {
 		t.Errorf("expected no error creating task, got %s", err)
 	}
