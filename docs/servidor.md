@@ -4,7 +4,15 @@
 
 O comando `download` faz o download dos arquivos necessários para alimentar o banco de dados. Na sequência, o comando `parse` transforma os arquivos para o formato CSV. Ambos aceitam o argumento `--directory` (ou `-d`) com um diretório onde encontrar os dados (o padrão é `data/`).
 
-O comando `download` baixa dados do servidor da Receita Federal, que é lento e instável. Como alternativa, pode-se apenas listar as URLs para download dos arquivos com `--urls-only` (ou `-u`). O _timeout_ padrão para o download de cada arquivo é de 15min, mas pode ser alterado com `--timeout` (ou `-t`).
+O comando `download` baixa dados do servidor da Receita Federal, que é lento e instável. Quando um download falha, nenhum arquivo é salvo (ou seja, não fica, no diretório, um arquivo pela metade; pode-se assumir que os arquivos restantes são íntegros e não precisam ser baixados novamente). Por esse motivo pode ser esperado que a barra de progresso de download recue (quando um arquivo de download falha, retiramos os bytes baixados da barra de download, pois na nova tentativa o download começa do zero).
+
+Caso o download falhe, é recomendado variar as configurações explicadas no `--help`, por exemplo:
+
+* diminuir o número de downloads paralelos com o `--parallel` (ou `-p`)
+* aumentar o números de tentativas de download de um mesmo arquivo com `--retries` (ou `-r`)
+* aumentar o tempo de `--timeout` (ou `-t`)
+* rodar o comando de download sucessivas vezes com a opção `--skip` (ou `-x`) para baixar apenas os arquivos que estão faltando
+* por fim, pode-se apenas listar as URLs para download dos arquivos com `--urls-only` (ou `-u`) e tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.)
 
 ### Exemplos de uso
 

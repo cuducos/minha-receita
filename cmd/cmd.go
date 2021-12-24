@@ -46,14 +46,22 @@ files) into a a group of JSON files, 1 per CNPJ.`
 const defaultPort = "8000"
 
 var (
-	outDir         string
-	srcDir         string
-	urlsOnly       bool
-	timeout        string
+	outDir string
+	srcDir string
+
 	databaseURI    string
 	postgresSchema string
-	port           string
-	newRelic       string
+
+	// download
+	urlsOnly          bool
+	timeout           string
+	downloadRetries   int
+	parallelDownloads int
+	skipExistingFiles bool
+
+	// api
+	port     string
+	newRelic string
 )
 
 func assertDirExists(dir string) error {
@@ -126,7 +134,7 @@ var downloadCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return download.Download(srcDir, dur, urlsOnly)
+		return download.Download(srcDir, dur, urlsOnly, skipExistingFiles, parallelDownloads, downloadRetries)
 	},
 }
 
@@ -215,8 +223,13 @@ func CLI() *cobra.Command {
 		"",
 		"New Relic license key (deafult NEW_RELIC_LICENSE_KEY environment variable)",
 	)
+
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
+	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
+	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")
+	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.MaxParallel, "maximum parallel downloads")
+
 	for _, c := range []*cobra.Command{downloadCmd, transformCmd} {
 		c.Flags().StringVarP(&srcDir, "source-directory", "s", "data", "directory of original CSV files")
 	}
@@ -227,6 +240,7 @@ func CLI() *cobra.Command {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "d", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
 		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
 	}
+
 	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, importCmd} {
 		rootCmd.AddCommand(c)
 	}
