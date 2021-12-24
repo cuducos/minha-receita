@@ -88,7 +88,7 @@ A etapa de transformação dos dados cria um diretório por CNPJ base, e, dentro
     1. Incorporar nessa leitura as informações da tabela de _look up_ `NATJUCSV`
 1. Ler os arquivos CSV com sufixo `SOCIOCSV` e enriquecer os arquivos JSON com essas informações
     1. Incorporar nessa leitura as informações da tabela de _look up_ `QUALSCSV`
-1. Ler os arquivos CSV com sufixo `SIMPLER` e enriquecer os arquivos JSON com essas informações
+1. Ler os arquivos CSV com sufixo `SIMPLES` e enriquecer os arquivos JSON com essas informações
 
 ## Documentação
 
