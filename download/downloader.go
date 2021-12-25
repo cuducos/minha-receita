@@ -170,13 +170,12 @@ func (d *downloader) downloadAll() error {
 		case err := <-errors:
 			return fmt.Errorf("error downloading files: %w", err)
 		case n := <-d.bar.updateBytes:
-			d.bar.main.Add64(n)
-		case <-d.bar.updateTotal:
-			d.bar.done++
-			d.bar.main.Describe(d.bar.description())
-			if d.bar.isFinished() {
+			d.bar.addBytes(n)
+			if d.bar.main.IsFinished() {
 				return nil
 			}
+		case <-d.bar.updateTotal:
+			d.bar.addFile()
 		}
 	}
 }
