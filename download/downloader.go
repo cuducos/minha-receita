@@ -69,16 +69,16 @@ func (d *downloader) getTotalSize() error {
 		close(sizes)
 	}()
 
-	var c int
+	bar := progressbar.Default(int64(len(d.files)), "Gathering file sizes")
 	for {
 		select {
 		case err := <-errors:
 			return fmt.Errorf("error getting total size: %w", err)
 		case s := <-sizes:
 			d.totalSize += s
-			c++
+			bar.Add(1)
 		}
-		if c == len(d.files) {
+		if bar.IsFinished() {
 			break
 		}
 	}
