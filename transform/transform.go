@@ -25,5 +25,5 @@ func Transform(srcDir, outDir string) error {
 	if err := addPartners(srcDir, outDir, t.lookups); err != nil {
 		return err
 	}
-	return addSimplesToCompanies(outDir)
+	return addSimplesToCompanies(srcDir, outDir)
 }
