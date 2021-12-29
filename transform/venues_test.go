@@ -9,7 +9,7 @@ import (
 
 func TestTaskRun(t *testing.T) {
 	outDir := t.TempDir()
-	p, err := newTask(filepath.Join("..", "testdata"), outDir)
+	p, err := createJSONFiles(filepath.Join("..", "testdata"), outDir)
 	if err != nil {
 		t.Errorf("expected no error creating task, got %s", err)
 	}
