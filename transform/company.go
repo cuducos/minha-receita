@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var companyNameClenupRegex = regexp.MustCompile(`(\D)(\d{3})(\d{5})(\d{3})$`) // maks CPF from in MEI names
+var companyNameClenupRegex = regexp.MustCompile(`(\D)(\d{3})(\d{5})(\d{3})$`) // masks CPF from in MEI names
 
 func companyNameClenup(n string) string {
 	return strings.TrimSpace(companyNameClenupRegex.ReplaceAllString(n, "$1***$3***"))
