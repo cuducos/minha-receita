@@ -13,14 +13,7 @@ func TestAddSimplesToCompanies(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected to error creating a json, got %s", err)
 	}
-	ls, err := PathsForSource(simple, filepath.Join("..", "testdata"))
-	if err != nil {
-		t.Errorf("expected no error finding paths for %s, got %s", string(simple), err)
-	}
-	for _, f := range ls {
-		copyFile(f, d)
-	}
-	if err := addSimplesToCompanies(d); err != nil {
+	if err := addSimplesToCompanies(filepath.Join("..", "testdata"), d); err != nil {
 		t.Errorf("expected no errors adding partners, got %s", err)
 		return
 	}
