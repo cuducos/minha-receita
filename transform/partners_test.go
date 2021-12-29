@@ -7,27 +7,19 @@ import (
 )
 
 func TestAddPartners(t *testing.T) {
-	d := t.TempDir()
+	outDir := t.TempDir()
 	c := company{CNPJ: "33683111000280"}
-	p, err := c.toJSON(d)
+	p, err := c.toJSON(outDir)
 	if err != nil {
 		t.Errorf("expected to error creating a json, got %s", err)
 	}
-	for _, src := range []sourceType{partners, motives, cities, countries, cnaes, qualifications, natures} {
-		ls, err := PathsForSource(src, filepath.Join("..", "testdata"))
-		if err != nil {
-			t.Errorf("expected no error finding paths for %s, got %s", string(src), err)
-		}
-		for _, f := range ls {
-			copyFile(f, d)
-		}
-	}
-	l, err := newLookups(d)
+	srcDir := filepath.Join("..", "testdata")
+	l, err := newLookups(srcDir)
 	if err != nil {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 		return
 	}
-	if err := addPartners(d, d, &l); err != nil {
+	if err := addPartners(srcDir, outDir, &l); err != nil {
 		t.Errorf("expected no errors adding partners, got %s", err)
 		return
 	}

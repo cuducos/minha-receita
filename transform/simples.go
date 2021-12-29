@@ -71,8 +71,8 @@ func (t *simplesTask) consumeShard(n int) {
 	}
 }
 
-func addSimplesToCompanies(dir string) error {
-	s, err := newSource(simple, dir)
+func addSimplesToCompanies(srcDir, outDir string) error {
+	s, err := newSource(simple, srcDir)
 	if err != nil {
 		return fmt.Errorf("error creating source for simples: %w", err)
 	}
@@ -82,7 +82,7 @@ func addSimplesToCompanies(dir string) error {
 	}
 
 	t := simplesTask{
-		dir:     dir,
+		dir:     outDir,
 		success: make(chan struct{}),
 		errors:  make(chan error),
 		bar:     progressbar.Default(s.totalLines),
