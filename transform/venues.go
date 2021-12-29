@@ -7,7 +7,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-type task struct {
+type venuesTask struct {
 	source  *source
 	lookups *lookups
 	outDir  string
@@ -17,9 +17,9 @@ type task struct {
 	bar     *progressbar.ProgressBar
 }
 
-func (t *task) produceRows() {
+func (t *venuesTask) produceRows() {
 	for _, r := range t.source.readers {
-		go func(t *task, a *archivedCSV) {
+		go func(t *venuesTask, a *archivedCSV) {
 			for {
 				r, err := a.read()
 				if err == io.EOF {
@@ -35,7 +35,7 @@ func (t *task) produceRows() {
 	}
 }
 
-func (t *task) consumeRows() {
+func (t *venuesTask) consumeRows() {
 	for r := range t.queue {
 		c, err := newCompany(r, t.lookups)
 		if err != nil {
@@ -51,7 +51,7 @@ func (t *task) consumeRows() {
 	}
 }
 
-func (t *task) run(m int) error {
+func (t *venuesTask) run(m int) error {
 	defer t.source.close()
 	t.produceRows()
 	for i := 0; i < m; i++ {
@@ -75,7 +75,7 @@ func (t *task) run(m int) error {
 	}
 }
 
-func newTask(srcDir, outDir string) (*task, error) {
+func createJSONFiles(srcDir, outDir string) (*venuesTask, error) {
 	v, err := newSource(venues, srcDir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for venues from %s: %w", srcDir, err)
@@ -84,7 +84,7 @@ func newTask(srcDir, outDir string) (*task, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating look up tables from %s: %w", srcDir, err)
 	}
-	t := task{
+	t := venuesTask{
 		source:  v,
 		outDir:  outDir,
 		lookups: &l,
