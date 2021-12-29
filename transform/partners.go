@@ -159,6 +159,9 @@ func addPartners(srcDir, outDir string, l *lookups) error {
 		return fmt.Errorf("error creating source for partners: %w", err)
 	}
 	defer s.close()
+	if s.totalLines == 0 {
+		return nil
+	}
 
 	t := partnersTask{
 		outDir:  outDir,
@@ -167,6 +170,7 @@ func addPartners(srcDir, outDir string, l *lookups) error {
 		errors:  make(chan error),
 		bar:     progressbar.Default(s.totalLines),
 	}
+	t.bar.Describe("Adding partners")
 	for i := 0; i < numOfShards; i++ {
 		t.queues = append(t.queues, make(chan []string))
 	}

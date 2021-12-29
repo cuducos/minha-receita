@@ -26,11 +26,12 @@ type lookups struct {
 	countries      lookup
 	cnaes          lookup
 	qualifications lookup
+	natures        lookup
 }
 
 func newLookups(d string) (lookups, error) {
 	var ls []lookup
-	srcs := []sourceType{motives, cities, countries, cnaes, qualifications}
+	srcs := []sourceType{motives, cities, countries, cnaes, qualifications, natures}
 	for _, src := range srcs {
 		paths, err := PathsForSource(src, d)
 		if err != nil {
@@ -47,7 +48,7 @@ func newLookups(d string) (lookups, error) {
 	if len(ls) != len(srcs) {
 		return lookups{}, fmt.Errorf("error creating look up tables, expected %d items, got %d", len(srcs), len(ls))
 	}
-	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4]}, nil
+	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], ls[5]}, nil
 }
 
 func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {

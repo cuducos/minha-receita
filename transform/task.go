@@ -93,5 +93,6 @@ func newTask(srcDir, outDir string) (*task, error) {
 		paths:   make(chan string),
 		errors:  make(chan error),
 	}
+	t.bar.Describe("Creating a JSON file for each CNPJ")
 	return &t, nil
 }

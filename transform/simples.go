@@ -77,6 +77,9 @@ func addSimplesToCompanies(dir string) error {
 		return fmt.Errorf("error creating source for simples: %w", err)
 	}
 	defer s.close()
+	if s.totalLines == 0 {
+		return nil
+	}
 
 	t := simplesTask{
 		dir:     dir,
@@ -84,6 +87,7 @@ func addSimplesToCompanies(dir string) error {
 		errors:  make(chan error),
 		bar:     progressbar.Default(s.totalLines),
 	}
+	t.bar.Describe("Adding Simples and MEI")
 	for i := 0; i < numOfShards; i++ {
 		t.queues = append(t.queues, make(chan []string))
 	}

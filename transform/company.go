@@ -17,7 +17,6 @@ func companyNameClenup(n string) string {
 }
 
 type company struct {
-	// Fields from the venues dataset
 	CNPJ                             string    `json:"cnpj"`
 	IdentificadorMatrizFilial        *int      `json:"identificador_matriz_filial"`
 	NomeFantasia                     string    `json:"nome_fantasia"`
@@ -52,17 +51,17 @@ type company struct {
 	OpcaoPeloMEI                     *bool     `json:"opcao_pelo_mei"`
 	DataOpcaoPeloMEI                 *date     `json:"data_opcao_pelo_mei"`
 	DataExclusaoDoMEI                *date     `json:"data_exclusao_do_mei"`
+	RazaoSocial                      string    `json:"razao_social"`
+	CodigoNaturezaJuridica           *int      `json:"codigo_natureza_juridica"`
+	NaturezaJuridica                 *string   `json:"natureza_juridica"`
+	QualificacaoDoResponsavel        *int      `json:"qualificacao_do_responsavel"`
+	CapitalSocial                    *float32  `json:"capital_social"`
+	CodigoPorte                      *int      `json:"codigo_porte"`
+	Porte                            *string   `json:"porte"`
+	EnteFederativoResponsavel        *int      `json:"ente_federativo_responsavel"`
+	DescricaoPorte                   string    `json:"descricao_porte"`
 	QuadroSocietario                 []partner `json:"qsa"`
 	CNAESecundarios                  []cnae    `json:"cnaes_secundarios"`
-
-	// TODO this will be used further, it is here just to document the expected output ATM
-	// RazaoSocial               string  `json:"razao_social"`
-	// CodigoNaturezaJuridica    *int     `json:"codigo_natureza_juridica"`
-	// QualificacaoDoResponsavel *int     `json:"qualificacao_do_responsavel"`
-	// CapitalSocial             *float32 `json:"capital_social"`
-	// Porte                     *int     `json:"porte"`
-	// EnteFederativoResponsavel *int     `json:"ente_federativo_responsavel"`
-	// DescricaoPorte             string    `json:"descricao_porte"`
 }
 
 func (c *company) situacaoCadastral(v string) error {
