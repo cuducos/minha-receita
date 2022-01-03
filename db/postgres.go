@@ -24,7 +24,7 @@ const (
 	idFieldName     = "id"
 	jsonFieldName   = "json"
 	batchSize       = 2048
-	pgCopyProcesses = 128
+	pgCopyProcesses = 4
 )
 
 //go:embed postgres

@@ -113,7 +113,7 @@ func (t *readDirTask) consumer() {
 
 func allJSONFiles(dir string, paths chan string, errors chan error) {
 	var wg sync.WaitGroup
-	s := readDirTask{
+	t := readDirTask{
 		dir:    dir,
 		queue:  make(chan string, maxReadDirEntries),
 		paths:  paths,
@@ -121,10 +121,10 @@ func allJSONFiles(dir string, paths chan string, errors chan error) {
 		wg:     &wg,
 	}
 	for i := 0; i <= transform.MaxFilesOpened; i++ {
-		go s.consumer()
+		go t.consumer()
 	}
 	wg.Add(1)
-	s.queue <- dir
+	t.queue <- dir
 	wg.Wait()
 	close(paths)
 }
