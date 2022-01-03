@@ -235,7 +235,7 @@ func CLI() *cobra.Command {
 		c.Flags().StringVarP(&srcDir, "source-directory", "s", "data", "directory of original CSV files")
 	}
 	for _, c := range []*cobra.Command{transformCmd, importCmd} {
-		c.Flags().StringVarP(&outDir, "output-directory", "o", "data", "directory of generated JSON & CSV files")
+		c.Flags().StringVarP(&outDir, "output-directory", "o", "data", "directory of generated JSON files")
 	}
 	for _, c := range []*cobra.Command{createCmd, dropCmd, importCmd, apiCmd} {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "d", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
