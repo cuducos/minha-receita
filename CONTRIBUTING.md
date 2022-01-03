@@ -80,7 +80,7 @@ Na leitura desses arquivos existem campos que contém um código numérico, mas 
 
 #### Estratégia
 
-A etapa de transformação dos dados cria um diretório por CNPJ base, e, dentro dele, um arquivo JSON por pessoa jurídica. Por exemplo, para p CNPJ `19.131.243/0001-97` teremos um arquivo `19131243/19131243000197.json`.
+A etapa de transformação dos dados cria um diretório por CNPJ base, e, dentro dele, um arquivo JSON por pessoa jurídica. Por exemplo, para p CNPJ `19.131.243/0001-97` teremos um arquivo `19/131/243/000197.json`.
 
 1. Ler os arquivos CSV com o sufixo `EMPRECSV` e criar um arquivo JSON por CNPJ completo
     1. Incorporar nessa leitura as informações das tabelas de _look up_ `CNAECSV`, `MOTICSV`, `MUNICCSV` e `PAISCSV`
