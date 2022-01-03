@@ -9,7 +9,10 @@ Existem duas formas de rodar essa aplicação:
 
 _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
-É necessário cerca de 30Gb disponíveis de espaço em disco para armazenar os dados.
+É necessário cerca de 650Gb disponíveis de espaço em disco para armazenar os dados:
+* Os arquivos da Receita federal tem cerca de 6Gb
+* Os arquivos JSON gerados pela Minha Receita ocupam cerca de 400Gb (mas podem ser excluídos ao final do processo)
+* O banco de dados PostgreSQL, cerca de 240Gb
 
 ### Requisitos e instalação sem Docker
 
