@@ -4,28 +4,24 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"path/filepath"
 
+	"github.com/cuducos/go-cnpj"
 	"github.com/schollz/progressbar/v3"
 )
 
-func addSimplesToCompany(dir string, r []string) error {
-	b, err := pathForBaseCNPJ(r[0])
+func addSimplesToCompany(db database, r []string) error {
+	strs, err := db.ListCompanies(r[0])
 	if err != nil {
-		return fmt.Errorf("error getting the path for %s: %w", r[0], err)
+		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
 	}
-	ls, err := filepath.Glob(filepath.Join(dir, b, "*.json"))
-	if err != nil {
-		return fmt.Errorf("error in the glob pattern: %w", err)
-	}
-	if len(ls) == 0 {
-		log.Output(2, fmt.Sprintf("No JSON file found for CNPJ base %s", r[0]))
+	if len(strs) == 0 {
+		log.Output(2, fmt.Sprintf("No company found for CNPJ base %s", r[0]))
 		return nil
 	}
-	for _, f := range ls {
-		c, err := companyFromJSON(f)
+	for _, s := range strs {
+		c, err := companyFromString(s)
 		if err != nil {
-			return fmt.Errorf("error reading company from %s: %w", f, err)
+			return fmt.Errorf("error loading company: %w", err)
 		}
 		c.OpcaoPeloSimples = toBool(r[1])
 		c.DataOpcaoPeloSimples, err = toDate(r[2])
@@ -45,16 +41,15 @@ func addSimplesToCompany(dir string, r []string) error {
 		if err != nil {
 			return fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
 		}
-		f, err = c.toJSON(dir)
-		if err != nil {
-			return fmt.Errorf("error updating json file for %s: %w", c.CNPJ, err)
+		if err = c.Save(db); err != nil {
+			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
 	}
 	return nil
 }
 
 type simplesTask struct {
-	dir     string
+	db      database
 	queues  []chan []string
 	success chan struct{}
 	errors  chan error
@@ -63,7 +58,7 @@ type simplesTask struct {
 
 func (t *simplesTask) consumeShard(n int) {
 	for r := range t.queues[n] {
-		if err := addSimplesToCompany(t.dir, r); err != nil {
+		if err := addSimplesToCompany(t.db, r); err != nil {
 			t.errors <- fmt.Errorf("error processing simples %v: %w", r, err)
 			continue
 		}
@@ -71,8 +66,8 @@ func (t *simplesTask) consumeShard(n int) {
 	}
 }
 
-func addSimplesToCompanies(srcDir, outDir string) error {
-	s, err := newSource(simple, srcDir)
+func addSimplesToCompanies(dir string, db database) error {
+	s, err := newSource(simple, dir)
 	if err != nil {
 		return fmt.Errorf("error creating source for simples: %w", err)
 	}
@@ -82,7 +77,7 @@ func addSimplesToCompanies(srcDir, outDir string) error {
 	}
 
 	t := simplesTask{
-		dir:     outDir,
+		db:      db,
 		success: make(chan struct{}),
 		errors:  make(chan error),
 		bar:     progressbar.Default(s.totalLines),

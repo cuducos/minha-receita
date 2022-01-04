@@ -1,23 +1,24 @@
 package transform
 
 import (
-	"path/filepath"
 	"testing"
 	"time"
 )
 
 func TestAddSimplesToCompanies(t *testing.T) {
-	d := t.TempDir()
+	db := newMockDB()
 	c := company{CNPJ: "33683111000280"}
-	p, err := c.toJSON(d)
-	if err != nil {
-		t.Errorf("expected to error creating a json, got %s", err)
+	if err := c.Save(&db); err != nil {
+		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := addSimplesToCompanies(filepath.Join("..", "testdata"), d); err != nil {
+	if err := addSimplesToCompanies(testdata, &db); err != nil {
 		t.Errorf("expected no errors adding partners, got %s", err)
 		return
 	}
-	c, err = companyFromJSON(p)
+	c, err := companyFromDB(&db, c.CNPJ)
+	if err != nil {
+		t.Errorf("expected no errors loading company, got %s", err)
+	}
 	dataOpcaoPeloSimples, err := time.Parse("2006-01-02", "2014-01-01")
 	if err != nil {
 		t.Errorf("expected no errors creating date got %s", err)

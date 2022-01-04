@@ -4,27 +4,20 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"encoding/csv"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/cuducos/minha-receita/transform"
 	"github.com/go-pg/pg/v10"
-	"github.com/schollz/progressbar/v3"
 )
 
 const (
-	tableName       = "cnpj"
-	idFieldName     = "id"
-	jsonFieldName   = "json"
-	batchSize       = 2048
-	pgCopyProcesses = 4
+	tableName     = "cnpj"
+	idFieldName   = "id"
+	jsonFieldName = "json"
+	batchSize     = 2048
 )
 
 //go:embed postgres
@@ -60,24 +53,6 @@ func (p *PostgreSQL) sqlFromTemplate(n string) (string, error) {
 	return b.String(), nil
 }
 
-type row struct {
-	ID   string
-	JSON string
-}
-
-// GetCompany returns the JSON of a company based on a CNPJ number.
-func (p *PostgreSQL) GetCompany(n string) (string, error) {
-	sql, err := p.sqlFromTemplate("select.sql")
-	if err != nil {
-		return "", fmt.Errorf("error loading template: %w", err)
-	}
-	var r row
-	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
-		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(n), sql, err)
-	}
-	return r.JSON, nil
-}
-
 // CreateTable creates the required database table.
 func (p *PostgreSQL) CreateTable() error {
 	sql, err := p.sqlFromTemplate("create.sql")
@@ -106,107 +81,47 @@ func (p *PostgreSQL) DropTable() error {
 	return nil
 }
 
-func (p *PostgreSQL) copy(batch []row) error {
-	var data bytes.Buffer
-	w := csv.NewWriter(&data)
-	w.Write([]string{idFieldName, jsonFieldName})
-	for _, r := range batch {
-		w.Write([]string{r.ID, r.JSON})
+// SaveCompany saves performs a upsert in the database.
+func (p *PostgreSQL) SaveCompany(id, json string) error {
+	sql, err := p.sqlFromTemplate("upsert.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
 	}
-	w.Flush()
-
-	var out bytes.Buffer
-	cmd := exec.Command(
-		"psql",
-		p.uri,
-		"-c",
-		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, tableName),
-	)
-	cmd.Stdin = &data
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error while importing data to postgres %s: %w", out.String(), err)
+	if _, err := p.conn.Exec(sql, id, json, json); err != nil {
+		return fmt.Errorf("error upserting record %s: %s\n%w", cnpj.Mask(id), sql, err)
 	}
 	return nil
 }
 
-type importTask struct {
-	queue  chan string
-	errors chan error
-	done   chan struct{}
-	bar    *progressbar.ProgressBar
+type row struct {
+	ID   string
+	JSON string
 }
 
-func (p *PostgreSQL) batchCreator(t *importTask) {
-	var idx int
-	batch := make([]row, batchSize) // fixed size to make it quicker
-	for pth := range t.queue {
-		n, err := transform.CNPJForPath(pth)
-		if err != nil {
-			t.errors <- fmt.Errorf("error getting cnpj for path %s: %w", pth, err)
-			return
-		}
-		b, err := ioutil.ReadFile(pth)
-		if err != nil {
-			t.errors <- fmt.Errorf("error reading %s: %w", pth, err)
-			return
-		}
-		batch[idx] = row{n, strings.TrimSpace(string(b))}
-		idx++
-
-		if idx == batchSize {
-			if err := p.copy(batch); err != nil {
-				t.errors <- fmt.Errorf("error calling copy command: %w", err)
-				return
-			}
-			t.bar.Add(len(batch))
-			batch = make([]row, batchSize)
-			idx = 0
-		}
+// GetCompany returns the JSON of a company based on a CNPJ number.
+func (p *PostgreSQL) GetCompany(n string) (string, error) {
+	sql, err := p.sqlFromTemplate("get.sql")
+	if err != nil {
+		return "", fmt.Errorf("error loading template: %w", err)
 	}
-
-	// remove zero-values from the remaining batch before calling pgCopy
-	var c []row
-	for _, r := range batch {
-		if r.ID == "" {
-			break
-		}
-		c = append(c, r)
+	var r row
+	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
+		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(n), sql, err)
 	}
-	if len(c) > 0 {
-		if err := p.copy(c); err != nil {
-			t.errors <- fmt.Errorf("error calling copy command: %w", err)
-		}
-		t.bar.Add(len(c))
-	}
-	t.done <- struct{}{}
+	return r.JSON, nil
 }
 
-// ImportData reads data from JSON directory and imports it.
-func (p *PostgreSQL) ImportData(dir string) error {
-	t := importTask{
-		make(chan string),
-		make(chan error),
-		make(chan struct{}),
-		progressbar.Default(-1, "Writing CNPJ data to PostgreSQL"),
+// ListCompanies returns the JSON for all companies with a CNPJ starting with a `base`.
+func (p *PostgreSQL) ListCompanies(base string) ([]string, error) {
+	sql, err := p.sqlFromTemplate("list.sql")
+	if err != nil {
+		return []string{}, fmt.Errorf("error loading template: %w", err)
 	}
-	for i := 0; i < pgCopyProcesses; i++ {
-		go p.batchCreator(&t)
+	var j []string
+	if _, err := p.conn.Query(&j, sql, base+"%"); err != nil {
+		return []string{}, fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
 	}
-	go allJSONFiles(dir, t.queue, t.errors)
-
-	var c int
-	for {
-		select {
-		case err := <-t.errors:
-			return fmt.Errorf("error running import data: %w", err)
-		case <-t.done:
-			c++
-			if c == pgCopyProcesses {
-				return nil
-			}
-		}
-	}
+	return j, nil
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.

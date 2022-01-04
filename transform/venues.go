@@ -10,9 +10,10 @@ import (
 type venuesTask struct {
 	source  *source
 	lookups *lookups
-	outDir  string
+	dir     string
+	db      database
 	queue   chan []string
-	paths   chan string
+	created chan struct{}
 	errors  chan error
 	bar     *progressbar.ProgressBar
 }
@@ -42,12 +43,11 @@ func (t *venuesTask) consumeRows() {
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
 			break
 		}
-		p, err := c.toJSON(t.outDir)
-		if err != nil {
+		if err = c.Save(t.db); err != nil {
 			t.errors <- fmt.Errorf("error getting the JSON bytes for %v: %w", c, err)
 			break
 		}
-		t.paths <- p
+		t.created <- struct{}{}
 	}
 }
 
@@ -59,14 +59,14 @@ func (t *venuesTask) run(m int) error {
 	}
 	defer func() {
 		close(t.queue)
-		close(t.paths)
+		close(t.created)
 		close(t.errors)
 	}()
 	for {
 		select {
 		case err := <-t.errors:
 			return err
-		case <-t.paths:
+		case <-t.created:
 			t.bar.Add(1)
 			if t.bar.IsFinished() {
 				return nil
@@ -75,24 +75,25 @@ func (t *venuesTask) run(m int) error {
 	}
 }
 
-func createJSONFiles(srcDir, outDir string) (*venuesTask, error) {
-	v, err := newSource(venues, srcDir)
+func createJSONRecords(dir string, db database) (*venuesTask, error) {
+	v, err := newSource(venues, dir)
 	if err != nil {
-		return nil, fmt.Errorf("error creating a source for venues from %s: %w", srcDir, err)
+		return nil, fmt.Errorf("error creating a source for venues from %s: %w", dir, err)
 	}
-	l, err := newLookups(srcDir)
+	l, err := newLookups(dir)
 	if err != nil {
-		return nil, fmt.Errorf("error creating look up tables from %s: %w", srcDir, err)
+		return nil, fmt.Errorf("error creating look up tables from %s: %w", dir, err)
 	}
 	t := venuesTask{
 		source:  v,
-		outDir:  outDir,
+		dir:     dir,
+		db:      db,
 		lookups: &l,
 		bar:     progressbar.Default(v.totalLines),
 		queue:   make(chan []string),
-		paths:   make(chan string),
+		created: make(chan struct{}),
 		errors:  make(chan error),
 	}
-	t.bar.Describe("Creating a JSON file for each CNPJ")
+	t.bar.Describe("Creating the JSON data for each CNPJ")
 	return &t, nil
 }

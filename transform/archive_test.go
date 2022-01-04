@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var path = filepath.Join("..", "testdata", "F.K03200$Z.D11009.MOTICSV.zip")
+var path = filepath.Join(testdata, "F.K03200$Z.D11009.MOTICSV.zip")
 
 func TestArchivedCSV(t *testing.T) {
 	t.Run("read", func(t *testing.T) {

@@ -1,12 +1,11 @@
 package transform
 
 import (
-	"path/filepath"
 	"testing"
 )
 
 func TestSource(t *testing.T) {
-	s, err := newSource(base, filepath.Join("..", "testdata"))
+	s, err := newSource(base, testdata)
 
 	if err != nil {
 		t.Errorf("expected no error creating a source, got: %s", err)

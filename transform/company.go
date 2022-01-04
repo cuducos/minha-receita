@@ -3,11 +3,10 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/cuducos/go-cnpj"
 )
 
 var companyNameClenupRegex = regexp.MustCompile(`(\D)(\d{3})(\d{5})(\d{3})$`) // masks CPF from in MEI names
@@ -155,36 +154,26 @@ func newCompany(row []string, l *lookups) (company, error) {
 	return c, nil
 }
 
-func (c *company) toJSON(outDir string) (string, error) {
+func (c *company) Save(db database) error {
 	b, err := json.Marshal(c)
 	if err != nil {
-		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
+		return fmt.Errorf("error while mashaling company JSON: %w", err)
 	}
-	n, err := PathForCNPJ(c.CNPJ)
-	if err != nil {
-		return "", fmt.Errorf("error while getting the file path for %s: %w", c.CNPJ, err)
-	}
-
-	p := filepath.Join(outDir, n)
-	err = os.MkdirAll(filepath.Dir(p), 0755)
-	if err != nil {
-		return "", fmt.Errorf("error creating %s: %w", filepath.Dir(p), err)
-	}
-
-	if err := ioutil.WriteFile(p, b, 0644); err != nil {
-		return "", fmt.Errorf("error writing to %s: %w", p, err)
-	}
-	return p, nil
+	return db.SaveCompany(c.CNPJ, string(b))
 }
 
-func companyFromJSON(p string) (company, error) {
-	j, err := ioutil.ReadFile(p)
-	if err != nil {
-		return company{}, fmt.Errorf("error reading %s: %w", p, err)
-	}
+func companyFromString(j string) (company, error) {
 	var c company
-	if err := json.Unmarshal(j, &c); err != nil {
-		return company{}, fmt.Errorf("error unmarshaling %s: %w", p, err)
+	if err := json.Unmarshal([]byte(j), &c); err != nil {
+		return company{}, fmt.Errorf("error unmarshaling: %w", err)
 	}
 	return c, nil
+}
+
+func companyFromDB(db database, n string) (company, error) {
+	j, err := db.GetCompany(cnpj.Unmask(n))
+	if err != nil {
+		return company{}, fmt.Errorf("error loading %s: %w", cnpj.Mask(n), err)
+	}
+	return companyFromString(j)
 }

@@ -1,29 +1,26 @@
 package transform
 
 import (
-	"path/filepath"
 	"testing"
 	"time"
 )
 
 func TestAddPartners(t *testing.T) {
-	outDir := t.TempDir()
+	db := newMockDB()
 	c := company{CNPJ: "33683111000280"}
-	p, err := c.toJSON(outDir)
-	if err != nil {
-		t.Errorf("expected to error creating a json, got %s", err)
+	if err := c.Save(&db); err != nil {
+		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	srcDir := filepath.Join("..", "testdata")
-	l, err := newLookups(srcDir)
+	l, err := newLookups(testdata)
 	if err != nil {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 		return
 	}
-	if err := addPartners(srcDir, outDir, &l); err != nil {
+	if err := addPartners(testdata, &db, &l); err != nil {
 		t.Errorf("expected no errors adding partners, got %s", err)
 		return
 	}
-	c, err = companyFromJSON(p)
+	c, err = companyFromDB(&db, c.CNPJ)
 	if len(c.QuadroSocietario) != 6 {
 		t.Errorf("expected 6 partners, got %d", len(c.QuadroSocietario))
 	}
