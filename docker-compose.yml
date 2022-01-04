@@ -18,6 +18,7 @@ services:
       POSTGRES_PASSWORD: minhareceita
       POSTGRES_USER: minhareceita
       POSTGRES_DB: minhareceita
+    command: ["postgres", "-c", "log_statement=all"]
 
   postgres:
     image: postgres:12.5-alpine

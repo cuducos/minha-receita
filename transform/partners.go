@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"path/filepath"
 
+	"github.com/cuducos/go-cnpj"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -103,39 +103,34 @@ func newPartner(l *lookups, r []string) (partner, error) {
 	return p, nil
 }
 
-func addPartner(l *lookups, dir string, r []string) error {
+func addPartner(l *lookups, db database, r []string) error {
 	p, err := newPartner(l, r)
 	if err != nil {
 		return fmt.Errorf("error creating partner for %v: %w", r, err)
 	}
-	b, err := pathForBaseCNPJ(r[0])
+	strs, err := db.ListCompanies(r[0])
 	if err != nil {
-		return fmt.Errorf("error getting the path for %s: %w", r[0], err)
+		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
 	}
-	ls, err := filepath.Glob(filepath.Join(dir, b, "*.json"))
-	if err != nil {
-		return fmt.Errorf("error in the glob pattern: %w", err)
-	}
-	if len(ls) == 0 {
-		log.Output(2, fmt.Sprintf("No JSON file found for CNPJ base %s", r[0]))
+	if len(strs) == 0 {
+		log.Output(2, fmt.Sprintf("No company found for CNPJ base %s", r[0]))
 		return nil
 	}
-	for _, f := range ls {
-		c, err := companyFromJSON(f)
+	for _, s := range strs {
+		c, err := companyFromString(s)
 		if err != nil {
-			return fmt.Errorf("error reading company from %s: %w", f, err)
+			return fmt.Errorf("error loading company: %w", err)
 		}
 		c.QuadroSocietario = append(c.QuadroSocietario, p)
-		f, err = c.toJSON(dir)
-		if err != nil {
-			return fmt.Errorf("error updating json file for %s: %w", c.CNPJ, err)
+		if err = c.Save(db); err != nil {
+			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
 	}
 	return nil
 }
 
 type partnersTask struct {
-	outDir  string
+	db      database
 	lookups *lookups
 	queues  []chan []string
 	success chan struct{}
@@ -145,7 +140,7 @@ type partnersTask struct {
 
 func (t *partnersTask) consumeShard(n int) {
 	for r := range t.queues[n] {
-		if err := addPartner(t.lookups, t.outDir, r); err != nil {
+		if err := addPartner(t.lookups, t.db, r); err != nil {
 			t.errors <- fmt.Errorf("error processing partner %v: %w", r, err)
 			continue
 		}
@@ -153,8 +148,8 @@ func (t *partnersTask) consumeShard(n int) {
 	}
 }
 
-func addPartners(srcDir, outDir string, l *lookups) error {
-	s, err := newSource(partners, srcDir)
+func addPartners(dir string, db database, l *lookups) error {
+	s, err := newSource(partners, dir)
 	if err != nil {
 		return fmt.Errorf("error creating source for partners: %w", err)
 	}
@@ -164,7 +159,7 @@ func addPartners(srcDir, outDir string, l *lookups) error {
 	}
 
 	t := partnersTask{
-		outDir:  outDir,
+		db:      db,
 		lookups: l,
 		success: make(chan struct{}),
 		errors:  make(chan error),

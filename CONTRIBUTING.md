@@ -20,10 +20,16 @@ Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
 $ docker-compose up -d postgres
 ```
 
-Existe também um banco de dados para teste, que não persiste dados:
+Existe também um banco de dados para teste, que não persiste dados e que loga todas as queries:
 
 ```console
 $ docker-compose up -d postgres_test
+```
+
+Para visualizar as queries efetuadas:
+
+```console
+$ docker-compose logs postgres_test
 ```
 
 As configurações padrão desses bancos são:
@@ -80,15 +86,15 @@ Na leitura desses arquivos existem campos que contém um código numérico, mas 
 
 #### Estratégia
 
-A etapa de transformação dos dados cria um diretório por CNPJ base, e, dentro dele, um arquivo JSON por pessoa jurídica. Por exemplo, para p CNPJ `19.131.243/0001-97` teremos um arquivo `19/131/243/000197.json`.
+A etapa de transformação dos dados cria uma linha no banco de dados para cada CNPJ listado em `ESTABELE`, e depois “enriquece” essa linha com os CSVs auxiliares:
 
-1. Ler os arquivos CSV com o sufixo `EMPRECSV` e criar um arquivo JSON por CNPJ completo
+1. Ler os arquivos CSV com o sufixo `ESTABELE` e criar um registro por CNPJ completo
     1. Incorporar nessa leitura as informações das tabelas de _look up_ `CNAECSV`, `MOTICSV`, `MUNICCSV` e `PAISCSV`
-1. Ler os arquivos CSV com sufixo `EMPRECSV` e enriquecer os arquivos JSON com essas informações
+1. Ler os arquivos CSV com sufixo `EMPRECSV` e enriquecer as linhas do banco de dados com essas informações
     1. Incorporar nessa leitura as informações da tabela de _look up_ `NATJUCSV`
-1. Ler os arquivos CSV com sufixo `SOCIOCSV` e enriquecer os arquivos JSON com essas informações
+1. Ler os arquivos CSV com sufixo `SOCIOCSV` e enriquecer as linhas do banco de dados com essas informações
     1. Incorporar nessa leitura as informações da tabela de _look up_ `QUALSCSV`
-1. Ler os arquivos CSV com sufixo `SIMPLES` e enriquecer os arquivos JSON com essas informações
+1. Ler os arquivos CSV com sufixo `SIMPLES` e enriquecer as linhas do banco de dados com essas informações
 
 ## Documentação
 

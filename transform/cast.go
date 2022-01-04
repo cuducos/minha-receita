@@ -1,4 +1,4 @@
-// Package transform incluse these caste functions allow the project to
+// Package transform incluse these cast functions to allow the project to
 // accomplish two things:
 //
 // * convert strings from the CSV files to other formats (e.g. int, float32,
@@ -8,7 +8,7 @@
 // This is achieved using pointers, so we have nil as a marker for missing
 // value.
 //
-// Since our use case involves serving this data in JSON file, this is crucial
+// Since our use case involves serving this data in JSON format, this is crucial
 // so we can use `null` when there is no value, and "0" when the value of an
 // integer, for example, is 0.
 package transform

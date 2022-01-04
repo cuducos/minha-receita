@@ -41,17 +41,18 @@ Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
 const transformHelper = `
 Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
-files) into a a group of JSON files, 1 per CNPJ, joining information from all
-other source CSV files.`
+files) into records in the database, 1 record per CNPJ, joining information
+from all other source CSV files.`
 
 const defaultPort = "8000"
 
 var (
-	outDir string
-	srcDir string
-
+	dir            string
 	databaseURI    string
 	postgresSchema string
+
+	// transform
+	maxParallelDBQueries int
 
 	// download
 	urlsOnly          bool
@@ -65,7 +66,7 @@ var (
 	newRelic string
 )
 
-func assertDirExists(dir string) error {
+func assertDirExists() error {
 	i, err := os.Stat(dir)
 	if os.IsNotExist(err) {
 		return fmt.Errorf("directory %s does not exist", dir)
@@ -128,29 +129,35 @@ var downloadCmd = &cobra.Command{
 	Short: "Downloads the required ZIP and Excel files",
 	Long:  downloadHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		if err := assertDirExists(srcDir); err != nil {
+		if err := assertDirExists(); err != nil {
 			return err
 		}
 		dur, err := time.ParseDuration(timeout)
 		if err != nil {
 			return err
 		}
-		return download.Download(srcDir, dur, urlsOnly, skipExistingFiles, parallelDownloads, downloadRetries)
+		return download.Download(dir, dur, urlsOnly, skipExistingFiles, parallelDownloads, downloadRetries)
 	},
 }
 
 var transformCmd = &cobra.Command{
 	Use:   "transform",
-	Short: "Transforms the CSV files into a group of JSON files",
+	Short: "Transforms the CSV files into database records",
 	Long:  transformHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		if err := assertDirExists(srcDir); err != nil {
+		if err := assertDirExists(); err != nil {
 			return err
 		}
-		if err := assertDirExists(outDir); err != nil {
+		u, err := loadDatabaseURI()
+		if err != nil {
 			return err
 		}
-		return transform.Transform(srcDir, outDir)
+		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		if err != nil {
+			return err
+		}
+		defer pg.Close()
+		return transform.Transform(dir, &pg, maxParallelDBQueries)
 	},
 }
 
@@ -188,28 +195,30 @@ var dropCmd = &cobra.Command{
 	},
 }
 
-var importCmd = &cobra.Command{
-	Use:   "import",
-	Short: "Imports the data to PostgreSQL",
-	RunE: func(_ *cobra.Command, _ []string) error {
-		if err := assertDirExists(outDir); err != nil {
-			return err
-		}
-		u, err := loadDatabaseURI()
-		if err != nil {
-			return err
-		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema)
-		if err != nil {
-			return err
-		}
-		defer pg.Close()
-		return pg.ImportData(outDir)
-	},
-}
-
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
+	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
+	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
+	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
+	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")
+	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.MaxParallel, "maximum parallel downloads")
+	transformCmd.Flags().IntVarP(
+		&maxParallelDBQueries,
+		"max-parallel-db-queries",
+		"m",
+		transform.MaxParallelDBQueries,
+		"maximum parallel database queries",
+	)
+	for _, c := range []*cobra.Command{downloadCmd, transformCmd} {
+		c.Flags().StringVarP(&dir, "directory", "d", "data", "directory of the downloaded CSV files")
+	}
+	for _, c := range []*cobra.Command{transformCmd, createCmd, dropCmd, apiCmd} {
+		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
+		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
+	}
+	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd} {
+		rootCmd.AddCommand(c)
+	}
 	apiCmd.Flags().StringVarP(
 		&port,
 		"port",
@@ -224,26 +233,5 @@ func CLI() *cobra.Command {
 		"",
 		"New Relic license key (deafult NEW_RELIC_LICENSE_KEY environment variable)",
 	)
-
-	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
-	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
-	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
-	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")
-	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.MaxParallel, "maximum parallel downloads")
-
-	for _, c := range []*cobra.Command{downloadCmd, transformCmd} {
-		c.Flags().StringVarP(&srcDir, "source-directory", "s", "data", "directory of original CSV files")
-	}
-	for _, c := range []*cobra.Command{transformCmd, importCmd} {
-		c.Flags().StringVarP(&outDir, "output-directory", "o", "data", "directory of generated JSON files")
-	}
-	for _, c := range []*cobra.Command{createCmd, dropCmd, importCmd, apiCmd} {
-		c.Flags().StringVarP(&databaseURI, "database-uri", "d", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
-		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
-	}
-
-	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, importCmd} {
-		rootCmd.AddCommand(c)
-	}
 	return rootCmd
 }

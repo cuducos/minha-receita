@@ -9,15 +9,13 @@ Existem duas formas de rodar essa aplicação:
 
 _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
-É necessário cerca de 650Gb disponíveis de espaço em disco para armazenar os dados:
+É necessário cerca de 130Gb disponíveis de espaço em disco para armazenar os dados:
 * Os arquivos da Receita federal tem cerca de 6Gb
-* Os arquivos JSON gerados pela Minha Receita ocupam cerca de 400Gb (mas podem ser excluídos ao final do processo)
-* O banco de dados PostgreSQL, cerca de 240Gb
+* O banco de dados PostgreSQL gerado utiliza cerca de 120Gb
 
 ### Requisitos e instalação sem Docker
 
-* [Go](https://golang.org/) versão 1.16
-* Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
+* [Go](https://golang.org/) versão 1.17
 
 Baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
 

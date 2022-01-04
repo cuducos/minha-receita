@@ -1,8 +1,6 @@
 package transform
 
 import (
-	"io/ioutil"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -102,7 +100,7 @@ func TestNewCompany(t *testing.T) {
 		},
 	}
 
-	lookups, err := newLookups(filepath.Join("..", "testdata"))
+	lookups, err := newLookups(testdata)
 	if err != nil {
 		t.Errorf("expected no errors creating look up tables, got %v", err)
 	}
@@ -229,9 +227,8 @@ func TestNewCompany(t *testing.T) {
 	}
 }
 
-func TestCompanyToJson(t *testing.T) {
-	d := t.TempDir()
-
+func TestCompanySave(t *testing.T) {
+	db := newMockDB()
 	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, "19670630")
 	if err != nil {
 		t.Errorf("error creating DataInicioAtividade for expected company: %s", err)
@@ -243,17 +240,10 @@ func TestCompanyToJson(t *testing.T) {
 		DataSituacaoEspecial: nil,
 	}
 
-	p, err := c.toJSON(d)
-	if err != nil {
-		t.Errorf("expected no error in converting %s to JSON, got %s", cnpj.Mask(c.CNPJ), err)
+	if err := c.Save(&db); err != nil {
+		t.Errorf("expected no error saving %s, got %s", cnpj.Mask(c.CNPJ), err)
 	}
-
-	b, err := ioutil.ReadFile(p)
-	if err != nil {
-		t.Errorf("expected no error reading %s, got %s", p, err)
-	}
-
-	got := string(b)
+	got := db.storage[c.CNPJ]
 	if !strings.Contains(got, `"cnpj":"33683111000280"`) {
 		t.Errorf("expected to find %s in a CNPJ field in %s", c.CNPJ, got)
 	}
@@ -265,11 +255,30 @@ func TestCompanyToJson(t *testing.T) {
 	}
 }
 
-func TestCompanyFromJson(t *testing.T) {
-	d := t.TempDir()
+func TestCompanyFromString(t *testing.T) {
 	c := company{CNPJ: "33683111000280", QuadroSocietario: []partner{{CNPJCPFDoSocio: "42"}}}
-	p, err := c.toJSON(d)
-	got, err := companyFromJSON(p)
+	got, err := companyFromString(`{"cnpj":"33683111000280","qsa":[{"cnpj_cpf_do_socio":"42"}]}`)
+	if err != nil {
+		t.Errorf("expected no error creating a company from json, got %s", err)
+	}
+	if got.CNPJ != c.CNPJ {
+		t.Errorf("expected cnpj to be %s, got %s", c.CNPJ, got.CNPJ)
+	}
+	if got.QuadroSocietario[0].CNPJCPFDoSocio != c.QuadroSocietario[0].CNPJCPFDoSocio {
+		t.Errorf("expected cnpj/cpf to be %s, got %s",
+			c.QuadroSocietario[0].CNPJCPFDoSocio,
+			got.QuadroSocietario[0].CNPJCPFDoSocio,
+		)
+	}
+}
+
+func TestCompanyFromDB(t *testing.T) {
+	db := newMockDB()
+	c := company{CNPJ: "33683111000280", QuadroSocietario: []partner{{CNPJCPFDoSocio: "42"}}}
+	if err := c.Save(&db); err != nil {
+		t.Errorf("expected no error saving %s, got %s", cnpj.Mask(c.CNPJ), err)
+	}
+	got, err := companyFromDB(&db, c.CNPJ)
 	if err != nil {
 		t.Errorf("expected no error creating a company from json, got %s", err)
 	}

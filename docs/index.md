@@ -10,8 +10,7 @@ Pela [Lei de Acesso à Informação](http://www.acessoainformacao.gov.br/assunto
 
 O código desse repositório faz esses dados ainda mais acessíveis:
 
-1. Consolidar todas as informações de um determinado CNPJ em um arquivo único (no caso, um JSON por CNPJ)
-1. Importando automaticamente os dados para um banco de dados PostgreSQL
+1. Consolidar todas as informações em um banco de dados único
 1. Fornecendo uma API web para a consulta de dados de um CNPJ
 
 ## Qual a URL para acesso?

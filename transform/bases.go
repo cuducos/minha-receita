@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"path/filepath"
 
+	"github.com/cuducos/go-cnpj"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -67,38 +67,32 @@ func (c *company) base(r []string, l *lookups) error {
 	return nil
 }
 
-func addBase(l *lookups, dir string, r []string) error {
-	b, err := pathForBaseCNPJ(r[0])
+func addBase(l *lookups, db database, r []string) error {
+	strs, err := db.ListCompanies(r[0])
 	if err != nil {
-		return fmt.Errorf("error getting the path for %s: %w", r[0], err)
+		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
 	}
-	ls, err := filepath.Glob(filepath.Join(dir, b, "*.json"))
-	if err != nil {
-		return fmt.Errorf("error in the glob pattern: %w", err)
-	}
-	if len(ls) == 0 {
-		log.Output(2, fmt.Sprintf("No JSON file found for CNPJ base %s", r[0]))
+	if len(strs) == 0 {
+		log.Output(2, fmt.Sprintf("No company found for CNPJ base %s", r[0]))
 		return nil
 	}
-	for _, f := range ls {
-		c, err := companyFromJSON(f)
+	for _, s := range strs {
+		c, err := companyFromString(s)
 		if err != nil {
-			return fmt.Errorf("error reading company from %s: %w", f, err)
+			return fmt.Errorf("error loading company: %w", err)
 		}
-		err = c.base(r, l)
-		if err != nil {
-			return fmt.Errorf("error filling company from %s: %w", f, err)
+		if err = c.base(r, l); err != nil {
+			return fmt.Errorf("error adding base for company %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
-		f, err = c.toJSON(dir)
-		if err != nil {
-			return err
+		if err = c.Save(db); err != nil {
+			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
 	}
 	return nil
 }
 
 type baseTask struct {
-	outDir  string
+	db      database
 	lookups *lookups
 	queues  []chan []string
 	success chan struct{}
@@ -108,7 +102,7 @@ type baseTask struct {
 
 func (t *baseTask) consumeShard(n int) {
 	for r := range t.queues[n] {
-		if err := addBase(t.lookups, t.outDir, r); err != nil {
+		if err := addBase(t.lookups, t.db, r); err != nil {
 			t.errors <- fmt.Errorf("error processing base cnpj %v: %w", r, err)
 			continue
 		}
@@ -116,8 +110,8 @@ func (t *baseTask) consumeShard(n int) {
 	}
 }
 
-func addBases(srcDir, outDir string, l *lookups) error {
-	s, err := newSource(base, srcDir)
+func addBases(dir string, db database, l *lookups) error {
+	s, err := newSource(base, dir)
 	if err != nil {
 		return fmt.Errorf("error creating source for base cnpj: %w", err)
 	}
@@ -127,7 +121,7 @@ func addBases(srcDir, outDir string, l *lookups) error {
 	}
 
 	t := baseTask{
-		outDir:  outDir,
+		db:      db,
 		lookups: l,
 		success: make(chan struct{}),
 		errors:  make(chan error),

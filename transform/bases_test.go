@@ -1,19 +1,18 @@
 package transform
 
 import (
-	"path/filepath"
 	"testing"
+
+	"github.com/cuducos/go-cnpj"
 )
 
 func TestAddBases(t *testing.T) {
-	outDir := t.TempDir()
+	db := newMockDB()
 	c := company{CNPJ: "33683111000280"}
-	p, err := c.toJSON(outDir)
-	if err != nil {
-		t.Errorf("expected to error creating a json, got %s", err)
+	if err := c.Save(&db); err != nil {
+		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	srcDir := filepath.Join("..", "testdata")
-	l, err := newLookups(srcDir)
+	l, err := newLookups(testdata)
 	if err != nil {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 		return
@@ -35,13 +34,13 @@ func TestAddBases(t *testing.T) {
 		EnteFederativoResponsavel: nil,
 	}
 
-	if err := addBases(srcDir, outDir, &l); err != nil {
+	if err := addBases(testdata, &db, &l); err != nil {
 		t.Errorf("expected no errors adding base cnpj, got %s", err)
 		return
 	}
-	got, err := companyFromJSON(p)
+	got, err := companyFromDB(&db, c.CNPJ)
 	if err != nil {
-		t.Errorf("expected no errors loading company from %s, got %s", p, err)
+		t.Errorf("expected no errors loading company from %s, got %s", cnpj.Mask(c.CNPJ), err)
 		return
 	}
 	if got.RazaoSocial != expected.RazaoSocial {

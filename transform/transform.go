@@ -4,26 +4,31 @@ import (
 	"fmt"
 )
 
-// MaxFilesOpened is the maximum number of files opened at the same time.
-const MaxFilesOpened = 512 // TODO how to optimize this number?
+// MaxParallelDBQueries is the default for maximum number of parallels save
+// queries sent to the database
+const MaxParallelDBQueries = 512
 
-// Transform the downloaded files for company venues creating a JSON file per CNPJ
-func Transform(srcDir, outDir string) error {
-	t, err := createJSONFiles(srcDir, outDir)
+type database interface {
+	GetCompany(string) (string, error)
+	ListCompanies(string) ([]string, error)
+	SaveCompany(string, string) error
+}
+
+// Transform the downloaded files for company venues creating a database record
+// per CNPJ
+func Transform(dir string, db database, maxParallelDBQueries int) error {
+	t, err := createJSONRecords(dir, db)
 	if err != nil {
-		return fmt.Errorf("error creating new task for venues in %s: %w", srcDir, err)
+		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}
-	if err := t.run(MaxFilesOpened); err != nil {
+	if err := t.run(maxParallelDBQueries); err != nil {
 		return err
 	}
-	if err := addBases(srcDir, outDir, t.lookups); err != nil {
+	if err := addBases(dir, db, t.lookups); err != nil {
 		return err
 	}
-	if err := addBases(srcDir, outDir, t.lookups); err != nil {
+	if err := addPartners(dir, db, t.lookups); err != nil {
 		return err
 	}
-	if err := addPartners(srcDir, outDir, t.lookups); err != nil {
-		return err
-	}
-	return addSimplesToCompanies(srcDir, outDir)
+	return addSimplesToCompanies(dir, db)
 }
