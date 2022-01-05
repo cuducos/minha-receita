@@ -25,7 +25,7 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.CreateTable(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
-	if err := pg.SaveCompany(id, json); err != nil {
+	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	got, err := pg.GetCompany("33683111000280")
@@ -35,8 +35,15 @@ func TestPostgresDB(t *testing.T) {
 	if got != json {
 		t.Errorf("expected json to be %s, got %s", json, got)
 	}
-	if err := pg.SaveCompany(id, newJSON); err != nil {
+	if err := pg.UpdateCompany(id, newJSON); err != nil {
 		t.Errorf("expected no error updating a company, got %s", err)
+	}
+	got, err = pg.GetCompany("33683111000280")
+	if err != nil {
+		t.Errorf("expected no error getting a company, got %s", err)
+	}
+	if got != newJSON {
+		t.Errorf("expected json to be %s, got %s", newJSON, got)
 	}
 	list, err := pg.ListCompanies(id[:8])
 	if err != nil {
@@ -44,9 +51,6 @@ func TestPostgresDB(t *testing.T) {
 	}
 	if len(list) != 1 {
 		t.Errorf("expected list to have 1 company, got %d", len(list))
-	}
-	if list[0] != newJSON {
-		t.Errorf("expected first record to be %s, got %s", newJSON, list[0])
 	}
 	if err := pg.DropTable(); err != nil {
 		t.Errorf("expected no error dropping the table, got %s", err)

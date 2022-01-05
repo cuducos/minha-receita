@@ -84,7 +84,7 @@ func addBase(l *lookups, db database, r []string) error {
 		if err = c.base(r, l); err != nil {
 			return fmt.Errorf("error adding base for company %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
-		if err = c.Save(db); err != nil {
+		if err = c.Update(db); err != nil {
 			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
 	}

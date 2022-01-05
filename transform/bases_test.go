@@ -9,7 +9,7 @@ import (
 func TestAddBases(t *testing.T) {
 	db := newMockDB()
 	c := company{CNPJ: "33683111000280"}
-	if err := c.Save(&db); err != nil {
+	if err := c.Create(&db); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	l, err := newLookups(testdata)

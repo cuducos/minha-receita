@@ -122,7 +122,7 @@ func addPartner(l *lookups, db database, r []string) error {
 			return fmt.Errorf("error loading company: %w", err)
 		}
 		c.QuadroSocietario = append(c.QuadroSocietario, p)
-		if err = c.Save(db); err != nil {
+		if err = c.Update(db); err != nil {
 			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
 	}
