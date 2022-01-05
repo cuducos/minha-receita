@@ -54,6 +54,7 @@ var (
 	// transform
 	maxParallelDBQueries int
 	batchSize            int
+	cleanUp              bool
 
 	// download
 	urlsOnly          bool
@@ -158,6 +159,15 @@ var transformCmd = &cobra.Command{
 			return err
 		}
 		defer pg.Close()
+
+		if cleanUp {
+			if err := pg.DropTable(); err != nil {
+				return err
+			}
+			if err := pg.CreateTable(); err != nil {
+				return err
+			}
+		}
 		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize)
 	},
 }
@@ -211,6 +221,7 @@ func CLI() *cobra.Command {
 		"maximum parallel database queries",
 	)
 	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
+	transformCmd.Flags().BoolVarP(&cleanUp, "clean-up", "c", cleanUp, "drop & recreate the database table before starting")
 	for _, c := range []*cobra.Command{downloadCmd, transformCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "directory of the downloaded CSV files")
 	}
