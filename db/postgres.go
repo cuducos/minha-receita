@@ -65,7 +65,6 @@ func (p *PostgreSQL) CreateTable() error {
 	if _, err := p.conn.Exec(sql); err != nil {
 		return fmt.Errorf("error creating table with: %s\n%w", sql, err)
 	}
-	log.Output(2, "Done!")
 	return nil
 }
 
@@ -79,7 +78,6 @@ func (p *PostgreSQL) DropTable() error {
 	if _, err := p.conn.Exec(sql); err != nil {
 		return fmt.Errorf("error dropping table with: %s\n%w", sql, err)
 	}
-	log.Output(2, "Done!")
 	return nil
 }
 
