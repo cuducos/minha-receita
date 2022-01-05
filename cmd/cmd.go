@@ -53,6 +53,7 @@ var (
 
 	// transform
 	maxParallelDBQueries int
+	batchSize            int
 
 	// download
 	urlsOnly          bool
@@ -157,7 +158,7 @@ var transformCmd = &cobra.Command{
 			return err
 		}
 		defer pg.Close()
-		return transform.Transform(dir, &pg, maxParallelDBQueries)
+		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize)
 	},
 }
 
@@ -209,6 +210,7 @@ func CLI() *cobra.Command {
 		transform.MaxParallelDBQueries,
 		"maximum parallel database queries",
 	)
+	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
 	for _, c := range []*cobra.Command{downloadCmd, transformCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "directory of the downloaded CSV files")
 	}

@@ -8,7 +8,7 @@ import (
 func TestAddSimplesToCompanies(t *testing.T) {
 	db := newMockDB()
 	c := company{CNPJ: "33683111000280"}
-	if err := c.Save(&db); err != nil {
+	if err := c.Create(&db); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	if err := addSimplesToCompanies(testdata, &db); err != nil {

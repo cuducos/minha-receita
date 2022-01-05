@@ -6,7 +6,7 @@ import (
 
 func TestTaskRun(t *testing.T) {
 	db := newMockDB()
-	r, err := createJSONRecords(testdata, &db)
+	r, err := createJSONRecordsTask(testdata, &db, 2)
 	if err != nil {
 		t.Errorf("expected no error creating task, got %s", err)
 	}

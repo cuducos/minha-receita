@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"encoding/csv"
 	"fmt"
 	"log"
+	"os/exec"
 	"path/filepath"
 	"text/template"
 
@@ -81,14 +83,41 @@ func (p *PostgreSQL) DropTable() error {
 	return nil
 }
 
-// SaveCompany saves performs a upsert in the database.
-func (p *PostgreSQL) SaveCompany(id, json string) error {
-	sql, err := p.sqlFromTemplate("upsert.sql")
+// UpdateCompany performs a update in the database.
+func (p *PostgreSQL) UpdateCompany(id, json string) error {
+	sql, err := p.sqlFromTemplate("update.sql")
 	if err != nil {
 		return fmt.Errorf("error loading template: %w", err)
 	}
-	if _, err := p.conn.Exec(sql, id, json, json); err != nil {
-		return fmt.Errorf("error upserting record %s: %s\n%w", cnpj.Mask(id), sql, err)
+	if _, err := p.conn.Exec(sql, json, id); err != nil {
+		return fmt.Errorf("error updating record %s: %s\n%w", cnpj.Mask(id), sql, err)
+	}
+	return nil
+}
+
+// CreateCompanies performs a copy to create a batch of companies in the
+// database. It expects an array and each item should be another array with only
+// two items: the ID and the JSON field values.
+func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
+	var data bytes.Buffer
+	w := csv.NewWriter(&data)
+	w.Write([]string{idFieldName, jsonFieldName})
+	for _, r := range batch {
+		w.Write(r)
+	}
+	w.Flush()
+
+	var out bytes.Buffer
+	cmd := exec.Command(
+		"psql",
+		p.uri,
+		"-c",
+		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, tableName),
+	)
+	cmd.Stdin = &data
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error while importing data to postgres %s: %w", out.String(), err)
 	}
 	return nil
 }

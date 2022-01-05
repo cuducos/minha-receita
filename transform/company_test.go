@@ -227,7 +227,34 @@ func TestNewCompany(t *testing.T) {
 	}
 }
 
-func TestCompanySave(t *testing.T) {
+func TestCompanyJSON(t *testing.T) {
+	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, "19670630")
+	if err != nil {
+		t.Errorf("error creating DataInicioAtividade for expected company: %s", err)
+	}
+	dataInicioAtividade := date(dataInicioAtividadeAsTime)
+	c := company{
+		CNPJ:                 "33683111000280",
+		DataInicioAtividade:  &dataInicioAtividade,
+		DataSituacaoEspecial: nil,
+	}
+
+	got, err := c.JSON()
+	if err != nil {
+		t.Errorf("expected no error getting the company %s as json, got %s", cnpj.Mask(c.CNPJ), err)
+	}
+	if !strings.Contains(got, `"cnpj":"33683111000280"`) {
+		t.Errorf("expected to find %s in a CNPJ field in %s", c.CNPJ, got)
+	}
+	if !strings.Contains(got, `"1967-06-30"`) {
+		t.Errorf("expected to find 1967-06-30 in JSON %s", got)
+	}
+	if !strings.Contains(got, `"data_situacao_especial":null`) {
+		t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
+	}
+}
+
+func TestCompanyCreate(t *testing.T) {
 	db := newMockDB()
 	dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, "19670630")
 	if err != nil {
@@ -240,7 +267,7 @@ func TestCompanySave(t *testing.T) {
 		DataSituacaoEspecial: nil,
 	}
 
-	if err := c.Save(&db); err != nil {
+	if err := c.Create(&db); err != nil {
 		t.Errorf("expected no error saving %s, got %s", cnpj.Mask(c.CNPJ), err)
 	}
 	got := db.storage[c.CNPJ]
@@ -253,6 +280,49 @@ func TestCompanySave(t *testing.T) {
 	if !strings.Contains(got, `"data_situacao_especial":null`) {
 		t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
 	}
+}
+
+func TestCompanyUpdate(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		db := newMockDB()
+		dataInicioAtividadeAsTime, err := time.Parse(dateInputFormat, "19670630")
+		if err != nil {
+			t.Errorf("error creating DataInicioAtividade for expected company: %s", err)
+		}
+		dataInicioAtividade := date(dataInicioAtividadeAsTime)
+		c := company{
+			CNPJ:                 "33683111000280",
+			DataInicioAtividade:  &dataInicioAtividade,
+			DataSituacaoEspecial: nil,
+		}
+
+		if err := c.Create(&db); err != nil {
+			t.Errorf("expected no error saving %s, got %s", cnpj.Mask(c.CNPJ), err)
+		}
+		c.RazaoSocial = "Razão Social"
+		c.Update(&db)
+		got := db.storage[c.CNPJ]
+		if !strings.Contains(got, `"cnpj":"33683111000280"`) {
+			t.Errorf("expected to find %s in a CNPJ field in %s", c.CNPJ, got)
+		}
+		if !strings.Contains(got, `"1967-06-30"`) {
+			t.Errorf("expected to find 1967-06-30 in JSON %s", got)
+		}
+		if !strings.Contains(got, `"data_situacao_especial":null`) {
+			t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
+		}
+	})
+
+	t.Run("company not found", func(t *testing.T) {
+		db := newMockDB()
+		c := company{
+			CNPJ:        "33683111000280",
+			RazaoSocial: "RazaoSocial",
+		}
+		if err := c.Update(&db); err == nil {
+			t.Errorf("expected error when trying to update non-existent company, got nil")
+		}
+	})
 }
 
 func TestCompanyFromString(t *testing.T) {
@@ -275,7 +345,7 @@ func TestCompanyFromString(t *testing.T) {
 func TestCompanyFromDB(t *testing.T) {
 	db := newMockDB()
 	c := company{CNPJ: "33683111000280", QuadroSocietario: []partner{{CNPJCPFDoSocio: "42"}}}
-	if err := c.Save(&db); err != nil {
+	if err := c.Create(&db); err != nil {
 		t.Errorf("expected no error saving %s, got %s", cnpj.Mask(c.CNPJ), err)
 	}
 	got, err := companyFromDB(&db, c.CNPJ)
