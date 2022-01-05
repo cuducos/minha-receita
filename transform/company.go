@@ -154,12 +154,28 @@ func newCompany(row []string, l *lookups) (company, error) {
 	return c, nil
 }
 
-func (c *company) Save(db database) error {
+func (c *company) JSON() (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
-		return fmt.Errorf("error while mashaling company JSON: %w", err)
+		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
 	}
-	return db.SaveCompany(c.CNPJ, string(b))
+	return string(b), nil
+}
+
+func (c *company) Create(db database) error {
+	j, err := c.JSON()
+	if err != nil {
+		return fmt.Errorf("error while getting company %s as JSON: %w", cnpj.Mask(c.CNPJ), err)
+	}
+	return db.CreateCompanies([][]string{{c.CNPJ, j}})
+}
+
+func (c *company) Update(db database) error {
+	j, err := c.JSON()
+	if err != nil {
+		return fmt.Errorf("error while getting company %s as JSON: %w", cnpj.Mask(c.CNPJ), err)
+	}
+	return db.UpdateCompany(c.CNPJ, j)
 }
 
 func companyFromString(j string) (company, error) {

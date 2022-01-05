@@ -41,7 +41,7 @@ func addSimplesToCompany(db database, r []string) error {
 		if err != nil {
 			return fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
 		}
-		if err = c.Save(db); err != nil {
+		if err = c.Update(db); err != nil {
 			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
 		}
 	}

@@ -2,23 +2,49 @@ package transform
 
 import (
 	"errors"
+	"fmt"
 
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/cuducos/go-cnpj"
 )
 
-var testdata = filepath.Join("..", "testdata")
+var (
+	testdata = filepath.Join("..", "testdata")
+)
 
 type mockDB struct {
 	storage map[string]string
 	mu      sync.Mutex
 }
 
-func (db *mockDB) SaveCompany(k, v string) error {
+func (db *mockDB) hasKey(k string) bool {
+	_, ok := db.storage[k]
+	return ok
+}
+
+func (db *mockDB) UpdateCompany(k, v string) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+	if !db.hasKey(k) {
+		return fmt.Errorf("company %s not found", cnpj.Mask(k))
+	}
+
 	db.storage[k] = v
+	return nil
+}
+
+func (db *mockDB) CreateCompanies(b [][]string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	for _, c := range b {
+		if db.hasKey(c[0]) {
+			return fmt.Errorf("company %s already exists", cnpj.Mask(c[0]))
+		}
+		db.storage[c[0]] = c[1]
+	}
 	return nil
 }
 
