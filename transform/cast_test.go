@@ -141,9 +141,17 @@ func TestToDate(t *testing.T) {
 	})
 
 	t.Run("unsuccessful date casting", func(t *testing.T) {
-		_, err := toDate("foobar")
-		if err == nil {
-			t.Errorf("expected a error when converting foobar to date, got nil")
+		got, err := toDate("foobar")
+		// TODO: waiting for response from falabr.cgu.gov.br
+		// ticket #03005.005925/2022-17
+		// if err == nil {
+		// 	t.Errorf("expected a error when converting foobar to date, got nil")
+		// }
+		if got != nil {
+			t.Errorf("expected nil, got %s", time.Time(*got))
+		}
+		if err != nil {
+			t.Errorf("expected nil, got %s", err)
 		}
 	})
 }

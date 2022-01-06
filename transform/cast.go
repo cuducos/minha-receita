@@ -15,6 +15,7 @@ package transform
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -78,7 +79,11 @@ func toDate(v string) (*date, error) {
 
 	t, err := time.Parse(dateInputFormat, v)
 	if err != nil {
-		return nil, fmt.Errorf("error converting %s to Time: %w", v, err)
+		// TODO: waiting for response from falabr.cgu.gov.br
+		// ticket #03005.005925/2022-17
+		// return nil, fmt.Errorf("error converting %s to Time: %w", v, err)
+		log.Output(2, fmt.Sprintf("invalid date %s", v))
+		return nil, nil
 	}
 
 	d := date(t)
