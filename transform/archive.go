@@ -92,3 +92,23 @@ func (a *archivedCSV) toLookup() (lookup, error) {
 	}
 	return m, nil
 }
+
+func (a *archivedCSV) sendLinesToShards(shardedQueues []chan []string, errors chan<- error) {
+	defer a.close()
+	for {
+		r, err := a.read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errors <- fmt.Errorf("error reading line %v: %w", r, err)
+			break
+		}
+		s, err := shard(r[0])
+		if err != nil {
+			errors <- fmt.Errorf("error getting shard for %s: %w", r[0], err)
+			break
+		}
+		shardedQueues[s] <- r
+	}
+}
