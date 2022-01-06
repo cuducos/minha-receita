@@ -29,7 +29,7 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int) err
 	if err := t.run(maxParallelDBQueries); err != nil {
 		return err
 	}
-	for _, f := range []updateFunc{addBases, addPartners, addSimplesToCompany} {
+	for _, f := range []updateFunc{addBases, addPartners, addTaxes} {
 		if err := f(dir, db, t.lookups); err != nil {
 			return err
 		}

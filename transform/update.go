@@ -16,6 +16,7 @@ type updateTask struct {
 	bar     *progressbar.ProgressBar
 }
 
+type updateFunc func(string, database, *lookups) error
 type shardConsumerHandler func(*lookups, database, []string) error
 
 func (t *updateTask) consumeShard(n int, h shardConsumerHandler) {
