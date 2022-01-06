@@ -20,11 +20,6 @@ const (
 	simple                    = "SIMPLES"
 )
 
-type lineCount struct {
-	total int64
-	err   error
-}
-
 type source struct {
 	dir        string
 	files      []string
@@ -59,12 +54,13 @@ func (s *source) resetReaders() error {
 		return fmt.Errorf("error closing readers: %w", err)
 	}
 	if err := s.createReaders(); err != nil {
-		return fmt.Errorf("error creating readers: %w", err)
+		return fmt.Errorf("error re-creating readers: %w", err)
 	}
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV, q chan<- lineCount) {
+func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error, done chan<- struct{}) {
+	defer func() { done <- struct{}{} }()
 	var t int64
 	for {
 		_, err := a.read()
@@ -72,31 +68,41 @@ func (s *source) countLinesFor(a *archivedCSV, q chan<- lineCount) {
 			break
 		}
 		if err != nil {
-			q <- lineCount{0, err}
+			errs <- err
 			return
 		}
 		t++
 	}
-	q <- lineCount{t, nil}
+	count <- t
 }
 
 func (s *source) countLines() error {
-	q := make(chan lineCount)
+	var done int
+	count := make(chan int64)
+	errs := make(chan error)
+	read := make(chan struct{})
 	for _, r := range s.readers {
-		go s.countLinesFor(r, q)
+		go s.countLinesFor(r, count, errs, read)
 	}
-
-	for range s.readers {
-		r := <-q
-		if r.err != nil {
-			return fmt.Errorf("error counting lines: %w", r.err)
+	defer func() {
+		s.resetReaders()
+		close(read)
+		close(count)
+		close(errs)
+	}()
+	for {
+		select {
+		case err := <-errs:
+			return fmt.Errorf("error counting lines: %w", err)
+		case n := <-count:
+			s.totalLines += n
+		case <-read:
+			done++
+			if done == len(s.readers) {
+				return nil
+			}
 		}
-		s.totalLines += r.total
 	}
-
-	close(q)
-	s.resetReaders()
-	return nil
 }
 
 func newSource(t sourceType, d string) (*source, error) {
@@ -104,7 +110,6 @@ func newSource(t sourceType, d string) (*source, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
 	}
-
 	s := source{dir: d, files: ls}
 	s.createReaders()
 	s.countLines()

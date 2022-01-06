@@ -2,11 +2,9 @@ package transform
 
 import (
 	"fmt"
-	"io"
 	"log"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/schollz/progressbar/v3"
 )
 
 type partner struct {
@@ -129,88 +127,10 @@ func addPartner(l *lookups, db database, r []string) error {
 	return nil
 }
 
-type partnersTask struct {
-	db      database
-	lookups *lookups
-	queues  []chan []string
-	success chan struct{}
-	errors  chan error
-	bar     *progressbar.ProgressBar
-}
-
-func (t *partnersTask) consumeShard(n int) {
-	for r := range t.queues[n] {
-		if err := addPartner(t.lookups, t.db, r); err != nil {
-			t.errors <- fmt.Errorf("error processing partner %v: %w", r, err)
-			continue
-		}
-		t.success <- struct{}{}
-	}
-}
-
 func addPartners(dir string, db database, l *lookups) error {
-	s, err := newSource(partners, dir)
+	t, err := newUpdateTask(partners, dir, db, l)
 	if err != nil {
-		return fmt.Errorf("error creating source for partners: %w", err)
+		return fmt.Errorf("error creating update task for partners: %w", err)
 	}
-	defer s.close()
-	if s.totalLines == 0 {
-		return nil
-	}
-
-	t := partnersTask{
-		db:      db,
-		lookups: l,
-		success: make(chan struct{}),
-		errors:  make(chan error),
-		bar:     progressbar.Default(s.totalLines),
-	}
-	t.bar.Describe("Adding partners")
-	for i := 0; i < numOfShards; i++ {
-		t.queues = append(t.queues, make(chan []string))
-	}
-	for i := 0; i < numOfShards; i++ {
-		go t.consumeShard(i)
-	}
-	for _, r := range s.readers {
-		go func(a *archivedCSV, q []chan []string, e chan error) {
-			defer a.close()
-			for {
-				r, err := a.read()
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					e <- fmt.Errorf("error reading line %v: %w", r, err)
-					break // do not proceed in case of errors.
-				}
-				s, err := shard(r[0])
-				if err != nil {
-					e <- fmt.Errorf("error getting shard for %s: %w", r[0], err)
-					break // do not proceed in case of errors.
-				}
-				t.queues[s] <- r
-			}
-		}(r, t.queues, t.errors)
-	}
-
-	defer func() {
-		for _, q := range t.queues {
-			close(q)
-		}
-		close(t.success)
-		close(t.errors)
-	}()
-
-	for {
-		select {
-		case err := <-t.errors:
-			return err
-		case <-t.success:
-			t.bar.Add(1)
-			if t.bar.IsFinished() {
-				return nil
-			}
-		}
-	}
+	return t.run("Adding partners", addPartner)
 }
