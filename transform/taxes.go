@@ -7,7 +7,7 @@ import (
 	"github.com/cuducos/go-cnpj"
 )
 
-func addSimplesToCompany(_ *lookups, db database, r []string) error {
+func addTax(_ *lookups, db database, r []string) error {
 	strs, err := db.ListCompanies(r[0])
 	if err != nil {
 		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
@@ -46,10 +46,10 @@ func addSimplesToCompany(_ *lookups, db database, r []string) error {
 	return nil
 }
 
-func addSimplesToCompanies(dir string, db database) error {
-	t, err := newUpdateTask(simple, dir, db, nil)
+func addTaxes(dir string, db database, _ *lookups) error {
+	t, err := newUpdateTask(taxes, dir, db, nil)
 	if err != nil {
 		return fmt.Errorf("error creating update task for taxes: %w", err)
 	}
-	return t.run("Adding Simples and MEI", addSimplesToCompany)
+	return t.run("Adding Simples and MEI", addTax)
 }
