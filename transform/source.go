@@ -17,7 +17,7 @@ const (
 	natures                   = "NATJUCSV"
 	partners                  = "SOCIOCSV"
 	qualifications            = "QUALSCSV"
-	simple                    = "SIMPLES"
+	taxes                     = "SIMPLES"
 )
 
 type source struct {

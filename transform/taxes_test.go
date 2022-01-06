@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-func TestAddSimplesToCompanies(t *testing.T) {
+func TestAddTaxes(t *testing.T) {
 	db := newMockDB()
 	c := company{CNPJ: "33683111000280"}
 	if err := c.Create(&db); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := addSimplesToCompanies(testdata, &db); err != nil {
+	if err := addTaxes(testdata, &db, nil); err != nil {
 		t.Errorf("expected no errors adding partners, got %s", err)
 		return
 	}
