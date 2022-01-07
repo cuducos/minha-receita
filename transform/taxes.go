@@ -2,7 +2,6 @@ package transform
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/cuducos/go-cnpj"
 )
@@ -13,7 +12,6 @@ func addTax(_ *lookups, db database, r []string) error {
 		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
 	}
 	if len(strs) == 0 {
-		log.Output(2, fmt.Sprintf("No company found for CNPJ base %s", r[0]))
 		return nil
 	}
 	for _, s := range strs {
@@ -44,12 +42,4 @@ func addTax(_ *lookups, db database, r []string) error {
 		}
 	}
 	return nil
-}
-
-func addTaxes(dir string, db database, _ *lookups) error {
-	t, err := newUpdateTask(taxes, dir, db, nil)
-	if err != nil {
-		return fmt.Errorf("error creating update task for taxes: %w", err)
-	}
-	return t.run("Adding Simples and MEI", addTax)
 }

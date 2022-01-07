@@ -21,6 +21,7 @@ const (
 )
 
 type source struct {
+	kind       sourceType
 	dir        string
 	files      []string
 	readers    []*archivedCSV
@@ -110,7 +111,7 @@ func newSource(t sourceType, d string) (*source, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
 	}
-	s := source{dir: d, files: ls}
+	s := source{kind: t, dir: d, files: ls}
 	s.createReaders()
 	s.countLines()
 	return &s, nil
