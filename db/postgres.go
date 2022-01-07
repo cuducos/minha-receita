@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	tableName     = "cnpj"
-	idFieldName   = "id"
-	jsonFieldName = "json"
-	batchSize     = 2048
+	tableName         = "cnpj"
+	idFieldName       = "id"
+	baseCNPJFieldName = "base"
+	jsonFieldName     = "json"
+	batchSize         = 2048
 )
 
 //go:embed postgres
@@ -27,12 +28,13 @@ var sql embed.FS
 
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	conn          *pg.DB
-	uri           string
-	schema        string
-	TableName     string
-	IDFieldName   string
-	JSONFieldName string
+	conn              *pg.DB
+	uri               string
+	schema            string
+	TableName         string
+	IDFieldName       string
+	BaseCNPJFieldName string
+	JSONFieldName     string
 }
 
 // Close closes the PostgreSQL connection
@@ -99,9 +101,9 @@ func (p *PostgreSQL) UpdateCompany(id, json string) error {
 func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 	var data bytes.Buffer
 	w := csv.NewWriter(&data)
-	w.Write([]string{idFieldName, jsonFieldName})
+	w.Write([]string{idFieldName, baseCNPJFieldName, jsonFieldName})
 	for _, r := range batch {
-		w.Write(r)
+		w.Write([]string{r[0], r[0][0:8], r[1]})
 	}
 	w.Flush()
 
@@ -145,19 +147,27 @@ func (p *PostgreSQL) ListCompanies(base string) ([]string, error) {
 		return []string{}, fmt.Errorf("error loading template: %w", err)
 	}
 	var j []string
-	if _, err := p.conn.Query(&j, sql, base+"%"); err != nil {
+	if _, err := p.conn.Query(&j, sql, base); err != nil {
 		return []string{}, fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
 	}
 	return j, nil
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL(u, s string) (PostgreSQL, error) {
-	opt, err := pg.ParseURL(u)
+func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
+	opt, err := pg.ParseURL(uri)
 	if err != nil {
-		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", u, err)
+		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", uri, err)
 	}
-	p := PostgreSQL{pg.Connect(opt), u, s, tableName, idFieldName, jsonFieldName}
+	p := PostgreSQL{
+		pg.Connect(opt),
+		uri,
+		schema,
+		tableName,
+		idFieldName,
+		baseCNPJFieldName,
+		jsonFieldName,
+	}
 	if err := p.conn.Ping(context.Background()); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}
