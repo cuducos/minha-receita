@@ -11,6 +11,9 @@ func (c *company) porte(v string) error {
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoPorte %s: %w", v, err)
 	}
+	if i == nil {
+		return nil
+	}
 
 	var s string
 	switch *i {
@@ -52,11 +55,7 @@ func (c *company) base(r []string, l *lookups) error {
 	if err != nil {
 		return fmt.Errorf("error trying to parse Porte %s: %w", r[5], err)
 	}
-	enteFederativoResponsavel, err := toInt(r[6])
-	if err != nil {
-		return fmt.Errorf("error trying to parse EnteFederativoResponsavel%s: %w", r[6], err)
-	}
-	c.EnteFederativoResponsavel = enteFederativoResponsavel
+	c.EnteFederativoResponsavel = r[6]
 	natures := l.natures[*c.CodigoNaturezaJuridica]
 	if natures != "" {
 		c.NaturezaJuridica = &natures
@@ -85,12 +84,4 @@ func addBase(l *lookups, db database, r []string) error {
 		}
 	}
 	return nil
-}
-
-func addBases(dir string, db database, l *lookups) error {
-	t, err := newUpdateTask(base, dir, db, l)
-	if err != nil {
-		return fmt.Errorf("error creating update task for base cnpj: %w", err)
-	}
-	return t.run("Adding base CNPJ", addBase)
 }
