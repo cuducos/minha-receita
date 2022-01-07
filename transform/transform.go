@@ -22,17 +22,16 @@ type database interface {
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
 func Transform(dir string, db database, maxParallelDBQueries, batchSize int) error {
-	t, err := createJSONRecordsTask(dir, db, batchSize)
+	j, err := createJSONRecordsTask(dir, db, batchSize)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}
-	if err := t.run(maxParallelDBQueries); err != nil {
+	if err := j.run(maxParallelDBQueries); err != nil {
 		return err
 	}
-	for _, f := range []updateFunc{addBases, addPartners, addTaxes} {
-		if err := f(dir, db, t.lookups); err != nil {
-			return err
-		}
+	u, err := newUpdateTask(dir, db, j.lookups)
+	if err != nil {
+		return fmt.Errorf("error creating update task: %w", err)
 	}
-	return nil
+	return u.run()
 }

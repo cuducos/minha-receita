@@ -57,7 +57,7 @@ type company struct {
 	CapitalSocial                    *float32  `json:"capital_social"`
 	CodigoPorte                      *int      `json:"codigo_porte"`
 	Porte                            *string   `json:"porte"`
-	EnteFederativoResponsavel        *int      `json:"ente_federativo_responsavel"`
+	EnteFederativoResponsavel        string    `json:"ente_federativo_responsavel"`
 	DescricaoPorte                   string    `json:"descricao_porte"`
 	QuadroSocietario                 []partner `json:"qsa"`
 	CNAESecundarios                  []cnae    `json:"cnaes_secundarios"`
