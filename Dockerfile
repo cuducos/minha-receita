@@ -8,7 +8,7 @@ ADD db/ ./db/
 ADD download/ ./download/
 ADD testdata/ ./testdata/
 ADD transform/ ./transform/
-RUN go get && go test ./... && go build -o /usr/bin/minha-receita
+RUN go get && go build -o /usr/bin/minha-receita
 
 FROM debian:bullseye-slim
 RUN apt-get update && \
