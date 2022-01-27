@@ -3,6 +3,8 @@ package transform
 import (
 	"fmt"
 	"io"
+	"sync"
+	"sync/atomic"
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/schollz/progressbar/v3"
@@ -27,30 +29,38 @@ func saveBatch(db database, b []company) (int, error) {
 }
 
 type venuesTask struct {
-	source        *source
-	lookups       *lookups
-	dir           string
-	db            database
-	batchSize     int
-	sentToBatches int64
-	rows          chan []string
-	companies     chan struct{}
-	saved         chan int
-	errors        chan error
-	bar           *progressbar.ProgressBar
+	source            *source
+	lookups           *lookups
+	dir               string
+	db                database
+	batchSize         int
+	sentToBatches     int64
+	rows              chan []string
+	companies         chan struct{}
+	saved             chan int
+	errors            chan error
+	bar               *progressbar.ProgressBar
+	shutdown          int32
+	shutdownWaitGroup sync.WaitGroup
 }
 
 func (t *venuesTask) produceRows() {
 	for _, r := range t.source.readers {
+		t.shutdownWaitGroup.Add(1)
 		go func(t *venuesTask, a *archivedCSV) {
+			defer t.shutdownWaitGroup.Done()
 			for {
+				if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
+					return
+				}
 				r, err := a.read()
 				if err == io.EOF {
 					break
 				}
-				if err != nil {
+				if err != nil { // initiate graceful shutdown.
 					t.errors <- err
-					break // do not proceed in case of errors.
+					atomic.StoreInt32(&t.shutdown, 1)
+					return
 				}
 				t.rows <- r
 			}
@@ -59,32 +69,39 @@ func (t *venuesTask) produceRows() {
 }
 
 func (t *venuesTask) consumeRows() {
+	defer t.shutdownWaitGroup.Done()
 	var b []company
-	defer func() { // send the remaining items in the batch
-		n, err := saveBatch(t.db, b)
-		if err != nil {
-			t.errors <- fmt.Errorf("error saving companies: %w", err)
-		}
-		t.saved <- n
-	}()
 	for r := range t.rows {
+		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
+			return
+		}
 		c, err := newCompany(r, t.lookups)
-		if err != nil {
+		if err != nil { // initiate graceful shutdown.
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
-			break
+			atomic.StoreInt32(&t.shutdown, 1)
+			return
 		}
 		b = append(b, c)
 		t.companies <- struct{}{}
 		if len(b) >= t.batchSize {
 			n, err := saveBatch(t.db, b)
-			if err != nil {
+			if err != nil { // initiate graceful shutdown.
 				t.errors <- fmt.Errorf("error saving companies: %w", err)
-				break
+				atomic.StoreInt32(&t.shutdown, 1)
+				return
 			}
 			t.saved <- n
 			b = []company{}
 		}
 	}
+	// send the remaining items in the batch
+	n, err := saveBatch(t.db, b)
+	if err != nil { // initiate graceful shutdown.
+		t.errors <- fmt.Errorf("error saving companies: %w", err)
+		atomic.StoreInt32(&t.shutdown, 1)
+		return
+	}
+	t.saved <- n
 }
 
 func (t *venuesTask) run(m int) error {
@@ -94,9 +111,13 @@ func (t *venuesTask) run(m int) error {
 	}
 	t.produceRows()
 	for i := 0; i < m; i++ {
+		t.shutdownWaitGroup.Add(1)
 		go t.consumeRows()
 	}
 	defer func() {
+		if atomic.LoadInt32(&t.shutdown) == 1 {
+			t.shutdownWaitGroup.Wait()
+		}
 		close(t.companies)
 		close(t.saved)
 		close(t.errors)
