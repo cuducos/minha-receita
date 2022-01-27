@@ -94,6 +94,9 @@ func (t *venuesTask) consumeRows() {
 			b = []company{}
 		}
 	}
+	if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
+		return
+	}
 	// send the remaining items in the batch
 	n, err := saveBatch(t.db, b)
 	if err != nil { // initiate graceful shutdown.
