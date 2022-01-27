@@ -56,7 +56,6 @@ func (p *partner) faixaEtaria(v string) {
 	if s != "" {
 		p.FaixaEtaria = &s
 	}
-	return
 }
 
 func (p *partner) pais(l *lookups, v string) error {

@@ -9,15 +9,15 @@ type sourceType string
 
 const (
 	venues         sourceType = "ESTABELE"
-	motives                   = "MOTICSV"
-	base                      = "EMPRECSV"
-	cities                    = "MUNICCSV"
-	cnaes                     = "CNAECSV"
-	countries                 = "PAISCSV"
-	natures                   = "NATJUCSV"
-	partners                  = "SOCIOCSV"
-	qualifications            = "QUALSCSV"
-	taxes                     = "SIMPLES"
+	motives        sourceType = "MOTICSV"
+	base           sourceType = "EMPRECSV"
+	cities         sourceType = "MUNICCSV"
+	cnaes          sourceType = "CNAECSV"
+	countries      sourceType = "PAISCSV"
+	natures        sourceType = "NATJUCSV"
+	partners       sourceType = "SOCIOCSV"
+	qualifications sourceType = "QUALSCSV"
+	taxes          sourceType = "SIMPLES"
 )
 
 type source struct {

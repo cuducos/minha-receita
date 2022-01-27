@@ -70,7 +70,7 @@ func toDate(v string) (*date, error) {
 		if err != nil {
 			return false
 		}
-		return 0 == v
+		return v == 0
 	}
 
 	if v == "" || onlyZeros(v) {
