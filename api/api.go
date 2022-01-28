@@ -46,21 +46,21 @@ type api struct {
 
 func (app api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != http.MethodPost {
-		return fmt.Errorf("No backward compatibilityt with method %s", r.Method)
+		return fmt.Errorf("no backward compatibilityt with method %s", r.Method)
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Invalid payload")
+		return fmt.Errorf("invalid payload")
 	}
 
 	v := r.Form.Get("cnpj")
 	if v == "" {
-		return fmt.Errorf("No CNPJ sent in the payload")
+		return fmt.Errorf("no CNPJ sent in the payload")
 	}
 
 	v = cnpj.Unmask(v)
 	if !cnpj.IsValid(v) {
-		return fmt.Errorf("Invalid CNPJ")
+		return fmt.Errorf("invalid CNPJ")
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/%s", v), http.StatusSeeOther)
@@ -88,7 +88,7 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 
 	v := r.URL.Path
 	if v == "/" {
-		http.Redirect(w, r, "https://docs.minhareceita.org", 302)
+		http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
 		return
 	}
 

@@ -25,7 +25,6 @@ type downloader struct {
 	bar         *downloadProgressBar
 	maxParallel int
 	maxRetries  int
-	done        int
 }
 
 func (d *downloader) getSize(url string) (int64, error) {
