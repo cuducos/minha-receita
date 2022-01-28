@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -11,6 +12,7 @@ import (
 	"github.com/cuducos/minha-receita/api"
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/download"
+	"github.com/cuducos/minha-receita/sample"
 	"github.com/cuducos/minha-receita/transform"
 )
 
@@ -44,6 +46,10 @@ Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
 files) into records in the database, 1 record per CNPJ, joining information
 from all other source CSV files.`
 
+const sampleHelper = `
+Creates versions of the source files from the Federal Revenue with a limited
+number of lines, allowing us to manually test the process quicker.`
+
 const defaultPort = "8000"
 
 var (
@@ -66,6 +72,10 @@ var (
 	// api
 	port     string
 	newRelic string
+
+	// sample
+	maxLines  int
+	targetDir string
 )
 
 func assertDirExists() error {
@@ -206,6 +216,18 @@ var dropCmd = &cobra.Command{
 	},
 }
 
+var sampleCmd = &cobra.Command{
+	Use:   "sample",
+	Short: "Creates sample data of the source files from the Federal Revenue",
+	Long:  sampleHelper,
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		return sample.Sample(dir, targetDir, maxLines)
+	},
+}
+
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
@@ -222,14 +244,22 @@ func CLI() *cobra.Command {
 	)
 	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
 	transformCmd.Flags().BoolVarP(&cleanUp, "clean-up", "c", cleanUp, "drop & recreate the database table before starting")
-	for _, c := range []*cobra.Command{downloadCmd, transformCmd} {
+	for _, c := range []*cobra.Command{downloadCmd, transformCmd, sampleCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", "data", "directory of the downloaded CSV files")
 	}
 	for _, c := range []*cobra.Command{transformCmd, createCmd, dropCmd, apiCmd} {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
 		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
 	}
-	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd} {
+	sampleCmd.Flags().IntVarP(&maxLines, "max-lines", "m", sample.MaxLines, "maximum lines per file")
+	sampleCmd.Flags().StringVarP(
+		&targetDir,
+		"target-directory",
+		"t",
+		filepath.Join("data", sample.TargetDir),
+		"directory for the sample CSV files",
+	)
+	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, sampleCmd} {
 		rootCmd.AddCommand(c)
 	}
 	apiCmd.Flags().StringVarP(

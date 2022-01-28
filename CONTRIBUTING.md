@@ -96,12 +96,14 @@ A etapa de transformação dos dados cria uma linha no banco de dados para cada 
 
 ## Amostra dos arquivos para testes
 
-Como o processo todo de ETL (o comando `transform`) demora demais, caso queira testar manualmente com uma **amostra** dos dados, o `contrib/make_test_files.py` gera arquivos limitados a 10 mil linhas, fazendo com que o processo todo rode em menos de 1 minuto. Após fazer o download dos dados, e com Python 3.6 ou mais novo:
+Como o processo todo de ETL (o comando `transform`) demora demais, caso queira testar manualmente com uma **amostra** dos dados, utilize o comando `sample` para gera arquivos limitados a 10 mil linhas (assim o processo todo roda em cerca de 1 minuto, por exemplo). Após fazer o download dos dados:
 
 ```console
-$ python contrib/make_test_files.py data data/sample
+$ ./minha-receita sample
 $ ./minha-receita transform -d data/sample
 ```
+
+Explore mais opções com `--help`.
 
 ## Documentação
 
