@@ -4,12 +4,15 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/cuducos/minha-receita/api"
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/download"
+	"github.com/cuducos/minha-receita/sample"
 	"github.com/cuducos/minha-receita/transform"
 )
 
@@ -18,19 +21,11 @@ const help = `Minha Receita.
 Toolbox to manage Minha Receita, including tools to handle extract, transform
 and load data, manage the PostgreSQL instance, and to spin up the web server.
 
-Requires a POSTGRES_URI environment variable with PostgreSQL credentials.
-
-An optional POSTGRES_SCHEMA environment variable can be user to set a different
-schema than “public” (which is the default).
-
 See --help for more details.
 `
 
 const apiHelper = `
 Starts the web API.
-
-The port used is 8000, unless an environment variable PORT points to a
-different number.
 
 Using GODEBUG environment variable changes the HTTP server verbosity (for
 example: http2debug=1 is verbose and http2debug=2 is more verbose, as in
@@ -44,39 +39,73 @@ const downloadHelper = `
 Downloads the required ZIP and Excel files.
 
 The main files are downloaded from the official website of the Brazilian
-Federal Revenue, or from Brasil.IO mirror. An extra Excel file is downloaded
-from IBGE.`
+Federal Revenue. An extra Excel file is downloaded from IBGE.`
 
-const parseHelper = `
-Parse the fixed-width files from the Federal Revenue into CSV files.
+const transformHelper = `
+Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
+files) into records in the database, 1 record per CNPJ, joining information
+from all other source CSV files.`
 
-Three compressed CSVs are created: empresa.csv.gz, socio.csv.gz and
-cnae_secundarias.csv.gz.`
+const sampleHelper = `
+Creates versions of the source files from the Federal Revenue with a limited
+number of lines, allowing us to manually test the process quicker.`
 
-var dir string
-var mirror bool
+const defaultPort = "8000"
 
-func assertDirExists() {
-	var err error
+var (
+	dir            string
+	databaseURI    string
+	postgresSchema string
+
+	// transform
+	maxParallelDBQueries int
+	batchSize            int
+	cleanUp              bool
+
+	// download
+	urlsOnly          bool
+	timeout           string
+	downloadRetries   int
+	parallelDownloads int
+	skipExistingFiles bool
+
+	// api
+	port     string
+	newRelic string
+
+	// sample
+	maxLines  int
+	targetDir string
+)
+
+func assertDirExists() error {
 	i, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Directory %s does not exist.", dir))
-		os.Exit(1)
+		return fmt.Errorf("directory %s does not exist", dir)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
-
 	if !i.Mode().IsDir() {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("%s is not a directory.", dir))
-		os.Exit(1)
+		return fmt.Errorf("%s is not a directory", dir)
 	}
+	return nil
+}
+
+func loadDatabaseURI() (string, error) {
+	if databaseURI != "" {
+		return databaseURI, nil
+	}
+	u := os.Getenv("POSTGRES_URI")
+	if u == "" {
+		return "", fmt.Errorf("could not find a database URI, pass it as a flag or set POSTGRES_URI environment variable with the credentials for a PostgreSQL database")
+	}
+	return u, nil
 }
 
 var rootCmd = &cobra.Command{
 	Use:   "minha-receita <command>",
-	Short: "Minha Receita toolbox.",
+	Short: "Minha Receita toolbox",
 	Long:  help,
 }
 
@@ -84,9 +113,26 @@ var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Spins up the web API",
 	Long:  apiHelper,
-	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL()
-		api.Serve(&pg)
+	RunE: func(_ *cobra.Command, _ []string) error {
+		u, err := loadDatabaseURI()
+		if err != nil {
+			return err
+		}
+		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		if err != nil {
+			return err
+		}
+		if port == "" {
+			port = os.Getenv("PORT")
+		}
+		if port == "" {
+			port = defaultPort
+		}
+		if newRelic == "" {
+			newRelic = os.Getenv("NEW_RELIC_LICENSE_KEY")
+		}
+		api.Serve(&pg, port, newRelic)
+		return nil
 	},
 }
 
@@ -94,61 +140,141 @@ var downloadCmd = &cobra.Command{
 	Use:   "download",
 	Short: "Downloads the required ZIP and Excel files",
 	Long:  downloadHelper,
-	Run: func(_ *cobra.Command, _ []string) {
-		assertDirExists()
-		download.Download(mirror, dir)
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		dur, err := time.ParseDuration(timeout)
+		if err != nil {
+			return err
+		}
+		return download.Download(dir, dur, urlsOnly, skipExistingFiles, parallelDownloads, downloadRetries)
 	},
 }
 
-var parseCmd = &cobra.Command{
-	Use:   "parse",
-	Short: "Parse the fixed-width files from the Federal Revenue into CSV files",
-	Long:  parseHelper,
-	Run: func(_ *cobra.Command, _ []string) {
-		assertDirExists()
-		transform.Parse(dir)
+var transformCmd = &cobra.Command{
+	Use:   "transform",
+	Short: "Transforms the CSV files into database records",
+	Long:  transformHelper,
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		u, err := loadDatabaseURI()
+		if err != nil {
+			return err
+		}
+		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		if err != nil {
+			return err
+		}
+		defer pg.Close()
+
+		if cleanUp {
+			if err := pg.DropTable(); err != nil {
+				return err
+			}
+			if err := pg.CreateTable(); err != nil {
+				return err
+			}
+		}
+		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize)
 	},
 }
 
 var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Creates the required tables in PostgreSQL",
-	Long:  "Creates the required tables in PostgreSQL, using the environment variable POSTGRES_URI to connect to the database.",
-	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL()
-		pg.CreateTables()
+	RunE: func(_ *cobra.Command, _ []string) error {
+		u, err := loadDatabaseURI()
+		if err != nil {
+			return err
+		}
+		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		if err != nil {
+			return err
+		}
+		defer pg.Close()
+		return pg.CreateTable()
 	},
 }
 
 var dropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops the tables in PostgreSQL",
-	Long:  "Drops the tables in PostgreSQL, using the environment variable POSTGRES_URI to connect to the database.",
-	Run: func(_ *cobra.Command, _ []string) {
-		pg := db.NewPostgreSQL()
-		pg.DropTables()
+	RunE: func(_ *cobra.Command, _ []string) error {
+		u, err := loadDatabaseURI()
+		if err != nil {
+			return err
+		}
+		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		if err != nil {
+			return err
+		}
+		defer pg.Close()
+		return pg.DropTable()
 	},
 }
 
-var importCmd = &cobra.Command{
-	Use:   "import",
-	Short: "Imports the generated CSV and the Excel files into PostgreSQL",
-	Long:  "Reads the compressed CSV and Excel files from a directory and copy their contents to the PostgreSQL tables, using the environment variable POSTGRES_URI to connect to the database.",
-	Run: func(_ *cobra.Command, _ []string) {
-		assertDirExists()
-		pg := db.NewPostgreSQL()
-		pg.ImportData(dir)
+var sampleCmd = &cobra.Command{
+	Use:   "sample",
+	Short: "Creates sample data of the source files from the Federal Revenue",
+	Long:  sampleHelper,
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		return sample.Sample(dir, targetDir, maxLines)
 	},
 }
 
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
-	downloadCmd.Flags().BoolVarP(&mirror, "mirror", "m", false, "use Brasil.IO mirror")
-	for _, c := range []*cobra.Command{downloadCmd, parseCmd, importCmd} {
-		c.Flags().StringVarP(&dir, "directory", "d", "data", "data directory")
+	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
+	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
+	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
+	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")
+	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.MaxParallel, "maximum parallel downloads")
+	transformCmd.Flags().IntVarP(
+		&maxParallelDBQueries,
+		"max-parallel-db-queries",
+		"m",
+		transform.MaxParallelDBQueries,
+		"maximum parallel database queries",
+	)
+	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
+	transformCmd.Flags().BoolVarP(&cleanUp, "clean-up", "c", cleanUp, "drop & recreate the database table before starting")
+	for _, c := range []*cobra.Command{downloadCmd, transformCmd, sampleCmd} {
+		c.Flags().StringVarP(&dir, "directory", "d", "data", "directory of the downloaded CSV files")
 	}
-	for _, c := range []*cobra.Command{apiCmd, downloadCmd, parseCmd, createCmd, dropCmd, importCmd} {
+	for _, c := range []*cobra.Command{transformCmd, createCmd, dropCmd, apiCmd} {
+		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
+		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
+	}
+	sampleCmd.Flags().IntVarP(&maxLines, "max-lines", "m", sample.MaxLines, "maximum lines per file")
+	sampleCmd.Flags().StringVarP(
+		&targetDir,
+		"target-directory",
+		"t",
+		filepath.Join("data", sample.TargetDir),
+		"directory for the sample CSV files",
+	)
+	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, sampleCmd} {
 		rootCmd.AddCommand(c)
 	}
+	apiCmd.Flags().StringVarP(
+		&port,
+		"port",
+		"p",
+		"",
+		fmt.Sprintf("web server port (default PORT environment variable or %s)", defaultPort),
+	)
+	apiCmd.Flags().StringVarP(
+		&newRelic,
+		"new-relic-key",
+		"n",
+		"",
+		"New Relic license key (deafult NEW_RELIC_LICENSE_KEY environment variable)",
+	)
 	return rootCmd
 }

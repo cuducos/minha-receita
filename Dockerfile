@@ -1,4 +1,4 @@
-FROM golang:1.16.7-buster as build
+FROM golang:1.17-bullseye as build
 WORKDIR /minha-receita
 ADD go.* ./
 ADD main.go .
@@ -8,9 +8,9 @@ ADD db/ ./db/
 ADD download/ ./download/
 ADD testdata/ ./testdata/
 ADD transform/ ./transform/
-RUN go get && go test ./... && go build -o /usr/bin/minha-receita
+RUN go get && go build -o /usr/bin/minha-receita
 
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 RUN apt-get update && \
     apt-get install -y --no-install-recommends postgresql-client ca-certificates && \
     update-ca-certificates && \

@@ -13,8 +13,11 @@ import (
 	"strings"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/cuducos/minha-receita/db"
 )
+
+type database interface {
+	GetCompany(string) (string, error)
+}
 
 // errorMessage is a helper to serialize an error message to JSON.
 type errorMessage struct {
@@ -38,26 +41,26 @@ func messageResponse(w http.ResponseWriter, s int, m string) {
 }
 
 type api struct {
-	db db.Database
+	db database
 }
 
 func (app api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != http.MethodPost {
-		return fmt.Errorf("No backward compatibilityt with method %s", r.Method)
+		return fmt.Errorf("no backward compatibilityt with method %s", r.Method)
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Invalid payload")
+		return fmt.Errorf("invalid payload")
 	}
 
 	v := r.Form.Get("cnpj")
 	if v == "" {
-		return fmt.Errorf("No CNPJ sent in the payload")
+		return fmt.Errorf("no CNPJ sent in the payload")
 	}
 
 	v = cnpj.Unmask(v)
 	if !cnpj.IsValid(v) {
-		return fmt.Errorf("Invalid CNPJ")
+		return fmt.Errorf("invalid CNPJ")
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/%s", v), http.StatusSeeOther)
@@ -85,7 +88,7 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 
 	v := r.URL.Path
 	if v == "/" {
-		http.Redirect(w, r, "https://docs.minhareceita.org", 302)
+		http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
 		return
 	}
 
@@ -94,18 +97,13 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c, err := app.db.GetCompany(cnpj.Unmask(v))
+	s, err := app.db.GetCompany(cnpj.Unmask(v))
 	if err != nil {
 		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	s, err := c.JSON()
-	if err != nil {
-		messageResponse(w, http.StatusInternalServerError, fmt.Sprintf("Não foi possível retornar os dados de %s em JSON.", cnpj.Mask(v)))
-		return
-	}
 	io.WriteString(w, s)
 }
 
@@ -118,20 +116,13 @@ func (app api) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serve spins up the HTTP server.
-func Serve(db db.Database) {
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Output(2, "No PORT environment variable found, using 8000.")
-		port = ":8000"
+func Serve(db database, p, n string) {
+	if !strings.HasPrefix(p, ":") {
+		p = ":" + p
 	}
-
-	if !strings.HasPrefix(port, ":") {
-		port = ":" + port
-	}
-
-	nr := newRelicApp()
+	nr := newRelicApp(n)
 	app := api{db: db}
 	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
-	log.Fatal(http.ListenAndServe(port, nil))
+	log.Fatal(http.ListenAndServe(p, nil))
 }

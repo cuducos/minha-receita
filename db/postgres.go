@@ -1,110 +1,175 @@
 package db
 
 import (
+	"bytes"
 	"context"
+	"embed"
+	"encoding/csv"
 	"fmt"
 	"log"
-	"os"
-	"sync"
+	"os/exec"
+	"path/filepath"
+	"text/template"
 
+	"github.com/cuducos/go-cnpj"
 	"github.com/go-pg/pg/v10"
 )
 
+const (
+	tableName         = "cnpj"
+	idFieldName       = "id"
+	baseCNPJFieldName = "base"
+	jsonFieldName     = "json"
+	batchSize         = 2048
+)
+
+//go:embed postgres
+var sql embed.FS
+
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	conn   *pg.DB
-	schema string
+	conn              *pg.DB
+	uri               string
+	schema            string
+	TableName         string
+	IDFieldName       string
+	BaseCNPJFieldName string
+	JSONFieldName     string
 }
 
-// Close ends the connection with the database.
-func (p *PostgreSQL) Close() {
-	p.conn.Close()
+// Close closes the PostgreSQL connection
+func (p *PostgreSQL) Close() { p.conn.Close() }
+
+// TableFullName is the name of the schame and table in dot-notation.
+func (p *PostgreSQL) TableFullName() string {
+	return fmt.Sprintf("%s.%s", p.schema, p.TableName)
 }
 
-// GetCompany returns a `Company` based on a CNPJ number.
-func (p *PostgreSQL) GetCompany(num string) (Company, error) {
-	c, err := getCompany(p.conn, num)
+func (p *PostgreSQL) sqlFromTemplate(n string) (string, error) {
+	t, err := template.ParseFS(sql, filepath.Join("postgres", n))
 	if err != nil {
-		log.Output(2, fmt.Sprintf("ERROR: %v", err))
-		return c, err
+		return "", fmt.Errorf("error parsing %s template: %w", n, err)
 	}
-	return c, nil
+	var b bytes.Buffer
+	if err = t.Execute(&b, p); err != nil {
+		return "", fmt.Errorf("error rendering %s template: %w", n, err)
+	}
+	return b.String(), nil
 }
 
-// CreateTables creates the required database tables.
-func (p *PostgreSQL) CreateTables() {
-	var wg sync.WaitGroup
-	src := getSources(p.schema)
-	wg.Add(len(src))
-	for _, s := range src {
-		go createTable(p.conn, &wg, s)
+// CreateTable creates the required database table.
+func (p *PostgreSQL) CreateTable() error {
+	sql, err := p.sqlFromTemplate("create.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
 	}
-	wg.Wait()
+	log.Output(2, fmt.Sprintf("Creating table %s…", p.TableFullName()))
+	if _, err := p.conn.Exec(sql); err != nil {
+		return fmt.Errorf("error creating table with: %s\n%w", sql, err)
+	}
+	return nil
 }
 
-// DropTables drops the database tables created by `CreateTables`.
-func (p *PostgreSQL) DropTables() {
-	var wg sync.WaitGroup
-	src := getSources(p.schema)
-	wg.Add(len(src))
-	for _, s := range src {
-		go dropTable(p.conn, &wg, s)
+// DropTable drops the database table created by `CreateTable`.
+func (p *PostgreSQL) DropTable() error {
+	sql, err := p.sqlFromTemplate("drop.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
 	}
-	wg.Wait()
+	log.Output(2, fmt.Sprintf("Dropping table %s…", p.TableFullName()))
+	if _, err := p.conn.Exec(sql); err != nil {
+		return fmt.Errorf("error dropping table with: %s\n%w", sql, err)
+	}
+	return nil
 }
 
-// ImportData reads data from compresed CSV and Excel files and import it.
-func (p *PostgreSQL) ImportData(dir string) {
-	c := make(chan error)
-	src := getSources(p.schema)
-	for _, s := range src {
-		if s.name == "cnae" {
-			go importCNAEXls(p.conn, c, s, dir)
-		} else {
-			go copyFrom(p.conn, c, s, dir)
-		}
+// UpdateCompany performs a update in the database.
+func (p *PostgreSQL) UpdateCompany(id, json string) error {
+	sql, err := p.sqlFromTemplate("update.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
 	}
+	if _, err := p.conn.Exec(sql, json, id); err != nil {
+		return fmt.Errorf("error updating record %s: %s\n%w", cnpj.Mask(id), sql, err)
+	}
+	return nil
+}
 
-	hasErr := false
-	for i := 0; i < len(src); i++ {
-		err := <-c
-		if err != nil {
-			hasErr = true
-			log.Output(2, fmt.Sprintf("%s", err))
-		}
+// CreateCompanies performs a copy to create a batch of companies in the
+// database. It expects an array and each item should be another array with only
+// two items: the ID and the JSON field values.
+func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
+	var data bytes.Buffer
+	w := csv.NewWriter(&data)
+	w.Write([]string{idFieldName, baseCNPJFieldName, jsonFieldName})
+	for _, r := range batch {
+		w.Write([]string{r[0], r[0][0:8], r[1]})
 	}
-	if hasErr {
-		os.Exit(1)
+	w.Flush()
+
+	var out bytes.Buffer
+	cmd := exec.Command(
+		"psql",
+		p.uri,
+		"-c",
+		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, tableName),
+	)
+	cmd.Stdin = &data
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error while importing data to postgres %s: %w", out.String(), err)
 	}
+	return nil
+}
+
+type row struct {
+	ID   string
+	JSON string
+}
+
+// GetCompany returns the JSON of a company based on a CNPJ number.
+func (p *PostgreSQL) GetCompany(n string) (string, error) {
+	sql, err := p.sqlFromTemplate("get.sql")
+	if err != nil {
+		return "", fmt.Errorf("error loading template: %w", err)
+	}
+	var r row
+	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
+		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(n), sql, err)
+	}
+	return r.JSON, nil
+}
+
+// ListCompanies returns the JSON for all companies with a CNPJ starting with a `base`.
+func (p *PostgreSQL) ListCompanies(base string) ([]string, error) {
+	sql, err := p.sqlFromTemplate("list.sql")
+	if err != nil {
+		return []string{}, fmt.Errorf("error loading template: %w", err)
+	}
+	var j []string
+	if _, err := p.conn.Query(&j, sql, base); err != nil {
+		return []string{}, fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
+	}
+	return j, nil
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL() PostgreSQL {
-	u := os.Getenv("POSTGRES_URI")
-	if u == "" {
-		fmt.Fprintf(os.Stderr, "Please, set an environmental variable POSTGRES_URI with the credentials for the PostgreSQL database.\n")
-		os.Exit(1)
-	}
-
-	s := os.Getenv("POSTGRES_SCHEMA")
-	if s == "" {
-		log.Output(2, "No POSTGRES_SCHEMA environment variable found, using public.")
-		s = "public"
-	}
-
-	opt, err := pg.ParseURL(u)
+func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
+	opt, err := pg.ParseURL(uri)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to parse POSTGRES_URI: %v\n", err)
-		os.Exit(1)
+		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", uri, err)
 	}
-
-	var p PostgreSQL
-	p.schema = s
-	p.conn = pg.Connect(opt)
+	p := PostgreSQL{
+		pg.Connect(opt),
+		uri,
+		schema,
+		tableName,
+		idFieldName,
+		baseCNPJFieldName,
+		jsonFieldName,
+	}
 	if err := p.conn.Ping(context.Background()); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not connect to PostgreSQL: %v\n", err)
-		os.Exit(1)
+		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}
-
-	return p
+	return p, nil
 }

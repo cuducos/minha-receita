@@ -6,32 +6,27 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/cuducos/go-cnpj"
-
-	"github.com/cuducos/minha-receita/db"
 )
 
 type mockDatabase struct{}
 
-func (mockDatabase) CreateTables()       {}
-func (mockDatabase) DropTables()         {}
-func (mockDatabase) ImportData(_ string) {}
-
-func (mockDatabase) GetCompany(n string) (db.Company, error) {
-	var c db.Company
+func (mockDatabase) GetCompany(n string) (string, error) {
 	n = cnpj.Unmask(n)
-	if n == "19131243000197" {
-		return db.Company{
-			CNPJ:                "19131243000197",
-			DataInicioAtividade: time.Date(2013, time.October, 3, 0, 0, 0, 0, time.UTC),
-		}, nil
+	if n != "19131243000197" {
+		return "", errors.New("Company not found")
 	}
-	return c, errors.New("Company not found")
+
+	b, err := os.ReadFile(filepath.Join("..", "testdata", "response.json"))
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func TestCompanyHandler(t *testing.T) {

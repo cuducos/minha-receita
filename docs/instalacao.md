@@ -9,13 +9,14 @@ Existem duas formas de rodar essa aplicação:
 
 _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
-É necessário cerca de 30Gb disponíveis de espaço em disco para armazenar os dados.
+É necessário cerca de 130Gb disponíveis de espaço em disco para armazenar os dados:
+* Os arquivos da Receita federal tem cerca de 6Gb
+* O banco de dados PostgreSQL gerado utiliza cerca de 120Gb
 
 ### Requisitos e instalação sem Docker
 
-* [Go](https://golang.org/) versão 1.15
+* [Go](https://golang.org/) versão 1.17
 * Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
-* Variável de ambiente`POSTGRES_URI` com credenciais de acesso a um banco de dados PostgreSQL (como no exemplo `.env.sample`)
 
 Baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
 
@@ -38,20 +39,31 @@ $ docker-compose build
 
 ## Configurações
 
-Todas as configurações podem ser passadas via variáveis de ambiente e estão documentadas no `--help` da aplicação.
+Várias configurações podem ser passadas para a CLI, e elas estão documentadas no `--help` de cada comando da aplicação.
 
 ### Exemplo
 
-Sem Docker:
+Sem Docker, por exemplo:
 
 ```console
 $ minha-receita --help
 $ minha-receita api --help
 ```
 
-Com Docker:
+Com Docker, por exemplo:
 
 ```console
 $ docker-compose run --rm minha-receita --help
 $ docker-compose run --rm minha-receita api --help
 ```
+
+### Variáveis de ambiente
+
+Para facilitar a manutenção, algumas variáveis de ambiente podem ser utilizadas, mas todas são opcionais:
+
+| Variável | Descrição |
+|---|---|
+| `POSTGRES_URI` | URI de acesso ao banco de dados PostgreSQL |
+| `PORT` | Porta na qual a API web ficará disponível |
+| `NEW_RELIC_LICENSE_KEY` | Licença no New Relic para monitoramento |
+| `TEST_POSTGRES_URI` | URI de acesso ao banco de dados PostgreSQL para ser utilizado nos testes |

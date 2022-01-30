@@ -1,5 +1,7 @@
 .env
+.ipynb_checkpoints/
 bin/
 data/
 site/
 ~/data/.gitkeep
+minha-receita

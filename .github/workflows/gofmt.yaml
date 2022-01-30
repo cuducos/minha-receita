@@ -1,0 +1,11 @@
+name: Format
+on: [push, pull_request]
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.17"
+      - run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
