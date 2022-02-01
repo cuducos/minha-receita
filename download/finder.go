@@ -53,7 +53,7 @@ func getLastUpdate(doc *goquery.Document) []string {
 
 func getURLs(d *goquery.Document) ([]string, error) {
 
-	var urls []string
+	urls := make(map[string]struct{})
 	d.Find("a.external-link").Each(func(_ int, a *goquery.Selection) {
 		h, exist := a.Attr("href")
 		if !exist {
@@ -62,10 +62,15 @@ func getURLs(d *goquery.Document) ([]string, error) {
 		if strings.HasSuffix(h, ".zip") {
 			h = strings.ReplaceAll(h, "http//", "")
 			h = strings.ReplaceAll(h, "http://http://", "http://")
-			urls = append(urls, h)
+			urls[h] = struct{}{}
 		}
 	})
-	return urls, nil
+
+	var u []string
+	for k := range urls {
+		u = append(u, k)
+	}
+	return u, nil
 }
 
 func getFiles(d *goquery.Document, dir string, skip bool) ([]file, error) {
