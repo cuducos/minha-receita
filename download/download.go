@@ -15,7 +15,12 @@ func Download(dir string, timeout time.Duration, urlsOnly, skip bool, parallel, 
 		log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	}
 
-	fs, err := getFiles(c, federalRevenue, dir, skip)
+	doc, err := getHTMLDocument(c, federalRevenue)
+	if err != nil {
+		return err
+	}
+
+	fs, err := getFiles(doc, dir, skip)
 	if err != nil {
 		return err
 	}

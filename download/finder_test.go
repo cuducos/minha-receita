@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -50,13 +51,41 @@ var expectedURLs = []string{
 	"http://200.152.38.155/CNPJ/K3241.K03200Y9.D10710.SOCIOCSV.zip",
 }
 
+func TestGetUpdateDates(t *testing.T) {
+	ts := httpTestServer(t)
+	defer ts.Close()
+
+	doc, err := getHTMLDocument(ts.Client(), ts.URL)
+	if err != nil {
+		t.Errorf("Expected getHTMLDocument to run without errors, got: %v:", err)
+		return
+	}
+
+	expectedDates := []string{"2021-01-08", "2021-10-20"}
+	got := getLastUpdate(doc)
+
+	if len(expectedDates) != len(got) {
+		t.Errorf("Expected getLastUpdate to return %d dates, got %d", len(expectedDates), len(got))
+	}
+
+	if !reflect.DeepEqual(expectedDates, got) {
+		t.Errorf("Expected getLastUpdate to return %v, got %v", expectedDates, got)
+	}
+}
+
 func TestGetURLs(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
 
-	got, err := getURLs(ts.Client(), ts.URL)
+	doc, err := getHTMLDocument(ts.Client(), ts.URL)
 	if err != nil {
-		t.Errorf("Expected getURLs to run withour errors, got: %v:", err)
+		t.Errorf("Expected getHTMLDocument to run without errors, got: %v:", err)
+		return
+	}
+
+	got, err := getURLs(doc)
+	if err != nil {
+		t.Errorf("Expected getURLs to run without errors, got: %v:", err)
 		return
 	}
 	assertArraysHaveSameItems(t, got, expectedURLs)
@@ -66,9 +95,15 @@ func TestGetFiles(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
 
+	doc, err := getHTMLDocument(ts.Client(), ts.URL)
+	if err != nil {
+		t.Errorf("Expected getHTMLDocument to run without errors, got: %v:", err)
+		return
+	}
+
 	tmp := t.TempDir()
-	expected := 37
-	got, err := getFiles(ts.Client(), ts.URL, tmp, false)
+	expected := 39
+	got, err := getFiles(doc, tmp, false)
 	if err != nil {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
 		return
