@@ -7,8 +7,8 @@ import (
 
 func TestPostgresDB(t *testing.T) {
 	id := "33683111000280"
-	json := `{"answer":42}`
-	newJSON := `{"answer":"fourty-two"}`
+	json := `{"answer": 42}`
+	newJSON := `{"answer": "fourty-two"}`
 
 	u := os.Getenv("TEST_POSTGRES_URI")
 	if u == "" {

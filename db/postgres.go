@@ -9,6 +9,7 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"text/template"
 
 	"github.com/cuducos/go-cnpj"
@@ -89,7 +90,11 @@ func (p *PostgreSQL) UpdateCompany(id, json string) error {
 	if err != nil {
 		return fmt.Errorf("error loading template: %w", err)
 	}
-	if _, err := p.conn.Exec(sql, json, id); err != nil {
+	n, err := strconv.ParseInt(id, 10, 0)
+	if err != nil {
+		return fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
+	}
+	if _, err := p.conn.Exec(sql, json, n); err != nil {
 		return fmt.Errorf("error updating record %s: %s\n%w", cnpj.Mask(id), sql, err)
 	}
 	return nil
@@ -123,19 +128,23 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 }
 
 type row struct {
-	ID   string
+	ID   int
 	JSON string
 }
 
 // GetCompany returns the JSON of a company based on a CNPJ number.
-func (p *PostgreSQL) GetCompany(n string) (string, error) {
+func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	sql, err := p.sqlFromTemplate("get.sql")
 	if err != nil {
 		return "", fmt.Errorf("error loading template: %w", err)
 	}
+	n, err := strconv.ParseInt(id, 10, 0)
+	if err != nil {
+		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
+	}
 	var r row
 	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
-		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(n), sql, err)
+		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), sql, err)
 	}
 	return r.JSON, nil
 }
@@ -146,8 +155,12 @@ func (p *PostgreSQL) ListCompanies(base string) ([]string, error) {
 	if err != nil {
 		return []string{}, fmt.Errorf("error loading template: %w", err)
 	}
+	n, err := strconv.ParseInt(base, 10, 0)
+	if err != nil {
+		return []string{}, fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
+	}
 	var j []string
-	if _, err := p.conn.Query(&j, sql, base); err != nil {
+	if _, err := p.conn.Query(&j, sql, n); err != nil {
 		return []string{}, fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
 	}
 	return j, nil
