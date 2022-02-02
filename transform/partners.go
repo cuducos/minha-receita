@@ -1,9 +1,8 @@
 package transform
 
 import (
+	"encoding/json"
 	"fmt"
-
-	"github.com/cuducos/go-cnpj"
 )
 
 type partner struct {
@@ -104,22 +103,12 @@ func addPartner(l *lookups, db database, r []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating partner for %v: %w", r, err)
 	}
-	strs, err := db.ListCompanies(r[0])
+	b, err := json.Marshal(p)
 	if err != nil {
-		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
+		return fmt.Errorf("error while mashaling partner: %w", err)
 	}
-	if len(strs) == 0 {
-		return nil
-	}
-	for _, s := range strs {
-		c, err := companyFromString(s)
-		if err != nil {
-			return fmt.Errorf("error loading company: %w", err)
-		}
-		c.QuadroSocietario = append(c.QuadroSocietario, p)
-		if err = c.Update(db); err != nil {
-			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
-		}
+	if err = db.AddPartner(r[0], string(b)); err != nil {
+		return fmt.Errorf("error adding partner to cnpj base %s: %w", base, err)
 	}
 	return nil
 }

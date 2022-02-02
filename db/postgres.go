@@ -149,6 +149,23 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return r.JSON, nil
 }
 
+// AddPartner appends a partner to the existing list of partners in the database.
+func (p *PostgreSQL) AddPartner(base string, json string) error {
+	sql, err := p.sqlFromTemplate("add_partner.sql")
+	if err != nil {
+		return fmt.Errorf("error loading template: %w", err)
+	}
+	n, err := strconv.ParseInt(base, 10, 0)
+	if err != nil {
+		return fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
+	}
+	json = "[" + json + "]" // postgres expects an array, not an object
+	if _, err := p.conn.Exec(sql, json, json, n); err != nil {
+		return fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
+	}
+	return nil
+}
+
 // ListCompanies returns the JSON for all companies with a CNPJ starting with a `base`.
 func (p *PostgreSQL) ListCompanies(base string) ([]string, error) {
 	sql, err := p.sqlFromTemplate("list.sql")

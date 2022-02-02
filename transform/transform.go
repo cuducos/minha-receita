@@ -16,6 +16,7 @@ type database interface {
 	GetCompany(string) (string, error)
 	CreateCompanies([][]string) error
 	UpdateCompany(string, string) error
+	AddPartner(string, string) error
 	ListCompanies(string) ([]string, error)
 }
 
