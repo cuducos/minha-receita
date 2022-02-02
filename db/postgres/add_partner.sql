@@ -1,10 +1,10 @@
 UPDATE {{ .TableFullName }}
 SET {{ .JSONFieldName }} = jsonb_set(
     {{ .TableFullName }}.{{ .JSONFieldName }},
-    '{qsa}',
+    array['{{ .PartnersJSONFieldName }}'],
     CASE
-        WHEN {{ .TableFullName }}.{{ .JSONFieldName }}->'qsa'::text = 'null'  THEN ?
-        ELSE {{ .TableFullName }}.{{ .JSONFieldName }}->'qsa' || ?
+        WHEN {{ .TableFullName }}.{{ .JSONFieldName }}->'{{ .PartnersJSONFieldName }}'::text = 'null'  THEN ?
+        ELSE {{ .TableFullName }}.{{ .JSONFieldName }}->'{{ .PartnersJSONFieldName }}' || ?
     END,
     false
 )

@@ -17,11 +17,12 @@ import (
 )
 
 const (
-	tableName         = "cnpj"
-	idFieldName       = "id"
-	baseCNPJFieldName = "base"
-	jsonFieldName     = "json"
-	batchSize         = 2048
+	tableName             = "cnpj"
+	idFieldName           = "id"
+	baseCNPJFieldName     = "base"
+	jsonFieldName         = "json"
+	partnersJSONFieldName = "qsa"
+	batchSize             = 2048
 )
 
 //go:embed postgres
@@ -29,13 +30,14 @@ var sql embed.FS
 
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	conn              *pg.DB
-	uri               string
-	schema            string
-	TableName         string
-	IDFieldName       string
-	BaseCNPJFieldName string
-	JSONFieldName     string
+	conn                  *pg.DB
+	uri                   string
+	schema                string
+	TableName             string
+	IDFieldName           string
+	BaseCNPJFieldName     string
+	JSONFieldName         string
+	PartnersJSONFieldName string
 }
 
 // Close closes the PostgreSQL connection
@@ -179,6 +181,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		idFieldName,
 		baseCNPJFieldName,
 		jsonFieldName,
+		partnersJSONFieldName,
 	}
 	if err := p.conn.Ping(context.Background()); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
