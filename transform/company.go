@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/cuducos/go-cnpj"
 )
 
 var companyNameClenupRegex = regexp.MustCompile(`(\D)(\d{3})(\d{5})(\d{3})$`) // masks CPF from in MEI names
@@ -160,36 +158,4 @@ func (c *company) JSON() (string, error) {
 		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
 	}
 	return string(b), nil
-}
-
-func (c *company) Create(db database) error {
-	j, err := c.JSON()
-	if err != nil {
-		return fmt.Errorf("error while getting company %s as JSON: %w", cnpj.Mask(c.CNPJ), err)
-	}
-	return db.CreateCompanies([][]string{{c.CNPJ, j}})
-}
-
-func (c *company) Update(db database) error {
-	j, err := c.JSON()
-	if err != nil {
-		return fmt.Errorf("error while getting company %s as JSON: %w", cnpj.Mask(c.CNPJ), err)
-	}
-	return db.UpdateCompany(c.CNPJ, j)
-}
-
-func companyFromString(j string) (company, error) {
-	var c company
-	if err := json.Unmarshal([]byte(j), &c); err != nil {
-		return company{}, fmt.Errorf("error unmarshaling: %w", err)
-	}
-	return c, nil
-}
-
-func companyFromDB(db database, n string) (company, error) {
-	j, err := db.GetCompany(cnpj.Unmask(n))
-	if err != nil {
-		return company{}, fmt.Errorf("error loading %s: %w", cnpj.Mask(n), err)
-	}
-	return companyFromString(j)
 }

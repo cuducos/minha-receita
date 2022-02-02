@@ -2,101 +2,44 @@ package transform
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-
+	"os"
 	"path/filepath"
-	"strings"
-	"sync"
+	"testing"
 
-	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/db"
 )
 
 var (
 	testdata = filepath.Join("..", "testdata")
 )
 
-type mockDB struct {
-	storage map[string]string
-	mu      sync.Mutex
-}
-
-func (db *mockDB) hasKey(k string) bool {
-	_, ok := db.storage[k]
-	return ok
-}
-
-func (db *mockDB) UpdateCompany(k, v string) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	if !db.hasKey(k) {
-		return fmt.Errorf("company %s not found", cnpj.Mask(k))
+func companyFromString(j string) (company, error) {
+	var c company
+	if err := json.Unmarshal([]byte(j), &c); err != nil {
+		return company{}, fmt.Errorf("error unmarshaling: %w", err)
 	}
-
-	db.storage[k] = v
-	return nil
+	return c, nil
 }
 
-func (db *mockDB) CreateCompanies(b [][]string) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	for _, c := range b {
-		if db.hasKey(c[0]) {
-			return fmt.Errorf("company %s already exists", cnpj.Mask(c[0]))
-		}
-		db.storage[c[0]] = c[1]
+func newTestDB(t *testing.T) *db.PostgreSQL {
+	u := os.Getenv("TEST_POSTGRES_URI")
+	if u == "" {
+		t.Errorf("expected a posgres uri at TEST_POSTGRES_URI, found nothing")
+		return nil
 	}
-	return nil
-}
-
-func (db *mockDB) GetCompany(k string) (string, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	v, ok := db.storage[k]
-	if !ok {
-		return "", errors.New("not found")
-	}
-	return v, nil
-}
-
-func (db *mockDB) AddPartner(b, j string) error {
-	var p partner
-	err := json.Unmarshal([]byte(j), &p)
+	r, err := db.NewPostgreSQL(u, "public")
 	if err != nil {
-		return err
+		t.Errorf("expected no error creating a test database, got %s", err)
+		return nil
 	}
-
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	for k, v := range db.storage {
-		if strings.HasPrefix(k, b) {
-			c, err := companyFromString(v)
-			if err != nil {
-				return err
-			}
-			c.QuadroSocietario = append(c.QuadroSocietario, p)
-			s, err := c.JSON()
-			if err != nil {
-				return err
-			}
-			db.storage[k] = s
-		}
+	if err := r.DropTable(); err != nil {
+		t.Errorf("expected no error droping the table in the test database, got %s", err)
+		return nil
 	}
-	return nil
-}
-
-func (db *mockDB) ListCompanies(b string) ([]string, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	var r []string
-	for k, v := range db.storage {
-		if strings.HasPrefix(k, b) {
-			r = append(r, v)
-		}
+	if err := r.CreateTable(); err != nil {
+		t.Errorf("expected no error creating the table in the test database, got %s", err)
+		return nil
 	}
-	return r, nil
-}
-
-func newMockDB() mockDB {
-	return mockDB{storage: make(map[string]string)}
+	return &r
 }

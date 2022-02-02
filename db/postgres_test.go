@@ -35,7 +35,7 @@ func TestPostgresDB(t *testing.T) {
 	if got != json {
 		t.Errorf("expected json to be %s, got %s", json, got)
 	}
-	if err := pg.UpdateCompany(id, newJSON); err != nil {
+	if err := pg.UpdateCompanies(id[:8], newJSON); err != nil {
 		t.Errorf("expected no error updating a company, got %s", err)
 	}
 	got, err = pg.GetCompany("33683111000280")

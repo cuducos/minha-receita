@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -193,25 +194,32 @@ func TestUpdateTaskRun(t *testing.T) {
 }
 
 func setupUpdateTastTest(t *testing.T) company {
-	db := newMockDB()
+	db := newTestDB(t)
 	c := company{CNPJ: "33683111000280"}
-	if err := c.Create(&db); err != nil {
+	j, err := c.JSON()
+	if err != nil {
+		t.Errorf("expected no error comverting company struct to json, got %s", err)
+	}
+	if err := db.CreateCompanies([][]string{{c.CNPJ, j}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	l, err := newLookups(testdata)
 	if err != nil {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 	}
-	u, err := newUpdateTask(testdata, &db, &l)
+	u, err := newUpdateTask(testdata, db, &l)
 	if err != nil {
 		t.Errorf("expected no errors creating update task, got %s", err)
 	}
 	if err = u.run(); err != nil {
 		t.Errorf("expected no errors running update task, got %s", err)
 	}
-	c, err = companyFromDB(&db, c.CNPJ)
+	j, err = db.GetCompany(c.CNPJ)
 	if err != nil {
 		t.Errorf("expected no errors loading company, got %s", err)
+	}
+	if err = json.Unmarshal([]byte(j), &c); err != nil {
+		t.Errorf("expected no errors transforming company to stuct, got %s", err)
 	}
 	return c
 }

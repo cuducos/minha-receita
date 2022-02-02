@@ -84,18 +84,19 @@ func (p *PostgreSQL) DropTable() error {
 	return nil
 }
 
-// UpdateCompany performs a update in the database.
-func (p *PostgreSQL) UpdateCompany(id, json string) error {
+// UpdateCompanies performs a update in the JSON from the database, merging it
+// with `json`.
+func (p *PostgreSQL) UpdateCompanies(base, json string) error {
 	sql, err := p.sqlFromTemplate("update.sql")
 	if err != nil {
 		return fmt.Errorf("error loading template: %w", err)
 	}
-	n, err := strconv.ParseInt(id, 10, 0)
+	n, err := strconv.ParseInt(base, 10, 0)
 	if err != nil {
-		return fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
+		return fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
 	}
 	if _, err := p.conn.Exec(sql, json, n); err != nil {
-		return fmt.Errorf("error updating record %s: %s\n%w", cnpj.Mask(id), sql, err)
+		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, sql, err)
 	}
 	return nil
 }
