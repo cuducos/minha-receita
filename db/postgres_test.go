@@ -45,13 +45,6 @@ func TestPostgresDB(t *testing.T) {
 	if got != newJSON {
 		t.Errorf("expected json to be %s, got %s", newJSON, got)
 	}
-	list, err := pg.ListCompanies(id[:8])
-	if err != nil {
-		t.Errorf("expected no error listing companies, got %s", err)
-	}
-	if len(list) != 1 {
-		t.Errorf("expected list to have 1 company, got %d", len(list))
-	}
 	if err := pg.DropTable(); err != nil {
 		t.Errorf("expected no error dropping the table, got %s", err)
 	}

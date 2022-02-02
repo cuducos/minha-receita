@@ -167,23 +167,6 @@ func (p *PostgreSQL) AddPartner(base string, json string) error {
 	return nil
 }
 
-// ListCompanies returns the JSON for all companies with a CNPJ starting with a `base`.
-func (p *PostgreSQL) ListCompanies(base string) ([]string, error) {
-	sql, err := p.sqlFromTemplate("list.sql")
-	if err != nil {
-		return []string{}, fmt.Errorf("error loading template: %w", err)
-	}
-	n, err := strconv.ParseInt(base, 10, 0)
-	if err != nil {
-		return []string{}, fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
-	}
-	var j []string
-	if _, err := p.conn.Query(&j, sql, n); err != nil {
-		return []string{}, fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
-	}
-	return j, nil
-}
-
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
 func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	opt, err := pg.ParseURL(uri)

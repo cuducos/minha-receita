@@ -17,7 +17,6 @@ type database interface {
 	CreateCompanies([][]string) error
 	UpdateCompanies(string, string) error
 	AddPartner(string, string) error
-	ListCompanies(string) ([]string, error)
 }
 
 // Transform the downloaded files for company venues creating a database record
