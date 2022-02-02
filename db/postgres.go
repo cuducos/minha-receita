@@ -84,23 +84,6 @@ func (p *PostgreSQL) DropTable() error {
 	return nil
 }
 
-// UpdateCompanies performs a update in the JSON from the database, merging it
-// with `json`.
-func (p *PostgreSQL) UpdateCompanies(base, json string) error {
-	sql, err := p.sqlFromTemplate("update.sql")
-	if err != nil {
-		return fmt.Errorf("error loading template: %w", err)
-	}
-	n, err := strconv.ParseInt(base, 10, 0)
-	if err != nil {
-		return fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
-	}
-	if _, err := p.conn.Exec(sql, json, n); err != nil {
-		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, sql, err)
-	}
-	return nil
-}
-
 // CreateCompanies performs a copy to create a batch of companies in the
 // database. It expects an array and each item should be another array with only
 // two items: the ID and the JSON field values.
@@ -128,26 +111,21 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 	return nil
 }
 
-type row struct {
-	ID   int
-	JSON string
-}
-
-// GetCompany returns the JSON of a company based on a CNPJ number.
-func (p *PostgreSQL) GetCompany(id string) (string, error) {
-	sql, err := p.sqlFromTemplate("get.sql")
+// UpdateCompanies performs a update in the JSON from the database, merging it
+// with `json`.
+func (p *PostgreSQL) UpdateCompanies(base, json string) error {
+	sql, err := p.sqlFromTemplate("update.sql")
 	if err != nil {
-		return "", fmt.Errorf("error loading template: %w", err)
+		return fmt.Errorf("error loading template: %w", err)
 	}
-	n, err := strconv.ParseInt(id, 10, 0)
+	n, err := strconv.ParseInt(base, 10, 0)
 	if err != nil {
-		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
+		return fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
 	}
-	var r row
-	if _, err := p.conn.QueryOne(&r, sql, n); err != nil {
-		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), sql, err)
+	if _, err := p.conn.Exec(sql, json, n); err != nil {
+		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, sql, err)
 	}
-	return r.JSON, nil
+	return nil
 }
 
 // AddPartner appends a partner to the existing list of partners in the database.
@@ -165,6 +143,26 @@ func (p *PostgreSQL) AddPartner(base string, json string) error {
 		return fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
 	}
 	return nil
+}
+
+// GetCompany returns the JSON of a company based on a CNPJ number.
+func (p *PostgreSQL) GetCompany(id string) (string, error) {
+	sql, err := p.sqlFromTemplate("get.sql")
+	if err != nil {
+		return "", fmt.Errorf("error loading template: %w", err)
+	}
+	n, err := strconv.ParseInt(id, 10, 0)
+	if err != nil {
+		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
+	}
+	var row struct {
+		ID   int
+		JSON string
+	}
+	if _, err := p.conn.QueryOne(&row, sql, n); err != nil {
+		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), sql, err)
+	}
+	return row.JSON, nil
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
