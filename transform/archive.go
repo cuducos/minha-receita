@@ -55,8 +55,29 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 	return a, nil
 }
 
+func removeNulChar(r rune) rune {
+	if r == '\x00' {
+		return -1
+	}
+	return r
+}
+
 func (a *archivedCSV) read() ([]string, error) {
-	return a.reader.Read()
+	ls, err := a.reader.Read()
+	if err != nil {
+		if err == io.EOF {
+			return []string{}, err
+		}
+		return []string{}, fmt.Errorf("error reading archived csv line from %s: %w", a.path, err)
+	}
+	for i, l := range ls {
+		ls[i], err = charmap.ISO8859_1.NewDecoder().String(l)
+		if err != nil {
+			return []string{}, fmt.Errorf("encoding error in text %s from %s: %w", l, a.path, err)
+		}
+		ls[i] = strings.Map(removeNulChar, ls[i])
+	}
+	return ls, nil
 }
 
 func (a *archivedCSV) close() error {
@@ -78,15 +99,9 @@ func (a *archivedCSV) toLookup() (lookup, error) {
 		if err != nil {
 			return m, fmt.Errorf("error reading CSV from %s: %w", a.path, err)
 		}
-
 		i, err := strconv.Atoi(l[0])
 		if err != nil {
 			return m, fmt.Errorf("error converting key %s to int in %s: %w", l[0], a.path, err)
-		}
-
-		l[1], err = charmap.ISO8859_1.NewDecoder().String(l[1])
-		if err != nil {
-			return m, fmt.Errorf("encoding error in text %s from %s: %w", l[0], a.path, err)
 		}
 		m[i] = l[1]
 	}
