@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"sync/atomic"
 )
 
 type sourceType string
@@ -26,18 +27,18 @@ type source struct {
 	files      []string
 	readers    []*archivedCSV
 	totalLines int64
+	shutdown   uint32
 }
 
 func (s *source) createReaders() error {
-	var as []*archivedCSV
-	for _, p := range s.files {
+	s.readers = make([]*archivedCSV, len(s.files))
+	for i, p := range s.files {
 		r, err := newArchivedCSV(p, separator)
 		if err != nil {
 			return fmt.Errorf("error reading %s: %w", p, err)
 		}
-		as = append(as, r)
+		s.readers[i] = r
 	}
-	s.readers = as
 	return nil
 }
 
@@ -60,44 +61,47 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error, done chan<- struct{}) {
-	defer func() { done <- struct{}{} }()
+func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error) {
 	var t int64
 	for {
+		if atomic.LoadUint32(&s.shutdown) == 1 {
+			return
+		}
 		_, err := a.read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
+			atomic.StoreUint32(&s.shutdown, 1)
 			errs <- err
 			return
 		}
 		t++
 	}
+	if atomic.LoadUint32(&s.shutdown) == 1 {
+		return
+	}
 	count <- t
 }
 
 func (s *source) countLines() error {
-	var done int
 	count := make(chan int64)
 	errs := make(chan error)
-	read := make(chan struct{})
 	for _, r := range s.readers {
-		go s.countLinesFor(r, count, errs, read)
+		go s.countLinesFor(r, count, errs)
 	}
 	defer func() {
 		s.resetReaders()
-		close(read)
 		close(count)
 		close(errs)
 	}()
+	var done int
 	for {
 		select {
 		case err := <-errs:
 			return fmt.Errorf("error counting lines: %w", err)
 		case n := <-count:
 			s.totalLines += n
-		case <-read:
 			done++
 			if done == len(s.readers) {
 				return nil
