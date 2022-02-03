@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"math"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -19,7 +20,6 @@ import (
 const (
 	tableName             = "cnpj"
 	idFieldName           = "id"
-	baseCNPJFieldName     = "base"
 	jsonFieldName         = "json"
 	partnersJSONFieldName = "qsa"
 	batchSize             = 2048
@@ -35,7 +35,6 @@ type PostgreSQL struct {
 	schema                string
 	TableName             string
 	IDFieldName           string
-	BaseCNPJFieldName     string
 	JSONFieldName         string
 	PartnersJSONFieldName string
 }
@@ -92,9 +91,9 @@ func (p *PostgreSQL) DropTable() error {
 func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 	var data bytes.Buffer
 	w := csv.NewWriter(&data)
-	w.Write([]string{idFieldName, baseCNPJFieldName, jsonFieldName})
+	w.Write([]string{idFieldName, jsonFieldName})
 	for _, r := range batch {
-		w.Write([]string{r[0], r[0][0:8], r[1]})
+		w.Write([]string{r[0], r[1]})
 	}
 	w.Flush()
 
@@ -113,6 +112,17 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 	return nil
 }
 
+// Returns the minimum and maximum CNPJ possible given a base CNPJ.
+func rangeFor(base string) (int64, int64, error) {
+	n, err := strconv.ParseInt(base, 10, 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
+	}
+	mm := int64(math.Pow(10, 6))
+	min := n * mm // adds 6 zeroes to complete the CNPJ's 14 digits
+	return min, min + (mm - 1), nil
+}
+
 // UpdateCompanies performs a update in the JSON from the database, merging it
 // with `json`.
 func (p *PostgreSQL) UpdateCompanies(base, json string) error {
@@ -120,11 +130,11 @@ func (p *PostgreSQL) UpdateCompanies(base, json string) error {
 	if err != nil {
 		return fmt.Errorf("error loading template: %w", err)
 	}
-	n, err := strconv.ParseInt(base, 10, 0)
+	min, max, err := rangeFor(base)
 	if err != nil {
-		return fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
+		return fmt.Errorf("error calculating the cnpj interval for base %s: %w", base, err)
 	}
-	if _, err := p.conn.Exec(sql, json, n); err != nil {
+	if _, err := p.conn.Exec(sql, json, min, max); err != nil {
 		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, sql, err)
 	}
 	return nil
@@ -136,12 +146,12 @@ func (p *PostgreSQL) AddPartner(base string, json string) error {
 	if err != nil {
 		return fmt.Errorf("error loading template: %w", err)
 	}
-	n, err := strconv.ParseInt(base, 10, 0)
+	min, max, err := rangeFor(base)
 	if err != nil {
-		return fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
+		return fmt.Errorf("error calculating the cnpj interval for base %s: %w", base, err)
 	}
 	json = "[" + json + "]" // postgres expects an array, not an object
-	if _, err := p.conn.Exec(sql, json, json, n); err != nil {
+	if _, err := p.conn.Exec(sql, json, json, min, max); err != nil {
 		return fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
 	}
 	return nil
@@ -179,7 +189,6 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		schema,
 		tableName,
 		idFieldName,
-		baseCNPJFieldName,
 		jsonFieldName,
 		partnersJSONFieldName,
 	}

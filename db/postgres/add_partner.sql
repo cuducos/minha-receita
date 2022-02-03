@@ -8,4 +8,4 @@ SET {{ .JSONFieldName }} = jsonb_set(
     END,
     false
 )
-WHERE {{ .BaseCNPJFieldName }} = ?;
+WHERE {{ .IDFieldName }} >= ? AND {{ .IDFieldName }} <= ?;
