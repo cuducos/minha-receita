@@ -49,6 +49,7 @@ var expectedURLs = []string{
 	"http://200.152.38.155/CNPJ/K3241.K03200Y9.D10710.EMPRECSV.zip",
 	"http://200.152.38.155/CNPJ/K3241.K03200Y9.D10710.ESTABELE.zip",
 	"http://200.152.38.155/CNPJ/K3241.K03200Y9.D10710.SOCIOCSV.zip",
+	"http://200.152.38.155/CNPJ/anual/Dados%20Abertos%20S%c3%adtio%20RFB%20Extracao%2020.10.2021.zip",
 }
 
 func TestGetUpdateDates(t *testing.T) {
@@ -102,7 +103,7 @@ func TestGetFiles(t *testing.T) {
 	}
 
 	tmp := t.TempDir()
-	expected := 39
+	expected := 38
 	got, err := getFiles(doc, tmp, false)
 	if err != nil {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)

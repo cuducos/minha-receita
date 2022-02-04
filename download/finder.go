@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -19,6 +20,15 @@ var reUpateDate = regexp.MustCompile(`(?i)data da última extração:.*([0-9]{2}
 type file struct {
 	url  string
 	path string
+}
+
+func toRFC3339Date(brDt string) string {
+	dt, err := time.Parse("02/01/2006", brDt)
+	if err != nil {
+		// Golang zero value for dates
+		return "0001-01-01"
+	}
+	return dt.Format("2006-01-02")
 }
 
 func getHTMLDocument(client *http.Client, src string) (*goquery.Document, error) {
@@ -42,9 +52,8 @@ func getLastUpdate(doc *goquery.Document) []string {
 		m := reUpateDate.FindAllStringSubmatch(p.Text(), -1)
 		if len(m) > 0 {
 			for _, md := range m {
-				// Transform BR date to intl date
-
-				updateDates = append(updateDates, md[1])
+				// Transform BR date
+				updateDates = append(updateDates, toRFC3339Date(md[1]))
 			}
 		}
 	})

@@ -1,12 +1,41 @@
 package download
 
 import (
+	"encoding/json"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 )
 
+func TestCreateLastUpdateFile(t *testing.T) {
+	tmp := t.TempDir()
+	updateDates := []string{"2021-12-12", "2021-10-20"}
+
+	err := createLastUpdateJSONFile(tmp, updateDates)
+	if err != nil {
+		t.Errorf("Expected no errors on create last_update.txt, got: %v", err)
+	}
+
+	jsonBody := make(map[string]string)
+	fj, err := os.Open(filepath.Join(tmp, "last_update.txt"))
+	if err != nil {
+		t.Errorf("Could not open last_update.txt, got: %v", err)
+	}
+	defer fj.Close()
+
+	err = json.NewDecoder(fj).Decode(&jsonBody)
+	if err != nil {
+		t.Errorf("Could not decode last_update.txt as JSON, got: %v", err)
+	}
+
+	if jsonBody["companies"] != updateDates[0] {
+		t.Errorf("Expected %s, got %s", updateDates[0], jsonBody["companies"])
+	}
+	if jsonBody["taxes"] != updateDates[1] {
+		t.Errorf("Expected %s, got %s", updateDates[1], jsonBody["taxes"])
+	}
+}
 func TestNewDownloader(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
