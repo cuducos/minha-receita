@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/cuducos/go-cnpj"
@@ -41,20 +42,20 @@ type PostgreSQL struct {
 }
 
 func (p *PostgreSQL) loadTemplates() error {
-	ls, err := filepath.Glob(filepath.Join("..", "db", "postgres", "*.sql"))
+	ls, err := sql.ReadDir("postgres")
 	if err != nil {
 		return fmt.Errorf("error looking for templates: %w", err)
 	}
-	for _, n := range ls {
-		t, err := template.ParseFS(sql, filepath.Join("postgres", filepath.Base(n)))
+	for _, f := range ls {
+		t, err := template.ParseFS(sql, filepath.Join("postgres", f.Name()))
 		if err != nil {
-			return fmt.Errorf("error parsing %s template: %w", n, err)
+			return fmt.Errorf("error parsing %s template: %w", f, err)
 		}
 		var b bytes.Buffer
 		if err = t.Execute(&b, p); err != nil {
-			return fmt.Errorf("error rendering %s template: %w", n, err)
+			return fmt.Errorf("error rendering %s template: %w", f, err)
 		}
-		p.sql[filepath.Base(n)] = b.String()
+		p.sql[f.Name()] = b.String()
 	}
 	return nil
 }
@@ -124,27 +125,44 @@ func rangeFor(base string) (int64, int64, error) {
 }
 
 // UpdateCompanies performs a update in the JSON from the database, merging it
-// with `json`.
-func (p *PostgreSQL) UpdateCompanies(base, json string) error {
-	min, max, err := rangeFor(base)
-	if err != nil {
-		return fmt.Errorf("error calculating the cnpj interval for base %s: %w", base, err)
+// with `json`. It expects an array of two-items array containing a base CNPJ
+// and the new JSON data.
+func (p *PostgreSQL) UpdateCompanies(data [][]string) error {
+	args := make([]interface{}, len(data)*3)
+	for i, v := range data {
+		min, max, err := rangeFor(v[0])
+		if err != nil {
+			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
+		}
+		args[i*3] = v[1]
+		args[(i*3)+1] = min
+		args[(i*3)+2] = max
 	}
-	if _, err := p.conn.Exec(p.sql["update.sql"], json, min, max); err != nil {
-		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, p.sql["update.sql"], err)
+	query := strings.Repeat(p.sql["update.sql"], len(data))
+	if _, err := p.conn.Exec(query, args...); err != nil {
+		return fmt.Errorf("error updating companies: %w", err)
 	}
 	return nil
 }
 
-// AddPartner appends a partner to the existing list of partners in the database.
-func (p *PostgreSQL) AddPartner(base string, json string) error {
-	min, max, err := rangeFor(base)
-	if err != nil {
-		return fmt.Errorf("error calculating the cnpj interval for base %s: %w", base, err)
+// AddPartners appends an array of partners to the existing list of partners in
+// the database. It expects an array of two-items array containing a base CNPJ
+// and the new JSON data.
+func (p *PostgreSQL) AddPartners(data [][]string) error {
+	args := make([]interface{}, len(data)*4)
+	for i, v := range data {
+		min, max, err := rangeFor(v[0])
+		if err != nil {
+			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
+		}
+		args[(i * 4)] = v[1]
+		args[(i*4)+1] = v[1]
+		args[(i*4)+2] = min
+		args[(i*4)+3] = max
 	}
-	json = "[" + json + "]" // postgres expects an array, not an object
-	if _, err := p.conn.Exec(p.sql["add_partner.sql"], json, json, min, max); err != nil {
-		return fmt.Errorf("error listing with base %s: %s\n%w", base, p.sql["add_partner.sql"], err)
+	query := strings.Repeat(p.sql["add_partner.sql"], len(data))
+	if _, err := p.conn.Exec(query, args...); err != nil {
+		return fmt.Errorf("error adding partners: %w", err)
 	}
 	return nil
 }

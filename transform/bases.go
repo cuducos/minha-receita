@@ -73,17 +73,14 @@ func (d *baseData) base(r []string, l *lookups) error {
 	return nil
 }
 
-func addBase(l *lookups, db database, r []string) error {
+func addBase(l *lookups, r []string) ([]string, error) {
 	var d baseData
 	if err := d.base(r, l); err != nil {
-		return fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
+		return []string{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
 	}
 	b, err := json.Marshal(&d)
 	if err != nil {
-		return fmt.Errorf("error converting base cnpj data to json for %s: %w", r[0], err)
+		return []string{}, fmt.Errorf("error converting base cnpj data to json for %s: %w", r[0], err)
 	}
-	if err = db.UpdateCompanies(r[0], string(b)); err != nil {
-		return fmt.Errorf("error updating base cnpj %s: %w", r[0], err)
-	}
-	return nil
+	return []string{r[0], string(b)}, nil
 }

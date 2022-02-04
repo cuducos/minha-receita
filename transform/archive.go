@@ -64,10 +64,10 @@ func removeNulChar(r rune) rune {
 
 func (a *archivedCSV) read() ([]string, error) {
 	ls, err := a.reader.Read()
+	if err == io.EOF {
+		return []string{}, err
+	}
 	if err != nil {
-		if err == io.EOF {
-			return []string{}, err
-		}
 		return []string{}, fmt.Errorf("error reading archived csv line from %s: %w", a.path, err)
 	}
 	for i, l := range ls {

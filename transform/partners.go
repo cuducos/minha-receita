@@ -98,17 +98,16 @@ func newPartner(l *lookups, r []string) (partner, error) {
 	return p, nil
 }
 
-func addPartner(l *lookups, db database, r []string) error {
+func addPartners(l *lookups, r []string) ([]string, error) {
 	p, err := newPartner(l, r)
 	if err != nil {
-		return fmt.Errorf("error creating partner for %v: %w", r, err)
+		return []string{}, fmt.Errorf("error creating partner for %v: %w", r, err)
 	}
-	b, err := json.Marshal(p)
+	a := make([]partner, 1) // db.AddPartner expects an array
+	a[0] = p
+	b, err := json.Marshal(a)
 	if err != nil {
-		return fmt.Errorf("error while mashaling partner: %w", err)
+		return []string{}, fmt.Errorf("error while mashaling partner: %w", err)
 	}
-	if err = db.AddPartner(r[0], string(b)); err != nil {
-		return fmt.Errorf("error adding partner to cnpj base %s: %w", base, err)
-	}
-	return nil
+	return []string{r[0], string(b)}, nil
 }

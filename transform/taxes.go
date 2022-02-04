@@ -14,7 +14,7 @@ type taxesData struct {
 	DataExclusaoDoMEI     *date `json:"data_exclusao_do_mei"`
 }
 
-func addTax(_ *lookups, db database, r []string) error {
+func addTax(_ *lookups, r []string) ([]string, error) {
 	var err error
 	d := taxesData{
 		OpcaoPeloSimples: toBool(r[1]),
@@ -22,26 +22,23 @@ func addTax(_ *lookups, db database, r []string) error {
 	}
 	d.DataOpcaoPeloSimples, err = toDate(r[2])
 	if err != nil {
-		return fmt.Errorf("error parsing DataOpcaoPeloSimples %s: %w", r[2], err)
+		return []string{}, fmt.Errorf("error parsing DataOpcaoPeloSimples %s: %w", r[2], err)
 	}
 	d.DataExclusaoDoSimples, err = toDate(r[3])
 	if err != nil {
-		return fmt.Errorf("error parsing DataExclusaoDoSimples %s: %w", r[3], err)
+		return []string{}, fmt.Errorf("error parsing DataExclusaoDoSimples %s: %w", r[3], err)
 	}
 	d.DataOpcaoPeloMEI, err = toDate(r[5])
 	if err != nil {
-		return fmt.Errorf("error parsing DataOpcaoPeloMEI %s: %w", r[5], err)
+		return []string{}, fmt.Errorf("error parsing DataOpcaoPeloMEI %s: %w", r[5], err)
 	}
 	d.DataExclusaoDoMEI, err = toDate(r[6])
 	if err != nil {
-		return fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
+		return []string{}, fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
 	}
 	b, err := json.Marshal(&d)
 	if err != nil {
-		return fmt.Errorf("error converting taxes data to json for %s: %w", r[0], err)
+		return []string{}, fmt.Errorf("error converting taxes data to json for %s: %w", r[0], err)
 	}
-	if err = db.UpdateCompanies(r[0], string(b)); err != nil {
-		return fmt.Errorf("error updating taxes for base cnpj %s: %w", r[0], err)
-	}
-	return nil
+	return []string{r[0], string(b)}, nil
 }

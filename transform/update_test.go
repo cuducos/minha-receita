@@ -8,7 +8,7 @@ import (
 
 func TestUpdateTaskRun(t *testing.T) {
 	t.Run("base CNPJ", func(t *testing.T) {
-		got := setupUpdateTastTest(t)
+		got := setupUpdateTaskTest(t)
 		codigoPorte := 5
 		porte := "DEMAIS"
 		codigoNaturezaJuridica := 2011
@@ -79,7 +79,7 @@ func TestUpdateTaskRun(t *testing.T) {
 			FaixaEtaria:                          &faixaEtaria,
 		}
 
-		c := setupUpdateTastTest(t)
+		c := setupUpdateTaskTest(t)
 		var got partner
 		for _, s := range c.QuadroSocietario {
 			if s.NomeSocio == expected.NomeSocio {
@@ -163,7 +163,7 @@ func TestUpdateTaskRun(t *testing.T) {
 	})
 
 	t.Run("taxes", func(t *testing.T) {
-		got := setupUpdateTastTest(t)
+		got := setupUpdateTaskTest(t)
 		dataOpcaoPeloSimples, err := time.Parse("2006-01-02", "2014-01-01")
 		if err != nil {
 			t.Errorf("expected no errors creating date got %s", err)
@@ -193,12 +193,12 @@ func TestUpdateTaskRun(t *testing.T) {
 	})
 }
 
-func setupUpdateTastTest(t *testing.T) company {
+func setupUpdateTaskTest(t *testing.T) company {
 	db := newTestDB(t)
 	c := company{CNPJ: "33683111000280"}
 	j, err := c.JSON()
 	if err != nil {
-		t.Errorf("expected no error comverting company struct to json, got %s", err)
+		t.Errorf("expected no error converting company struct to json, got %s", err)
 	}
 	if err := db.CreateCompanies([][]string{{c.CNPJ, j}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
@@ -207,7 +207,7 @@ func setupUpdateTastTest(t *testing.T) company {
 	if err != nil {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 	}
-	u, err := newUpdateTask(testdata, db, &l)
+	u, err := newUpdateTask(testdata, db, 1, &l)
 	if err != nil {
 		t.Errorf("expected no errors creating update task, got %s", err)
 	}

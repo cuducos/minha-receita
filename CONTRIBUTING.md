@@ -105,6 +105,8 @@ $ ./minha-receita transform -d data/sample
 
 Explore mais opções com `--help`.
 
+Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u $TEST_POSTGRES_URI` é uma boa forma de evitar isso.
+
 ## Documentação
 
 Utilizamos o [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/):
