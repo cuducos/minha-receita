@@ -9,9 +9,9 @@ Existem duas formas de rodar essa aplicação:
 
 _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
-É necessário cerca de 130Gb disponíveis de espaço em disco para armazenar os dados:
+É necessário cerca de 150Gb disponíveis de espaço em disco para armazenar os dados:
 * Os arquivos da Receita federal tem cerca de 6Gb
-* O banco de dados PostgreSQL gerado utiliza cerca de 120Gb
+* O banco de dados PostgreSQL gerado utiliza cerca de 140Gb
 
 ### Requisitos e instalação sem Docker
 
