@@ -33,10 +33,30 @@ type PostgreSQL struct {
 	conn                  *pg.DB
 	uri                   string
 	schema                string
+	sql                   map[string]string
 	TableName             string
 	IDFieldName           string
 	JSONFieldName         string
 	PartnersJSONFieldName string
+}
+
+func (p *PostgreSQL) loadTemplates() error {
+	ls, err := filepath.Glob(filepath.Join("..", "db", "postgres", "*.sql"))
+	if err != nil {
+		return fmt.Errorf("error looking for templates: %w", err)
+	}
+	for _, n := range ls {
+		t, err := template.ParseFS(sql, filepath.Join("postgres", filepath.Base(n)))
+		if err != nil {
+			return fmt.Errorf("error parsing %s template: %w", n, err)
+		}
+		var b bytes.Buffer
+		if err = t.Execute(&b, p); err != nil {
+			return fmt.Errorf("error rendering %s template: %w", n, err)
+		}
+		p.sql[filepath.Base(n)] = b.String()
+	}
+	return nil
 }
 
 // Close closes the PostgreSQL connection
@@ -47,40 +67,20 @@ func (p *PostgreSQL) TableFullName() string {
 	return fmt.Sprintf("%s.%s", p.schema, p.TableName)
 }
 
-func (p *PostgreSQL) sqlFromTemplate(n string) (string, error) {
-	t, err := template.ParseFS(sql, filepath.Join("postgres", n))
-	if err != nil {
-		return "", fmt.Errorf("error parsing %s template: %w", n, err)
-	}
-	var b bytes.Buffer
-	if err = t.Execute(&b, p); err != nil {
-		return "", fmt.Errorf("error rendering %s template: %w", n, err)
-	}
-	return b.String(), nil
-}
-
 // CreateTable creates the required database table.
 func (p *PostgreSQL) CreateTable() error {
-	sql, err := p.sqlFromTemplate("create.sql")
-	if err != nil {
-		return fmt.Errorf("error loading template: %w", err)
-	}
 	log.Output(2, fmt.Sprintf("Creating table %s…", p.TableFullName()))
-	if _, err := p.conn.Exec(sql); err != nil {
-		return fmt.Errorf("error creating table with: %s\n%w", sql, err)
+	if _, err := p.conn.Exec(p.sql["create.sql"]); err != nil {
+		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create.sql"], err)
 	}
 	return nil
 }
 
 // DropTable drops the database table created by `CreateTable`.
 func (p *PostgreSQL) DropTable() error {
-	sql, err := p.sqlFromTemplate("drop.sql")
-	if err != nil {
-		return fmt.Errorf("error loading template: %w", err)
-	}
 	log.Output(2, fmt.Sprintf("Dropping table %s…", p.TableFullName()))
-	if _, err := p.conn.Exec(sql); err != nil {
-		return fmt.Errorf("error dropping table with: %s\n%w", sql, err)
+	if _, err := p.conn.Exec(p.sql["drop.sql"]); err != nil {
+		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop.sql"], err)
 	}
 	return nil
 }
@@ -126,43 +126,31 @@ func rangeFor(base string) (int64, int64, error) {
 // UpdateCompanies performs a update in the JSON from the database, merging it
 // with `json`.
 func (p *PostgreSQL) UpdateCompanies(base, json string) error {
-	sql, err := p.sqlFromTemplate("update.sql")
-	if err != nil {
-		return fmt.Errorf("error loading template: %w", err)
-	}
 	min, max, err := rangeFor(base)
 	if err != nil {
 		return fmt.Errorf("error calculating the cnpj interval for base %s: %w", base, err)
 	}
-	if _, err := p.conn.Exec(sql, json, min, max); err != nil {
-		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, sql, err)
+	if _, err := p.conn.Exec(p.sql["update.sql"], json, min, max); err != nil {
+		return fmt.Errorf("error updating cnpj base %s: %s\n%w", base, p.sql["update.sql"], err)
 	}
 	return nil
 }
 
 // AddPartner appends a partner to the existing list of partners in the database.
 func (p *PostgreSQL) AddPartner(base string, json string) error {
-	sql, err := p.sqlFromTemplate("add_partner.sql")
-	if err != nil {
-		return fmt.Errorf("error loading template: %w", err)
-	}
 	min, max, err := rangeFor(base)
 	if err != nil {
 		return fmt.Errorf("error calculating the cnpj interval for base %s: %w", base, err)
 	}
 	json = "[" + json + "]" // postgres expects an array, not an object
-	if _, err := p.conn.Exec(sql, json, json, min, max); err != nil {
-		return fmt.Errorf("error listing with base %s: %s\n%w", base, sql, err)
+	if _, err := p.conn.Exec(p.sql["add_partner.sql"], json, json, min, max); err != nil {
+		return fmt.Errorf("error listing with base %s: %s\n%w", base, p.sql["add_partner.sql"], err)
 	}
 	return nil
 }
 
 // GetCompany returns the JSON of a company based on a CNPJ number.
 func (p *PostgreSQL) GetCompany(id string) (string, error) {
-	sql, err := p.sqlFromTemplate("get.sql")
-	if err != nil {
-		return "", fmt.Errorf("error loading template: %w", err)
-	}
 	n, err := strconv.ParseInt(id, 10, 0)
 	if err != nil {
 		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
@@ -171,8 +159,8 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 		ID   int
 		JSON string
 	}
-	if _, err := p.conn.QueryOne(&row, sql, n); err != nil {
-		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), sql, err)
+	if _, err := p.conn.QueryOne(&row, p.sql["get.sql"], n); err != nil {
+		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), p.sql["get.sql"], err)
 	}
 	return row.JSON, nil
 }
@@ -187,10 +175,14 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		pg.Connect(opt),
 		uri,
 		schema,
+		make(map[string]string),
 		tableName,
 		idFieldName,
 		jsonFieldName,
 		partnersJSONFieldName,
+	}
+	if err = p.loadTemplates(); err != nil {
+		return PostgreSQL{}, fmt.Errorf("could not load the sql templates: %w", err)
 	}
 	if err := p.conn.Ping(context.Background()); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
