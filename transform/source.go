@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"log"
 )
 
 type sourceType string
@@ -60,8 +61,7 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error, done chan<- struct{}) {
-	defer func() { done <- struct{}{} }()
+func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error) {
 	var t int64
 	for {
 		_, err := a.read()
@@ -78,26 +78,23 @@ func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- e
 }
 
 func (s *source) countLines() error {
-	var done int
 	count := make(chan int64)
 	errs := make(chan error)
-	read := make(chan struct{})
 	for _, r := range s.readers {
-		go s.countLinesFor(r, count, errs, read)
+		go s.countLinesFor(r, count, errs)
 	}
 	defer func() {
 		s.resetReaders()
-		close(read)
 		close(count)
 		close(errs)
 	}()
+	var done int
 	for {
 		select {
 		case err := <-errs:
 			return fmt.Errorf("error counting lines: %w", err)
 		case n := <-count:
 			s.totalLines += n
-		case <-read:
 			done++
 			if done == len(s.readers) {
 				return nil
@@ -107,12 +104,15 @@ func (s *source) countLines() error {
 }
 
 func newSource(t sourceType, d string) (*source, error) {
+	log.Output(2, fmt.Sprintf("Loading %s files…", string(t)))
 	ls, err := PathsForSource(t, d)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
 	}
 	s := source{kind: t, dir: d, files: ls}
 	s.createReaders()
-	s.countLines()
+	if err = s.countLines(); err != nil {
+		return nil, fmt.Errorf("error counting lines for %s in %s: %w", string(t), d, err)
+	}
 	return &s, nil
 }

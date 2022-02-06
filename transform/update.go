@@ -186,7 +186,6 @@ func (t *updateTask) run() error {
 	if t.totalLines == 0 {
 		return nil
 	}
-	t.bar.Describe("Adding base CNPJ, partners and taxes info")
 	if err := t.bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
@@ -241,5 +240,6 @@ func newUpdateTask(dir string, db database, b int, l *lookups) (*updateTask, err
 		errors:     make(chan error),
 		bar:        progressbar.Default(t),
 	}
+	u.bar.Describe("Adding base CNPJ, partners and taxes info")
 	return &u, nil
 }

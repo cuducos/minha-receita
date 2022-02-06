@@ -8,13 +8,11 @@ import (
 
 // PathsForSource lists files for a given `sourceType` in a directory `dir`.
 func PathsForSource(t sourceType, dir string) ([]string, error) {
-	var ls []string
-
 	r, err := os.ReadDir(dir)
 	if err != nil {
-		return ls, err
+		return []string{}, err
 	}
-
+	var ls []string
 	for _, f := range r {
 		if f.IsDir() {
 			continue
