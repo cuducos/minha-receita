@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -91,6 +92,16 @@ func (p *PostgreSQL) UpdateCompany(id, json string) error {
 	}
 	if _, err := p.conn.Exec(sql, json, id); err != nil {
 		return fmt.Errorf("error updating record %s: %s\n%w", cnpj.Mask(id), sql, err)
+	}
+	return nil
+}
+
+// AssertPostgresCLIExists searches for the PostgreSQL executable (psql) in the
+// environment's PATH. It will return an error if no executable is found.
+func AssertPostgresCLIExists() error {
+	_, err := exec.LookPath("psql")
+	if err != nil {
+		return errors.New("postgres client (psql) not installed or not in PATH")
 	}
 	return nil
 }
