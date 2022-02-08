@@ -1,13 +1,14 @@
 package transform
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 )
 
 func TestUpdateTaskRun(t *testing.T) {
 	t.Run("base CNPJ", func(t *testing.T) {
-		got := setupUpdateTastTest(t)
+		got := setupUpdateTaskTest(t)
 		codigoPorte := 5
 		porte := "DEMAIS"
 		codigoNaturezaJuridica := 2011
@@ -78,7 +79,7 @@ func TestUpdateTaskRun(t *testing.T) {
 			FaixaEtaria:                          &faixaEtaria,
 		}
 
-		c := setupUpdateTastTest(t)
+		c := setupUpdateTaskTest(t)
 		var got partner
 		for _, s := range c.QuadroSocietario {
 			if s.NomeSocio == expected.NomeSocio {
@@ -162,7 +163,7 @@ func TestUpdateTaskRun(t *testing.T) {
 	})
 
 	t.Run("taxes", func(t *testing.T) {
-		got := setupUpdateTastTest(t)
+		got := setupUpdateTaskTest(t)
 		dataOpcaoPeloSimples, err := time.Parse("2006-01-02", "2014-01-01")
 		if err != nil {
 			t.Errorf("expected no errors creating date got %s", err)
@@ -192,26 +193,33 @@ func TestUpdateTaskRun(t *testing.T) {
 	})
 }
 
-func setupUpdateTastTest(t *testing.T) company {
-	db := newMockDB()
+func setupUpdateTaskTest(t *testing.T) company {
+	db := newTestDB(t)
 	c := company{CNPJ: "33683111000280"}
-	if err := c.Create(&db); err != nil {
+	j, err := c.JSON()
+	if err != nil {
+		t.Errorf("expected no error converting company struct to json, got %s", err)
+	}
+	if err := db.CreateCompanies([][]string{{c.CNPJ, j}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	l, err := newLookups(testdata)
 	if err != nil {
 		t.Errorf("expected no error creating look up tables, got %s", err)
 	}
-	u, err := newUpdateTask(testdata, &db, &l)
+	u, err := newUpdateTask(testdata, db, 1, &l)
 	if err != nil {
 		t.Errorf("expected no errors creating update task, got %s", err)
 	}
 	if err = u.run(); err != nil {
 		t.Errorf("expected no errors running update task, got %s", err)
 	}
-	c, err = companyFromDB(&db, c.CNPJ)
+	j, err = db.GetCompany(c.CNPJ)
 	if err != nil {
 		t.Errorf("expected no errors loading company, got %s", err)
+	}
+	if err = json.Unmarshal([]byte(j), &c); err != nil {
+		t.Errorf("expected no errors transforming company to stuct, got %s", err)
 	}
 	return c
 }

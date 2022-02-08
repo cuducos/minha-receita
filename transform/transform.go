@@ -13,10 +13,9 @@ const MaxParallelDBQueries = 32
 const BatchSize = 8192
 
 type database interface {
-	GetCompany(string) (string, error)
 	CreateCompanies([][]string) error
-	UpdateCompany(string, string) error
-	ListCompanies(string) ([]string, error)
+	UpdateCompanies([][]string) error
+	AddPartners([][]string) error
 }
 
 // Transform the downloaded files for company venues creating a database record
@@ -29,7 +28,7 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int) err
 	if err := j.run(maxParallelDBQueries); err != nil {
 		return err
 	}
-	u, err := newUpdateTask(dir, db, j.lookups)
+	u, err := newUpdateTask(dir, db, batchSize, j.lookups)
 	if err != nil {
 		return fmt.Errorf("error creating update task: %w", err)
 	}

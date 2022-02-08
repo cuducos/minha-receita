@@ -1,12 +1,22 @@
 package transform
 
 import (
+	"encoding/json"
 	"fmt"
-
-	"github.com/cuducos/go-cnpj"
 )
 
-func (c *company) porte(v string) error {
+type baseData struct {
+	CodigoPorte               *int     `json:"codigo_porte"`
+	Porte                     *string  `json:"porte"`
+	RazaoSocial               string   `json:"razao_social"`
+	CodigoNaturezaJuridica    *int     `json:"codigo_natureza_juridica"`
+	NaturezaJuridica          *string  `json:"natureza_juridica"`
+	QualificacaoDoResponsavel *int     `json:"qualificacao_do_responsavel"`
+	CapitalSocial             *float32 `json:"capital_social"`
+	EnteFederativoResponsavel string   `json:"ente_federativo_responsavel"`
+}
+
+func (d *baseData) porte(v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoPorte %s: %w", v, err)
@@ -27,61 +37,50 @@ func (c *company) porte(v string) error {
 		s = "DEMAIS"
 	}
 
-	c.CodigoPorte = i
+	d.CodigoPorte = i
 	if s != "" {
-		c.Porte = &s
+		d.Porte = &s
 	}
 	return nil
 }
 
-func (c *company) base(r []string, l *lookups) error {
-	c.RazaoSocial = r[1]
+func (d *baseData) base(r []string, l *lookups) error {
+	d.RazaoSocial = r[1]
 	codigoNaturezaJuridica, err := toInt(r[2])
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoNaturezaJuridica %s: %w", r[2], err)
 	}
-	c.CodigoNaturezaJuridica = codigoNaturezaJuridica
+	d.CodigoNaturezaJuridica = codigoNaturezaJuridica
 	qualificacaoDoResponsavel, err := toInt(r[3])
 	if err != nil {
 		return fmt.Errorf("error trying to parse QualificacaoDoResponsavel %s: %w", r[3], err)
 	}
-	c.QualificacaoDoResponsavel = qualificacaoDoResponsavel
+	d.QualificacaoDoResponsavel = qualificacaoDoResponsavel
 	capitalSocial, err := toFloat(r[4])
 	if err != nil {
 		return fmt.Errorf("error trying to parse CapitalSocial %s: %w", r[4], err)
 	}
-	c.CapitalSocial = capitalSocial
-	err = c.porte(r[5])
+	d.CapitalSocial = capitalSocial
+	err = d.porte(r[5])
 	if err != nil {
 		return fmt.Errorf("error trying to parse Porte %s: %w", r[5], err)
 	}
-	c.EnteFederativoResponsavel = r[6]
-	natures := l.natures[*c.CodigoNaturezaJuridica]
+	d.EnteFederativoResponsavel = r[6]
+	natures := l.natures[*d.CodigoNaturezaJuridica]
 	if natures != "" {
-		c.NaturezaJuridica = &natures
+		d.NaturezaJuridica = &natures
 	}
 	return nil
 }
 
-func addBase(l *lookups, db database, r []string) error {
-	strs, err := db.ListCompanies(r[0])
+func addBase(l *lookups, r []string) ([]string, error) {
+	var d baseData
+	if err := d.base(r, l); err != nil {
+		return []string{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
+	}
+	b, err := json.Marshal(&d)
 	if err != nil {
-		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
+		return []string{}, fmt.Errorf("error converting base cnpj data to json for %s: %w", r[0], err)
 	}
-	if len(strs) == 0 {
-		return nil
-	}
-	for _, s := range strs {
-		c, err := companyFromString(s)
-		if err != nil {
-			return fmt.Errorf("error loading company: %w", err)
-		}
-		if err = c.base(r, l); err != nil {
-			return fmt.Errorf("error adding base for company %s: %w", cnpj.Mask(c.CNPJ), err)
-		}
-		if err = c.Update(db); err != nil {
-			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
-		}
-	}
-	return nil
+	return []string{r[0], string(b)}, nil
 }

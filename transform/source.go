@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"log"
 	"sync/atomic"
 )
 
@@ -111,12 +112,15 @@ func (s *source) countLines() error {
 }
 
 func newSource(t sourceType, d string) (*source, error) {
+	log.Output(2, fmt.Sprintf("Loading %s files…", string(t)))
 	ls, err := PathsForSource(t, d)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
 	}
 	s := source{kind: t, dir: d, files: ls}
 	s.createReaders()
-	s.countLines()
+	if err = s.countLines(); err != nil {
+		return nil, fmt.Errorf("error counting lines for %s in %s: %w", string(t), d, err)
+	}
 	return &s, nil
 }

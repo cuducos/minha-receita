@@ -125,5 +125,6 @@ func Serve(db database, p, n string) {
 	app := api{db: db}
 	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
+	fmt.Printf("Serving at port %s…\n", p[1:])
 	log.Fatal(http.ListenAndServe(p, nil))
 }

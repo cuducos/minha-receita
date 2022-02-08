@@ -1,45 +1,44 @@
 package transform
 
 import (
+	"encoding/json"
 	"fmt"
-
-	"github.com/cuducos/go-cnpj"
 )
 
-func addTax(_ *lookups, db database, r []string) error {
-	strs, err := db.ListCompanies(r[0])
+type taxesData struct {
+	OpcaoPeloSimples      *bool `json:"opcao_pelo_simples"`
+	DataOpcaoPeloSimples  *date `json:"data_opcao_pelo_simples"`
+	DataExclusaoDoSimples *date `json:"data_exclusao_do_simples"`
+	OpcaoPeloMEI          *bool `json:"opcao_pelo_mei"`
+	DataOpcaoPeloMEI      *date `json:"data_opcao_pelo_mei"`
+	DataExclusaoDoMEI     *date `json:"data_exclusao_do_mei"`
+}
+
+func addTax(_ *lookups, r []string) ([]string, error) {
+	var err error
+	d := taxesData{
+		OpcaoPeloSimples: toBool(r[1]),
+		OpcaoPeloMEI:     toBool(r[4]),
+	}
+	d.DataOpcaoPeloSimples, err = toDate(r[2])
 	if err != nil {
-		return fmt.Errorf("error loading companies with base %s: %w", r[0], err)
+		return []string{}, fmt.Errorf("error parsing DataOpcaoPeloSimples %s: %w", r[2], err)
 	}
-	if len(strs) == 0 {
-		return nil
+	d.DataExclusaoDoSimples, err = toDate(r[3])
+	if err != nil {
+		return []string{}, fmt.Errorf("error parsing DataExclusaoDoSimples %s: %w", r[3], err)
 	}
-	for _, s := range strs {
-		c, err := companyFromString(s)
-		if err != nil {
-			return fmt.Errorf("error loading company: %w", err)
-		}
-		c.OpcaoPeloSimples = toBool(r[1])
-		c.DataOpcaoPeloSimples, err = toDate(r[2])
-		if err != nil {
-			return fmt.Errorf("error parsing DataOpcaoPeloSimples %s: %w", r[2], err)
-		}
-		c.DataExclusaoDoSimples, err = toDate(r[3])
-		if err != nil {
-			return fmt.Errorf("error parsing DataExclusaoDoSimples %s: %w", r[3], err)
-		}
-		c.OpcaoPeloMEI = toBool(r[4])
-		c.DataOpcaoPeloMEI, err = toDate(r[5])
-		if err != nil {
-			return fmt.Errorf("error parsing DataOpcaoPeloMEI %s: %w", r[5], err)
-		}
-		c.DataExclusaoDoMEI, err = toDate(r[6])
-		if err != nil {
-			return fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
-		}
-		if err = c.Update(db); err != nil {
-			return fmt.Errorf("error saving %s: %w", cnpj.Mask(c.CNPJ), err)
-		}
+	d.DataOpcaoPeloMEI, err = toDate(r[5])
+	if err != nil {
+		return []string{}, fmt.Errorf("error parsing DataOpcaoPeloMEI %s: %w", r[5], err)
 	}
-	return nil
+	d.DataExclusaoDoMEI, err = toDate(r[6])
+	if err != nil {
+		return []string{}, fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
+	}
+	b, err := json.Marshal(&d)
+	if err != nil {
+		return []string{}, fmt.Errorf("error converting taxes data to json for %s: %w", r[0], err)
+	}
+	return []string{r[0], string(b)}, nil
 }
