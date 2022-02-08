@@ -120,6 +120,7 @@ func Serve(db database, p, n string) {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
+	fmt.Printf("Serving at port %s…\n", p[1:])
 	nr := newRelicApp(n)
 	app := api{db: db}
 	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))

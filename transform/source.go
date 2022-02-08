@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync/atomic"
 )
 
 type sourceType string
@@ -27,18 +28,18 @@ type source struct {
 	files      []string
 	readers    []*archivedCSV
 	totalLines int64
+	shutdown   uint32
 }
 
 func (s *source) createReaders() error {
-	var as []*archivedCSV
-	for _, p := range s.files {
+	s.readers = make([]*archivedCSV, len(s.files))
+	for i, p := range s.files {
 		r, err := newArchivedCSV(p, separator)
 		if err != nil {
 			return fmt.Errorf("error reading %s: %w", p, err)
 		}
-		as = append(as, r)
+		s.readers[i] = r
 	}
-	s.readers = as
 	return nil
 }
 
@@ -64,15 +65,22 @@ func (s *source) resetReaders() error {
 func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error) {
 	var t int64
 	for {
+		if atomic.LoadUint32(&s.shutdown) == 1 {
+			return
+		}
 		_, err := a.read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
+			atomic.StoreUint32(&s.shutdown, 1)
 			errs <- err
 			return
 		}
 		t++
+	}
+	if atomic.LoadUint32(&s.shutdown) == 1 {
+		return
 	}
 	count <- t
 }
