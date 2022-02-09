@@ -1,41 +1,12 @@
 package download
 
 import (
-	"encoding/json"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 )
 
-func TestCreateLastUpdateFile(t *testing.T) {
-	tmp := t.TempDir()
-	updateDates := []string{"2021-12-12", "2021-10-20"}
-
-	err := createLastUpdateJSONFile(tmp, updateDates)
-	if err != nil {
-		t.Errorf("Expected no errors on create last_update.txt, got: %v", err)
-	}
-
-	jsonBody := make(map[string]string)
-	fj, err := os.Open(filepath.Join(tmp, "last_update.txt"))
-	if err != nil {
-		t.Errorf("Could not open last_update.txt, got: %v", err)
-	}
-	defer fj.Close()
-
-	err = json.NewDecoder(fj).Decode(&jsonBody)
-	if err != nil {
-		t.Errorf("Could not decode last_update.txt as JSON, got: %v", err)
-	}
-
-	if jsonBody["companies"] != updateDates[0] {
-		t.Errorf("Expected %s, got %s", updateDates[0], jsonBody["companies"])
-	}
-	if jsonBody["taxes"] != updateDates[1] {
-		t.Errorf("Expected %s, got %s", updateDates[1], jsonBody["taxes"])
-	}
-}
 func TestNewDownloader(t *testing.T) {
 	ts := httpTestServer(t)
 	defer ts.Close()
@@ -47,7 +18,7 @@ func TestNewDownloader(t *testing.T) {
 	}
 	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
-		t.Errorf("Expected newDownloader to return a downloader, got: %v", err)
+		t.Errorf("expected newDownloader to return a downloader, got: %v", err)
 	}
 
 	f, s := loadFixture(t)
@@ -55,10 +26,10 @@ func TestNewDownloader(t *testing.T) {
 
 	expectedTotalSize := int64(len(fs)) * s
 	if d.totalSize != expectedTotalSize {
-		t.Errorf("Expected totalSize to be %d, got %d", expectedTotalSize, d.totalSize)
+		t.Errorf("expected totalSize to be %d, got %d", expectedTotalSize, d.totalSize)
 	}
 	if d.bar == nil {
-		t.Errorf("Expected downloader to have a progess bar")
+		t.Errorf("expected downloader to have a progess bar")
 	}
 }
 
@@ -76,33 +47,33 @@ func TestDownloadAll(t *testing.T) {
 	}
 	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
-		t.Errorf("Expected newDownloader to return a downloader, got: %v", err)
+		t.Errorf("expected newDownloader to return a downloader, got: %v", err)
 	}
 
 	err = d.downloadAll()
 	if err != nil {
-		t.Errorf("Expected downloadAll to run without errors, got: %v", err)
+		t.Errorf("expected downloadAll to run without errors, got: %v", err)
 	}
 
 	for _, f := range fs {
 		i, err := os.Stat(f.path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				t.Errorf("Expected %s to exist", f.path)
+				t.Errorf("expected %s to exist", f.path)
 			} else {
-				t.Errorf("Error getting info about %s: %v", f.path, err)
+				t.Errorf("error getting info about %s: %v", f.path, err)
 			}
 			continue
 		}
 		if i.Size() != s {
-			t.Errorf("Expected %s to have length %d, got %d", f.path, s, i.Size())
+			t.Errorf("expected %s to have length %d, got %d", f.path, s, i.Size())
 		}
 	}
 }
 
 func assertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
 	if len(a1) != len(a2) {
-		t.Errorf("Arrays lengths are different: %d != %d", len(a1), len(a2))
+		t.Errorf("arrays lengths are different: %d != %d", len(a1), len(a2))
 		return
 	}
 
@@ -136,12 +107,12 @@ func loadFixture(t *testing.T) (*os.File, int64) {
 	p := path.Join("..", "testdata", "dados-publicos-cnpj.html")
 	f, err := os.Open(p)
 	if err != nil {
-		t.Errorf("Could not open %s: %v", p, err)
+		t.Errorf("could not open %s: %v", p, err)
 		return nil, 0
 	}
 	i, err := f.Stat()
 	if err != nil {
-		t.Errorf("Could not get info for %s: %v", p, err)
+		t.Errorf("could not get info for %s: %v", p, err)
 		return nil, 0
 	}
 	return f, i.Size()

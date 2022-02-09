@@ -15,7 +15,7 @@ import (
 
 const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
 
-var reUpateDate = regexp.MustCompile(`(?i)data da última extração:.*([0-9]{2}/[0-9]{2}/[0-9]{4})`)
+var reUpateDate = regexp.MustCompile(`(?i)data da última extração:\s*(\d{2}/\d{2}/\d{4})`)
 
 type file struct {
 	url  string
@@ -25,8 +25,7 @@ type file struct {
 func toRFC3339Date(brDt string) string {
 	dt, err := time.Parse("02/01/2006", brDt)
 	if err != nil {
-		// Golang zero value for dates
-		return "0001-01-01"
+		return ""
 	}
 	return dt.Format("2006-01-02")
 }
@@ -46,18 +45,16 @@ func getHTMLDocument(client *http.Client, src string) (*goquery.Document, error)
 }
 
 func getLastUpdate(doc *goquery.Document) []string {
-	var updateDates []string
-
+	var dates []string
 	doc.Find("#parent-fieldname-text").Each(func(_ int, p *goquery.Selection) {
 		m := reUpateDate.FindAllStringSubmatch(p.Text(), -1)
 		if len(m) > 0 {
-			for _, md := range m {
-				// Transform BR date
-				updateDates = append(updateDates, toRFC3339Date(md[1]))
+			for _, d := range m {
+				dates = append(dates, toRFC3339Date(d[1]))
 			}
 		}
 	})
-	return updateDates
+	return dates
 }
 
 func getURLs(d *goquery.Document) ([]string, error) {
