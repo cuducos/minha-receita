@@ -22,12 +22,12 @@ type file struct {
 	path string
 }
 
-func toRFC3339Date(brDt string) string {
+func toRFC3339Date(brDt string) (string, error) {
 	dt, err := time.Parse("02/01/2006", brDt)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return dt.Format("2006-01-02")
+	return dt.Format("2006-01-02"), nil
 }
 
 func getHTMLDocument(client *http.Client, src string) (*goquery.Document, error) {
@@ -44,17 +44,20 @@ func getHTMLDocument(client *http.Client, src string) (*goquery.Document, error)
 	return goquery.NewDocumentFromReader(r.Body)
 }
 
-func getLastUpdate(doc *goquery.Document) []string {
+func getLastUpdate(doc *goquery.Document) ([]string, error) {
 	var dates []string
+	var err error
 	doc.Find("#parent-fieldname-text").Each(func(_ int, p *goquery.Selection) {
 		m := reUpateDate.FindAllStringSubmatch(p.Text(), -1)
 		if len(m) > 0 {
 			for _, d := range m {
-				dates = append(dates, toRFC3339Date(d[1]))
+				var v string
+				v, err = toRFC3339Date(d[1])
+				dates = append(dates, v)
 			}
 		}
 	})
-	return dates
+	return dates, err
 }
 
 func getURLs(d *goquery.Document) ([]string, error) {

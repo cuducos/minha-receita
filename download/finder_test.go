@@ -63,7 +63,10 @@ func TestGetUpdateDates(t *testing.T) {
 	}
 
 	expected := []string{"2021-01-08", "2021-10-20"}
-	got := getLastUpdate(doc)
+	got, err := getLastUpdate(doc)
+	if err != nil {
+		t.Errorf("expected getLastUpdate to run without errors, got: %v", err)
+	}
 	if len(expected) != len(got) {
 		t.Errorf("expected getLastUpdate to return %d dates, got %d", len(expected), len(got))
 	}
@@ -105,7 +108,7 @@ func TestGetFiles(t *testing.T) {
 	expected := 38
 	got, err := getFiles(doc, tmp, false)
 	if err != nil {
-		t.Errorf("expected getFiles to run withour errors, got: %v:", err)
+		t.Errorf("expected getFiles to run without errors, got: %v:", err)
 		return
 	}
 

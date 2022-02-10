@@ -17,7 +17,10 @@ type lastUpdate struct {
 const lastUpdateOutputFile = "last_update.json"
 
 func createLastUpdateJSONFile(dir string, doc *goquery.Document) error {
-	dates := getLastUpdate(doc)
+	dates, err := getLastUpdate(doc)
+	if err != nil {
+		return fmt.Errorf("error getting last update dates from HTML document: %w", err)
+	}
 	// Create last_update.txt
 	pth := filepath.Join(dir, lastUpdateOutputFile)
 	f, err := os.Create(pth)
