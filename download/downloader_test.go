@@ -18,7 +18,7 @@ func TestNewDownloader(t *testing.T) {
 	}
 	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
-		t.Errorf("expected newDownloader to return a downloader, got: %v", err)
+		t.Errorf("expected newDownloader to return a downloader, got: %s", err)
 	}
 
 	f, s := loadFixture(t)
@@ -47,12 +47,12 @@ func TestDownloadAll(t *testing.T) {
 	}
 	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
-		t.Errorf("expected newDownloader to return a downloader, got: %v", err)
+		t.Errorf("expected newDownloader to return a downloader, got: %s", err)
 	}
 
 	err = d.downloadAll()
 	if err != nil {
-		t.Errorf("expected downloadAll to run without errors, got: %v", err)
+		t.Errorf("expected downloadAll to run without errors, got: %s", err)
 	}
 
 	for _, f := range fs {
@@ -61,7 +61,7 @@ func TestDownloadAll(t *testing.T) {
 			if os.IsNotExist(err) {
 				t.Errorf("expected %s to exist", f.path)
 			} else {
-				t.Errorf("error getting info about %s: %v", f.path, err)
+				t.Errorf("error getting info about %s: %s", f.path, err)
 			}
 			continue
 		}
@@ -107,12 +107,12 @@ func loadFixture(t *testing.T) (*os.File, int64) {
 	p := path.Join("..", "testdata", "dados-publicos-cnpj.html")
 	f, err := os.Open(p)
 	if err != nil {
-		t.Errorf("could not open %s: %v", p, err)
+		t.Errorf("could not open %s: %s", p, err)
 		return nil, 0
 	}
 	i, err := f.Stat()
 	if err != nil {
-		t.Errorf("could not get info for %s: %v", p, err)
+		t.Errorf("could not get info for %s: %s", p, err)
 		return nil, 0
 	}
 	return f, i.Size()

@@ -58,17 +58,14 @@ func TestGetUpdateDates(t *testing.T) {
 
 	doc, err := getHTMLDocument(ts.Client(), ts.URL)
 	if err != nil {
-		t.Errorf("expected getHTMLDocument to run without errors, got: %v:", err)
+		t.Errorf("expected getHTMLDocument to run without errors, got: %s:", err)
 		return
 	}
 
-	expected := []string{"2021-01-08", "2021-10-20"}
+	expected := lastUpdate{"2021-01-08", "2021-10-20"}
 	got, err := getLastUpdate(doc)
 	if err != nil {
-		t.Errorf("expected getLastUpdate to run without errors, got: %v", err)
-	}
-	if len(expected) != len(got) {
-		t.Errorf("expected getLastUpdate to return %d dates, got %d", len(expected), len(got))
+		t.Errorf("expected getLastUpdate to run without errors, got: %s", err)
 	}
 
 	if !reflect.DeepEqual(expected, got) {
@@ -82,13 +79,13 @@ func TestGetURLs(t *testing.T) {
 
 	doc, err := getHTMLDocument(ts.Client(), ts.URL)
 	if err != nil {
-		t.Errorf("expected getHTMLDocument to run without errors, got: %v:", err)
+		t.Errorf("expected getHTMLDocument to run without errors, got: %s:", err)
 		return
 	}
 
 	got, err := getURLs(doc)
 	if err != nil {
-		t.Errorf("expected getURLs to run without errors, got: %v:", err)
+		t.Errorf("expected getURLs to run without errors, got: %s:", err)
 		return
 	}
 	assertArraysHaveSameItems(t, got, expectedURLs)

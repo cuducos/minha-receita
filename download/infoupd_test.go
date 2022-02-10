@@ -13,7 +13,7 @@ func TestCreateLastUpdateFile(t *testing.T) {
 
 	doc, err := getHTMLDocument(ts.Client(), ts.URL)
 	if err != nil {
-		t.Errorf("expected getHTMLDocument to run without errors, got: %v:", err)
+		t.Errorf("expected getHTMLDocument to run without errors, got: %s:", err)
 		return
 	}
 
@@ -21,20 +21,20 @@ func TestCreateLastUpdateFile(t *testing.T) {
 
 	err = createLastUpdateJSONFile(tmp, doc)
 	if err != nil {
-		t.Errorf("expected no errors on create last update file, got: %v", err)
+		t.Errorf("expected no errors on create last update file, got: %s", err)
 	}
 
 	var lus lastUpdate
 	pth := filepath.Join(tmp, lastUpdateOutputFile)
 	f, err := os.Open(pth)
 	if err != nil {
-		t.Errorf("could not open %s, got: %v", pth, err)
+		t.Errorf("could not open %s, got: %s", pth, err)
 	}
 	defer f.Close()
 
 	err = json.NewDecoder(f).Decode(&lus)
 	if err != nil {
-		t.Errorf("could not decode %s as JSON, got: %v", pth, err)
+		t.Errorf("could not decode %s as JSON, got: %s", pth, err)
 	}
 
 	expected := []string{"2021-01-08", "2021-10-20"}

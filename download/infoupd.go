@@ -29,20 +29,13 @@ func createLastUpdateJSONFile(dir string, doc *goquery.Document) error {
 	}
 	defer f.Close()
 
-	st := lastUpdate{
-		Companies: dates[0],
-	}
-	if len(dates) > 1 {
-		st.Taxes = dates[1]
-	}
-
-	body, err := json.MarshalIndent(&st, "", "    ")
+	body, err := json.MarshalIndent(&dates, "", "    ")
 	if err != nil {
 		return fmt.Errorf("error encoding last update struct to json: %w", err)
 	}
 	_, err = f.Write(body)
 	if err != nil {
-		return fmt.Errorf("error writing last updte file at %s: %w", pth, err)
+		return fmt.Errorf("error writing last update file at %s: %w", pth, err)
 	}
 	return nil
 }
