@@ -53,6 +53,9 @@ func getLastUpdate(doc *goquery.Document) ([]string, error) {
 			for _, d := range m {
 				var v string
 				v, err = toRFC3339Date(d[1])
+				if err != nil {
+					return
+				}
 				dates = append(dates, v)
 			}
 		}
