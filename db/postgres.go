@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -82,6 +83,16 @@ func (p *PostgreSQL) DropTable() error {
 	log.Output(2, fmt.Sprintf("Dropping table %s…", p.TableFullName()))
 	if _, err := p.conn.Exec(p.sql["drop.sql"]); err != nil {
 		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop.sql"], err)
+	}
+	return nil
+}
+
+// AssertPostgresCLIExists searches for the PostgreSQL executable (psql) in the
+// environment's PATH. It will return an error if no executable is found.
+func AssertPostgresCLIExists() error {
+	_, err := exec.LookPath("psql")
+	if err != nil {
+		return errors.New("postgres client (psql) not installed or not in PATH")
 	}
 	return nil
 }
