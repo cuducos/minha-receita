@@ -19,8 +19,7 @@ func TestCreateLastUpdateFile(t *testing.T) {
 
 	tmp := t.TempDir()
 
-	err = createLastUpdateJSONFile(tmp, doc)
-	if err != nil {
+	if err = createLastUpdateJSONFile(tmp, doc); err != nil {
 		t.Errorf("expected no errors on create last update file, got: %s", err)
 	}
 
@@ -32,8 +31,7 @@ func TestCreateLastUpdateFile(t *testing.T) {
 	}
 	defer f.Close()
 
-	err = json.NewDecoder(f).Decode(&lus)
-	if err != nil {
+	if err = json.NewDecoder(f).Decode(&lus); err != nil {
 		t.Errorf("could not decode %s as JSON, got: %s", pth, err)
 	}
 
