@@ -35,7 +35,7 @@ type company struct {
 	Bairro                           string    `json:"bairro"`
 	CEP                              string    `json:"cep"`
 	UF                               string    `json:"uf"`
-	CodigoMunicipio                  *int      `json:"codigio_municipio"`
+	CodigoMunicipio                  *int      `json:"codigo_municipio"`
 	Municipio                        *string   `json:"municipio"`
 	Telefone1                        string    `json:"ddd_telefone_1"`
 	Telefone2                        string    `json:"ddd_telefone_2"`

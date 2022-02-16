@@ -46,7 +46,7 @@ $ curl -i 0.0.0.0:8000/33683111000280
     "bairro": "ASA NORTE",
     "cep": "70836900",
     "uf": "DF",
-    "codigio_municipio": 9701,
+    "codigo_municipio": 9701,
     "municipio": "BRASILIA",
     "ddd_telefone_1": "",
     "ddd_telefone_2": "",
