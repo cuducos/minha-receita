@@ -27,6 +27,7 @@ $ curl -i 0.0.0.0:8000/33683111000280
 {
     "cnpj": "33683111000280",
     "identificador_matriz_filial": 2,
+    "descricao_identificador_matriz_filial": "FILIAL",
     "nome_fantasia": "REGIONAL BRASILIA-DF",
     "situacao_cadastral": 2,
     "descricao_situacao_cadastral": "ATIVA",

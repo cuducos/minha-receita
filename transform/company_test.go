@@ -43,6 +43,7 @@ func TestNewCompany(t *testing.T) {
 	}
 
 	identificadorMatrizFilial := 2
+	DescricaoMatrizFilial := "FILIAL"
 	situacaoCadastral := 2
 	descricaoSituacaoCadastral := "ATIVA"
 	dataSituacaoCadastralAsTime, err := time.Parse(dateInputFormat, row[6])
@@ -65,6 +66,7 @@ func TestNewCompany(t *testing.T) {
 	expected := company{
 		CNPJ:                             "33683111000280",
 		IdentificadorMatrizFilial:        &identificadorMatrizFilial,
+		DescricaoMatrizFilial:            &DescricaoMatrizFilial,
 		NomeFantasia:                     "REGIONAL BRASILIA-DF",
 		SituacaoCadastral:                &situacaoCadastral,
 		DescricaoSituacaoCadastral:       &descricaoSituacaoCadastral,
@@ -117,6 +119,13 @@ func TestNewCompany(t *testing.T) {
 			"expected IdentificadorMatrizFilial to be %d, got %d",
 			*expected.IdentificadorMatrizFilial,
 			*got.IdentificadorMatrizFilial,
+		)
+	}
+	if *got.DescricaoMatrizFilial != *expected.DescricaoMatrizFilial {
+		t.Errorf(
+			"expected DescricaoMatrizFilial to be %s, got %s",
+			*expected.DescricaoMatrizFilial,
+			*got.DescricaoMatrizFilial,
 		)
 	}
 	if got.NomeFantasia != expected.NomeFantasia {

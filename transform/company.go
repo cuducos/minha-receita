@@ -16,6 +16,7 @@ func companyNameClenup(n string) string {
 type company struct {
 	CNPJ                             string    `json:"cnpj"`
 	IdentificadorMatrizFilial        *int      `json:"identificador_matriz_filial"`
+	DescricaoMatrizFilial            *string   `json:"descricao_identificador_matriz_filial"`
 	NomeFantasia                     string    `json:"nome_fantasia"`
 	SituacaoCadastral                *int      `json:"situacao_cadastral"`
 	DescricaoSituacaoCadastral       *string   `json:"descricao_situacao_cadastral"`
@@ -88,6 +89,27 @@ func (c *company) situacaoCadastral(v string) error {
 	return nil
 }
 
+func (c *company) identificadorMatrizFilial(v string) error {
+	i, err := toInt(v)
+	if err != nil {
+		return fmt.Errorf("error trying to parse IdentificadorMatrizFilial %s: %w", v, err)
+	}
+
+	var s string
+	switch *i {
+	case 1:
+		s = "MATRIZ"
+	case 2:
+		s = "FILIAL"
+	}
+
+	c.IdentificadorMatrizFilial = i
+	if s != "" {
+		c.DescricaoMatrizFilial = &s
+	}
+	return nil
+}
+
 func newCompany(row []string, l *lookups) (company, error) {
 	var c company
 	c.CNPJ = row[0] + row[1] + row[2]
@@ -105,11 +127,9 @@ func newCompany(row []string, l *lookups) (company, error) {
 	c.Fax = row[25] + row[26]
 	c.SituacaoEspecial = row[28]
 
-	identificadorMatrizFilial, err := toInt(row[3])
-	if err != nil {
-		return c, fmt.Errorf("error trying to parse IdentificadorMatrizFilial %s: %w", row[3], err)
+	if err := c.identificadorMatrizFilial(row[3]); err != nil {
+		return c, fmt.Errorf("error trying to parse IdentificadorMatrizFilial: %w", err)
 	}
-	c.IdentificadorMatrizFilial = identificadorMatrizFilial
 
 	if err := c.situacaoCadastral(row[5]); err != nil {
 		return c, fmt.Errorf("error trying to parse SituacaoCadastral: %w", err)
