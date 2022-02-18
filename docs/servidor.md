@@ -14,7 +14,9 @@ A URI de acesso será `postgres://minhareceita:minhareceita@localhost:5432/minha
 
 ## Download dos dados
 
-O comando `download` baixa dados do servidor da Receita Federal, que é lento e instável. Quando um download falha, nenhum arquivo é salvo (ou seja, não fica, no diretório, um arquivo pela metade; pode-se assumir que os arquivos restantes são íntegros e não precisam ser baixados novamente). Por esse motivo pode ser esperado que a barra de progresso de download recue (quando um arquivo de download falha, retiramos os bytes baixados da barra de download, pois na nova tentativa o download começa do zero).
+O comando `download` baixa dados da Receita Federal, mais um arquivo do Tesouro Nacional com o código dos municípios do IBGE.
+
+O servidor da Receita Federal é lento e instável, e quando um download falha, o arquivo não é salvo (ou seja, não fica, no diretório, um arquivo pela metade; pode-se assumir que os arquivos restantes são íntegros e não precisam ser baixados novamente). Por esse motivo pode ser esperado que a barra de progresso de download recue (quando um arquivo de download falha, retiramos os bytes baixados da barra de download, pois na nova tentativa o download começa do zero).
 
 O comando aceita um opção `--directory` (ou `-d`) com um diretório onde serão salvos os arquivos originais da Receita Federal. O padrão é `data/`.
 
@@ -43,9 +45,9 @@ $ docker-compose run --rm minha-receita download --directory /mnt/data/
 
 ## Tratamento dos dados
 
-O comando `transform` transforma os arquivos para o formato JSON, consolidando as informações de todos os arquivos CSV. Esse JSON é armazenado diretamente no banco de dados. Para tanto, é preciso criar a tabela no banco de dados com o comando `create` (o comando `drop` pode ser utilizado para excluir essa mesma tabela).
+O comando `transform` transforma os arquivos para o formato JSON, consolidando as informações de todos os arquivos CSV mais o arquivo dos códigos dos municípios do IBGE. Esse JSON é armazenado diretamente no banco de dados. Para tanto, é preciso criar a tabela no banco de dados com o comando `create` (o comando `drop` pode ser utilizado para excluir essa mesma tabela).
 
-Para especificar onde ficam os arquivos originais da Receita Federal, o comando aceita como argumento `--directory` (ou `-d`), sendo o padrão `data/`.
+Para especificar onde ficam os arquivos originais da Receita Federal e do Tesouro Nacional, o comando aceita como argumento `--directory` (ou `-d`), sendo o padrão `data/`.
 
 ### Exemplos de uso
 

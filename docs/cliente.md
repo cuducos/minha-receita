@@ -47,6 +47,7 @@ $ curl -i 0.0.0.0:8000/33683111000280
     "cep": "70836900",
     "uf": "DF",
     "codigo_municipio": 9701,
+    "codigo_municipio_ibge": 5300108,
     "municipio": "BRASILIA",
     "ddd_telefone_1": "",
     "ddd_telefone_2": "",

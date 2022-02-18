@@ -15,7 +15,21 @@ func Download(dir string, timeout time.Duration, urlsOnly, skip bool, parallel, 
 		log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	}
 
-	fs, err := getFiles(c, federalRevenue, dir, skip)
+	searches := []search{
+		{
+			"federal revenue",
+			federalRevenue,
+			federalRevenueSelector,
+			federalRevenueExtension,
+		},
+		{
+			"national treasure",
+			nationalTreasure,
+			nationalTreasureSelector,
+			nationalTreasureExtension,
+		},
+	}
+	fs, err := getFiles(c, searches, dir, skip)
 	if err != nil {
 		return err
 	}

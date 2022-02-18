@@ -60,6 +60,7 @@ func TestNewCompany(t *testing.T) {
 	codigoCNAEFiscal := 6204000
 	codigoCNAEFiscalDescricao := "Consultoria em tecnologia da informação"
 	CodigoMunicipio := 9701
+	CodigoMunicipioIBGE := 5300108
 	municipio := "BRASILIA"
 
 	expected := company{
@@ -85,6 +86,7 @@ func TestNewCompany(t *testing.T) {
 		CEP:                              "70836900",
 		UF:                               "DF",
 		CodigoMunicipio:                  &CodigoMunicipio,
+		CodigoMunicipioIBGE:              &CodigoMunicipioIBGE,
 		Municipio:                        &municipio,
 		Telefone1:                        "",
 		Telefone2:                        "",
@@ -205,6 +207,14 @@ func TestNewCompany(t *testing.T) {
 
 	if *got.CodigoMunicipio != *expected.CodigoMunicipio {
 		t.Errorf("expected CodigoMunicipio to be %d, got %d", *expected.CodigoMunicipio, *got.CodigoMunicipio)
+	}
+
+	if *got.CodigoMunicipioIBGE != *expected.CodigoMunicipioIBGE {
+		t.Errorf(
+			"expected CodigoMunicipioIBGE to be %d, got %d",
+			*expected.CodigoMunicipioIBGE,
+			*got.CodigoMunicipioIBGE,
+		)
 	}
 
 	if *got.Municipio != *expected.Municipio {

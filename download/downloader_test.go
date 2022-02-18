@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewDownloader(t *testing.T) {
-	ts := httpTestServer(t)
+	ts := httpTestServer(t, "dados-publicos-cnpj.html")
 	defer ts.Close()
 
 	tmp := t.TempDir()
@@ -21,7 +21,7 @@ func TestNewDownloader(t *testing.T) {
 		t.Errorf("Expected newDownloader to return a downloader, got: %v", err)
 	}
 
-	f, s := loadFixture(t)
+	f, s := loadFixture(t, "dados-publicos-cnpj.html")
 	defer f.Close()
 
 	expectedTotalSize := int64(len(fs)) * s
@@ -34,10 +34,10 @@ func TestNewDownloader(t *testing.T) {
 }
 
 func TestDownloadAll(t *testing.T) {
-	ts := httpTestServer(t)
+	ts := httpTestServer(t, "dados-publicos-cnpj.html")
 	defer ts.Close()
 
-	f, s := loadFixture(t)
+	f, s := loadFixture(t, "dados-publicos-cnpj.html")
 	defer f.Close()
 
 	tmp := t.TempDir()
@@ -103,8 +103,8 @@ func assertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
 	}
 }
 
-func loadFixture(t *testing.T) (*os.File, int64) {
-	p := path.Join("..", "testdata", "dados-publicos-cnpj.html")
+func loadFixture(t *testing.T, n string) (*os.File, int64) {
+	p := path.Join("..", "testdata", n)
 	f, err := os.Open(p)
 	if err != nil {
 		t.Errorf("Could not open %s: %v", p, err)
