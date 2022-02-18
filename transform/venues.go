@@ -31,6 +31,7 @@ func saveBatch(db database, b []company) (int, error) {
 type venuesTask struct {
 	source            *source
 	lookups           *lookups
+	privacy           bool
 	dir               string
 	db                database
 	batchSize         int
@@ -75,7 +76,7 @@ func (t *venuesTask) consumeRows() {
 		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
 			return
 		}
-		c, err := newCompany(r, t.lookups)
+		c, err := newCompany(r, t.lookups, t.privacy)
 		if err != nil { // initiate graceful shutdown.
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
 			atomic.StoreInt32(&t.shutdown, 1)
@@ -143,7 +144,7 @@ func (t *venuesTask) run(m int) error {
 	}
 }
 
-func createJSONRecordsTask(dir string, db database, b int) (*venuesTask, error) {
+func createJSONRecordsTask(dir string, db database, b int, p bool) (*venuesTask, error) {
 	v, err := newSource(venues, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for venues from %s: %w", dir, err)
@@ -155,6 +156,7 @@ func createJSONRecordsTask(dir string, db database, b int) (*venuesTask, error) 
 	t := venuesTask{
 		source:        v,
 		lookups:       &l,
+		privacy:       p,
 		dir:           dir,
 		db:            db,
 		batchSize:     b,
