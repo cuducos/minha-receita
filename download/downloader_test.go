@@ -2,7 +2,6 @@ package download
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 )
@@ -69,51 +68,4 @@ func TestDownloadAll(t *testing.T) {
 			t.Errorf("Expected %s to have length %d, got %d", f.path, s, i.Size())
 		}
 	}
-}
-
-func assertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
-	if len(a1) != len(a2) {
-		t.Errorf("Arrays lengths are different: %d != %d", len(a1), len(a2))
-		return
-	}
-
-	c1 := make(map[string]int)
-	c2 := make(map[string]int)
-	for _, v := range a1 {
-		c1[v]++
-	}
-	for _, v := range a2 {
-		c2[v]++
-	}
-
-	diff := make(map[string]struct{})
-	for k := range c1 {
-		if c1[k] != c2[k] {
-			diff[k] = struct{}{}
-		}
-	}
-	for k := range c2 {
-		if c1[k] != c2[k] {
-			diff[k] = struct{}{}
-		}
-	}
-
-	for k := range diff {
-		t.Errorf("%q appears %d in the first array, but %d in the second array", k, c1[k], c2[k])
-	}
-}
-
-func loadFixture(t *testing.T, n string) (*os.File, int64) {
-	p := path.Join("..", "testdata", n)
-	f, err := os.Open(p)
-	if err != nil {
-		t.Errorf("Could not open %s: %v", p, err)
-		return nil, 0
-	}
-	i, err := f.Stat()
-	if err != nil {
-		t.Errorf("Could not get info for %s: %v", p, err)
-		return nil, 0
-	}
-	return f, i.Size()
 }

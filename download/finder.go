@@ -7,89 +7,42 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
 )
-
-const (
-	federalRevenue          = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
-	federalRevenueSelector  = "a.external-link"
-	federalRevenueExtension = ".zip"
-
-	nationalTreasure          = "https://www.tesourotransparente.gov.br/ckan/dataset/lista-de-municipios-do-siafi/resource/eebb3bc6-9eea-4496-8bcf-304f33155282"
-	nationalTreasureSelector  = "a.btn"
-	nationalTreasureExtension = ".CSV"
-)
-
-type search struct {
-	name      string
-	url       string
-	selector  string
-	extension string
-}
 
 type file struct {
 	url  string
 	path string
 }
 
-func getURLs(client *http.Client, s search) ([]string, error) {
-	r, err := client.Get(s.url)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-	if r.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s responded with %s", s.url, r.Status)
-	}
-	d, err := goquery.NewDocumentFromReader(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	urls := make(map[string]struct{})
-	d.Find(s.selector).Each(func(_ int, a *goquery.Selection) {
-		h, exist := a.Attr("href")
-		if !exist {
-			return
-		}
-		if strings.HasSuffix(h, s.extension) {
-			h = strings.ReplaceAll(h, "http//", "")
-			h = strings.ReplaceAll(h, "http://http://", "http://")
-			urls[h] = struct{}{}
-		}
-	})
+type getURLsHandler func(c *http.Client, url string) ([]string, error)
 
-	var u []string
-	for k := range urls {
-		u = append(u, k)
+func getURLs(client *http.Client, confs []getFilesConfig) ([]string, error) {
+	var urls []string
+	for _, c := range confs {
+		u, err := c.handler(client, c.url)
+		if err != nil {
+			return nil, fmt.Errorf("error getting urls: %w", err)
+		}
+		urls = append(urls, u...)
 	}
-	return u, nil
+	return urls, nil
 }
 
-func appendFiles(fs *[]file, client *http.Client, s search, dir string, skip bool) error {
-	urls, err := getURLs(client, s)
+func getFiles(client *http.Client, hs []getFilesConfig, dir string, skip bool) ([]file, error) {
+	var fs []file
+	urls, err := getURLs(client, hs)
 	if err != nil {
-		return fmt.Errorf("error listing files from the %s: %w", s.url, err)
+		return nil, fmt.Errorf("error getting files: %w", err)
 	}
 	for _, u := range urls {
-		f := file{url: u, path: filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])}
+		f := file{u, filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])}
 		h, err := os.Open(f.path)
 		if !skip || errors.Is(err, os.ErrNotExist) {
-			*fs = append(*fs, f)
+			fs = append(fs, f)
 			continue
 		}
 		if err == nil {
 			h.Close()
-		}
-	}
-	return nil
-}
-
-func getFiles(client *http.Client, searches []search, dir string, skip bool) ([]file, error) {
-	var fs []file
-	for _, s := range searches {
-		if err := appendFiles(&fs, client, s, dir, skip); err != nil {
-			return []file{}, fmt.Errorf("error getting files from the %s: %w", s.name, err)
 		}
 	}
 	return fs, nil

@@ -45,7 +45,7 @@ $ docker-compose run --rm minha-receita download --directory /mnt/data/
 
 ## Tratamento dos dados
 
-O comando `transform` transforma os arquivos para o formato JSON, consolidando as informações de todos os arquivos CSV mais o arquivo dos códigos dos municípios do IBGE. Esse JSON é armazenado diretamente no banco de dados. Para tanto, é preciso criar a tabela no banco de dados com o comando `create` (o comando `drop` pode ser utilizado para excluir essa mesma tabela).
+O comando `transform` transforma os arquivos para o formato JSON, consolidando as informações de todos os arquivos CSV. Esse JSON é armazenado diretamente no banco de dados. Para tanto, é preciso criar a tabela no banco de dados com o comando `create` (o comando `drop` pode ser utilizado para excluir essa mesma tabela).
 
 Para especificar onde ficam os arquivos originais da Receita Federal e do Tesouro Nacional, o comando aceita como argumento `--directory` (ou `-d`), sendo o padrão `data/`.
 
