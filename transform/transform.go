@@ -20,8 +20,8 @@ type database interface {
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
-func Transform(dir string, db database, maxParallelDBQueries, batchSize int) error {
-	j, err := createJSONRecordsTask(dir, db, batchSize)
+func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy bool) error {
+	j, err := createJSONRecordsTask(dir, db, batchSize, privacy)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}

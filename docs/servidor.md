@@ -69,7 +69,8 @@ $ docker-compose run --rm minha-receita transform -d /mnt/data/
 
 ### Questões de privacidade
 
-Assim como o [`socios-brasil`](https://github.com/turicas/socios-brasil#privacidade) removemos alguns dados para evitar exposição de dados sensíveis de pessoas físicas, bem como SPAM. Ao contrário do `socios-brasil`, não temos uma opção para desativar essa camada de privacidade (mas PRs são bem-vindos).
+Assim como o [`socios-brasil`](https://github.com/turicas/socios-brasil#privacidade) removemos alguns dados para evitar exposição de dados sensíveis de pessoas físicas, bem como SPAM. A opção `--no-privacy` do comando `transform` remove essa precaução de privacidade.
+
 
 ## Iniciando a API web
 

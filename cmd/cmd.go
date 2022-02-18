@@ -63,6 +63,7 @@ var (
 	maxParallelDBQueries int
 	batchSize            int
 	cleanUp              bool
+	noPrivacy            bool
 
 	// download
 	urlsOnly          bool
@@ -185,7 +186,7 @@ var transformCmd = &cobra.Command{
 				return err
 			}
 		}
-		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize)
+		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy)
 	},
 }
 
@@ -251,6 +252,7 @@ func CLI() *cobra.Command {
 	)
 	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
 	transformCmd.Flags().BoolVarP(&cleanUp, "clean-up", "c", cleanUp, "drop & recreate the database table before starting")
+	transformCmd.Flags().BoolVarP(&noPrivacy, "no-privacy", "p", noPrivacy, "include email addresses, CPF and other PII in the JSON data")
 	for _, c := range []*cobra.Command{downloadCmd, transformCmd, sampleCmd} {
 		c.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded CSV files")
 	}
