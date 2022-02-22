@@ -7,61 +7,35 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
 )
-
-const federalRevenue = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
 
 type file struct {
 	url  string
 	path string
 }
 
-func getURLs(client *http.Client, src string) ([]string, error) {
-	r, err := client.Get(src)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
+type getURLsHandler func(c *http.Client, url string) ([]string, error)
 
-	if r.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s responded with %s", src, r.Status)
-	}
-
-	d, err := goquery.NewDocumentFromReader(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	urls := make(map[string]struct{})
-	d.Find("a.external-link").Each(func(_ int, a *goquery.Selection) {
-		h, exist := a.Attr("href")
-		if !exist {
-			return
+func getURLs(client *http.Client, confs []getFilesConfig) ([]string, error) {
+	var urls []string
+	for _, c := range confs {
+		u, err := c.handler(client, c.url)
+		if err != nil {
+			return nil, fmt.Errorf("error getting urls: %w", err)
 		}
-		if strings.HasSuffix(h, ".zip") {
-			h = strings.ReplaceAll(h, "http//", "")
-			h = strings.ReplaceAll(h, "http://http://", "http://")
-			urls[h] = struct{}{}
-		}
-	})
-
-	var u []string
-	for k := range urls {
-		u = append(u, k)
+		urls = append(urls, u...)
 	}
-	return u, nil
+	return urls, nil
 }
 
-func getFiles(client *http.Client, src, dir string, skip bool) ([]file, error) {
+func getFiles(client *http.Client, hs []getFilesConfig, dir string, skip bool) ([]file, error) {
 	var fs []file
-	urls, err := getURLs(client, src)
+	urls, err := getURLs(client, hs)
 	if err != nil {
-		return fs, err
+		return nil, fmt.Errorf("error getting files: %w", err)
 	}
 	for _, u := range urls {
-		f := file{url: u, path: filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])}
+		f := file{u, filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])}
 		h, err := os.Open(f.path)
 		if !skip || errors.Is(err, os.ErrNotExist) {
 			fs = append(fs, f)

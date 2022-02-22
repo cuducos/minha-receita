@@ -81,13 +81,14 @@ Na leitura desses arquivos existem campos que contém um código numérico, mas 
 * Arquivos CSV com o sufixo `PAISCSV` com o nome dos países
 * Arquivos CSV com o sufixo `NATJUCSV` com o nome da natureza jurídica
 * Arquivos CSV com o sufixo `QUALSCSV` com a descrição da qualificação de cada pessoa do quadro societário
+* [Arquivo do Tesouro Nacional com os códigos dos municípios do IBGE](https://www.tesourotransparente.gov.br/ckan/dataset/lista-de-municipios-do-siafi/resource/eebb3bc6-9eea-4496-8bcf-304f33155282)
 
 ### Estratégia
 
 A etapa de transformação dos dados cria uma linha no banco de dados para cada CNPJ listado em `ESTABELE`, e depois “enriquece” essa linha com os CSVs auxiliares:
 
 1. Ler os arquivos CSV com o sufixo `ESTABELE` e criar um registro por CNPJ completo
-    1. Incorporar nessa leitura as informações das tabelas de _look up_ `CNAECSV`, `MOTICSV`, `MUNICCSV` e `PAISCSV`
+    1. Incorporar nessa leitura as informações das tabelas de _look up_ `CNAECSV`, `MOTICSV`, `MUNICCSV`, `PAISCSV` e códigos dos municípios do IBGE
 1. Ler os arquivos CSV com sufixo `EMPRECSV` e enriquecer as linhas do banco de dados com essas informações
     1. Incorporar nessa leitura as informações da tabela de _look up_ `NATJUCSV`
 1. Ler os arquivos CSV com sufixo `SOCIOCSV` e enriquecer as linhas do banco de dados com essas informações

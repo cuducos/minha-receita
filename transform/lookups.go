@@ -2,6 +2,7 @@ package transform
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -27,6 +28,7 @@ type lookups struct {
 	cnaes          lookup
 	qualifications lookup
 	natures        lookup
+	ibge           lookup
 }
 
 func newLookups(d string) (lookups, error) {
@@ -48,7 +50,11 @@ func newLookups(d string) (lookups, error) {
 	if len(ls) != len(srcs) {
 		return lookups{}, fmt.Errorf("error creating look up tables, expected %d items, got %d", len(srcs), len(ls))
 	}
-	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], ls[5]}, nil
+	c, err := citiesLookup(d)
+	if err != nil {
+		return lookups{}, fmt.Errorf("error creating ibge lookup: %w", err)
+	}
+	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], ls[5], c}, nil
 }
 
 func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
@@ -84,6 +90,9 @@ func (c *company) pais(l *lookups, v string) error {
 }
 
 func (c *company) municipio(l *lookups, v string) error {
+	if c.UF == "EX" {
+		return nil
+	}
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoMunicipio %s: %w", v, err)
@@ -91,10 +100,20 @@ func (c *company) municipio(l *lookups, v string) error {
 	if i == nil {
 		return nil
 	}
-	s := l.cities[*i]
 	c.CodigoMunicipio = i
-	if s != "" {
-		c.Municipio = &s
+	s, ok := l.cities[*i]
+	if !ok {
+		return nil
+	}
+	c.Municipio = &s
+	ibge, ok := l.ibge[*i]
+	if !ok {
+		log.Output(2, fmt.Sprintf("Could not find IBGE city code for %s-%s (%d)", *c.Municipio, c.UF, *i))
+		return nil
+	}
+	c.CodigoMunicipioIBGE, err = toInt(ibge)
+	if err != nil {
+		return fmt.Errorf("error trying to parse ibge code %s: %w", ibge, err)
 	}
 	return nil
 }
