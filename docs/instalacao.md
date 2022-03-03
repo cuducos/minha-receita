@@ -18,11 +18,11 @@ _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certe
 * [Go](https://golang.org/) versão 1.17
 * Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
 
-Baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
+Depois de clonar o repositório, baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
 
 ```console
 $ go get
-$ go build -o /usr/local/bin minha-receita
+$ go build -o /usr/local/bin/minha-receita main.go
 ```
 
 ### Requisitos e instalação com Docker
