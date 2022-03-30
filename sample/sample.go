@@ -1,6 +1,7 @@
 package sample
 
 import (
+    "io"
 	"archive/zip"
 	"bufio"
 	"errors"
@@ -75,6 +76,33 @@ func makeSample(src, outDir string, m int) error {
 	return nil
 }
 
+func copy(src, dst, filename string) (int64, error) {
+        src_path := filepath.Join(src, filename)
+        dst_path := filepath.Join(src, filename)
+        sourceFileStat, err := os.Stat(src)
+        if err != nil {
+                return 0, err
+        }
+
+        if !sourceFileStat.Mode().IsRegular() {
+                return 0, fmt.Errorf("%s is not a regular file", src)
+        }
+
+        source, err := os.Open(src_path)
+        if err != nil {
+                return 0, err
+        }
+        defer source.Close()
+
+        destination, err := os.Create(dst_path)
+        if err != nil {
+                return 0, err
+        }
+        defer destination.Close()
+        nBytes, err := io.Copy(destination, source)
+        return nBytes, err
+}
+
 // Sample generates sample data on the target directory, coping the first `m`
 // lines of each file from the source directory.
 func Sample(src, target string, m int) error {
@@ -91,11 +119,20 @@ func Sample(src, target string, m int) error {
 	if len(ls) == 0 {
 		return errors.New("source directory %s has no zip files")
 	}
-	bar := progressbar.Default(int64(len(ls)))
+	bar := progressbar.Default(int64(len(ls) + 1))
 	bar.Describe("Creating sample files")
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
+
+    tabmun := "TABMUN.CSV"
+    dados_abertos := "Dados%20Abertos%20S%c3%adtio%20RFB%20Extracao%2020.10.2021.zip"
+
+    copy(src, target, tabmun)
+    bar.Add(1)
+
+    copy(src, target, dados_abertos)
+    bar.Add(1)
 
 	q := make(chan error)
 	defer close(q)
