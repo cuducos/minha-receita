@@ -7,18 +7,21 @@ import (
 	"testing"
 )
 
-func TestSampleTargetHaveAllFiles(t *testing.T) {
-    data_files := listFilesFromDir("../data")
-    sample_files := listFilesFromDir("../sample_data")
-    assertArraysHaveSameItems(t, data_files, sample_files)
+func TestSample(t *testing.T) {
+    Sample("../data", "../data/sample", 100)
+    dataFiles := listFilesFromDir(t, "../data")
+    sampleFiles := listFilesFromDir(t, "../data/sample")
+    if ! reflect.DeepEqual(dataFiles, sampleFiles) {
+        t.Errorf("File not found in sample")
+    }
 }
 
-func listFilesFromDir(dir string) []string {
+func listFilesFromDir(t *testing.T, dir string) []string {
     var files []string
     path, _ := filepath.Abs(dir)
     paths, err := ioutil.ReadDir(path)
     if err != nil {
-        panic(err)
+        t.Errorf("Could not list dir: %s, %v", dir, err)
     }
 
     for _, file := range paths {
@@ -28,12 +31,3 @@ func listFilesFromDir(dir string) []string {
     }
     return files
 }
-
-func assertArraysHaveSameItems(t *testing.T, a, b []string) {
-        if len(a) != len(b) {
-            t.Errorf("Arrays have different lengths")
-        }
-        if ! reflect.DeepEqual(a, b) {
-            t.Errorf("File not found in sample")
-        }
-    }
