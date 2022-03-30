@@ -4,13 +4,15 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
 func TestSample(t *testing.T) {
-    Sample("../data", "../data/sample", 100)
-    dataFiles := listFilesFromDir(t, "../data")
-    sampleFiles := listFilesFromDir(t, "../data/sample")
+    src, dst := "../testdata", "../testdata/sample"
+    Sample(src, dst, 100)
+    dataFiles := listFilesFromDir(t, src)
+    sampleFiles := listFilesFromDir(t, dst)
     if ! reflect.DeepEqual(dataFiles, sampleFiles) {
         t.Errorf("File not found in sample")
     }
@@ -25,9 +27,20 @@ func listFilesFromDir(t *testing.T, dir string) []string {
     }
 
     for _, file := range paths {
-        if ! file.IsDir() {
+        fileExt := strings.ToLower(filepath.Ext(file.Name()))
+        ext := []string{"json", "csv", "zip"}
+        if ! file.IsDir() && contains(ext, fileExt) {
             files = append(files, file.Name())
         }
     }
     return files
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }

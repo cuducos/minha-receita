@@ -2,8 +2,8 @@
 .ipynb_checkpoints/
 bin/
 data/
-sample_data/
 site/
 ~/data/.gitkeep
-~/sample_data/.gitkeep
 minha-receita
+/testdata/sample/
+~/testdata/sample/.gitkeep
