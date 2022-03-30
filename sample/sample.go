@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cuducos/minha-receita/transform"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -91,6 +92,8 @@ func Sample(src, target string, m int) error {
 	if len(ls) == 0 {
 		return errors.New("source directory %s has no zip files")
 	}
+	ls = append(ls, filepath.Join(src, transform.NationalTreasureFileName))
+
 	bar := progressbar.Default(int64(len(ls)))
 	bar.Describe("Creating sample files")
 	if err := bar.RenderBlank(); err != nil {
