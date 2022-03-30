@@ -16,7 +16,7 @@ import (
 const MaxLines = 10000
 
 // TargetDir to use when creating sample data
-const TargetDir = "sample"
+const TargetDir = "sample_data"
 
 func makeSample(src, outDir string, m int) error {
 	r, err := zip.OpenReader(src)

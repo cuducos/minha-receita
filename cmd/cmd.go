@@ -261,7 +261,7 @@ func CLI() *cobra.Command {
 		&targetDir,
 		"target-directory",
 		"t",
-		filepath.Join("data", sample.TargetDir),
+		filepath.Join(sample.TargetDir),
 		"directory for the sample CSV files",
 	)
 	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, sampleCmd} {
