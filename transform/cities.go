@@ -9,10 +9,10 @@ import (
 	"strconv"
 )
 
-const nationalTreasureFileName = "TABMUN.CSV"
+const NationalTreasureFileName = "TABMUN.CSV"
 
 func citiesLookup(dir string) (lookup, error) {
-	pth := filepath.Join(dir, nationalTreasureFileName)
+	pth := filepath.Join(dir, NationalTreasureFileName)
 	f, err := os.Open(pth)
 	if err != nil {
 		return nil, fmt.Errorf("error opening %s: %w", pth, err)
