@@ -2,19 +2,21 @@ package sample
 
 import (
 	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
 
 func TestSampleTargetHaveAllFiles(t *testing.T) {
-    data_files := listFilesFromDir("/home/alexandre/Desenvolvimento/minha-receita/data")
-    sample_files := listFilesFromDir("/home/alexandre/Desenvolvimento/minha-receita/sample_data")
+    data_files := listFilesFromDir("../data")
+    sample_files := listFilesFromDir("../sample_data")
     assertArraysHaveSameItems(t, data_files, sample_files)
 }
 
 func listFilesFromDir(dir string) []string {
     var files []string
-    paths, err := ioutil.ReadDir(dir)
+    path, _ := filepath.Abs(dir)
+    paths, err := ioutil.ReadDir(path)
     if err != nil {
         panic(err)
     }
