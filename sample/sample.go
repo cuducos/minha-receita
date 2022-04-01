@@ -66,7 +66,6 @@ func makeSampleFromZIP(src, outDir string, m int) error {
 	out := filepath.Join(outDir, name)
 	for _, z := range r.File {
 		if z.Name != base && filepath.Ext(z.Name) == "csv" {
-            fmt.Println(z.Name)
 			continue
 		}
 		if z.FileInfo().IsDir() {
