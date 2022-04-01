@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+/*
+NationalTreasureFileName is the name of the CSV containging city names and 
+their codes. 
+*/
 const NationalTreasureFileName = "TABMUN.CSV"
 
 func citiesLookup(dir string) (lookup, error) {
