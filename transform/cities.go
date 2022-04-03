@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-// NationalTreasureFileName is the name of the CSV containging city names and
+// NationalTreasureFileName is the name of the CSV containing city names and
 // their codes.
 const NationalTreasureFileName = "TABMUN.CSV"
 
