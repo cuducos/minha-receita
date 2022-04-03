@@ -52,6 +52,8 @@ number of lines, allowing us to manually test the process quicker.`
 
 const defaultPort = "8000"
 
+const defaultDataDir = "data"
+
 var (
 	dir            string
 	databaseURI    string
@@ -250,7 +252,7 @@ func CLI() *cobra.Command {
 	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
 	transformCmd.Flags().BoolVarP(&cleanUp, "clean-up", "c", cleanUp, "drop & recreate the database table before starting")
 	for _, c := range []*cobra.Command{downloadCmd, transformCmd, sampleCmd} {
-		c.Flags().StringVarP(&dir, "directory", "d", "data", "directory of the downloaded CSV files")
+		c.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded CSV files")
 	}
 	for _, c := range []*cobra.Command{transformCmd, createCmd, dropCmd, apiCmd} {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
@@ -261,7 +263,7 @@ func CLI() *cobra.Command {
 		&targetDir,
 		"target-directory",
 		"t",
-		filepath.Join("data", sample.TargetDir),
+		filepath.Join(defaultDataDir, sample.TargetDir),
 		"directory for the sample CSV files",
 	)
 	for _, c := range []*cobra.Command{apiCmd, downloadCmd, transformCmd, createCmd, dropCmd, sampleCmd} {
