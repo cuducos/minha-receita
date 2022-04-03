@@ -2,49 +2,37 @@ package sample
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 )
 
+var testdata = filepath.Join("..", "testdata")
+
 func TestSample(t *testing.T) {
-    src, dst := "../testdata", t.TempDir()
-    if err:= Sample(src, dst, 100); err != nil {
-        t.Fatalf("expected no error running sample, got %s", err)
-    }
-    dataFiles := listFilesFromDir(t, src)
-    sampleFiles := listFilesFromDir(t, dst)
-    if !reflect.DeepEqual(dataFiles, sampleFiles) {
-        t.Errorf("File not found in sample")
-    }
-}
+	tmp := t.TempDir()
+	if err := Sample(testdata, tmp, 42); err != nil {
+		t.Fatalf("expected no error running sample, got %s", err)
+	}
+	ls, err := ioutil.ReadDir(tmp)
+	if err != nil {
+		t.Errorf("expected no error readind dir %s, got %s", tmp, err)
+	}
 
-func listFilesFromDir(t *testing.T, dir string) []string {
-    ext := []string{"json", "csv", "zip"}
-    var files []string
-    path, err := filepath.Abs(dir)
-    if err != nil {
-        t.Errorf("could not read directory %s", dir)
-    }
-    paths, err := ioutil.ReadDir(path)
-    if err != nil {
-        t.Errorf("Could not list dir: %s, %v", dir, err)
-    }
-
-    for _, file := range paths {
-        if !file.IsDir() && contains(ext, strings.ToLower(filepath.Ext(file.Name()))) {
-            files = append(files, file.Name())
-        }
-    }
-    return files
-}
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
+	expected := 12
+	var got []string
+	for _, f := range ls {
+		if !f.IsDir() {
+			got = append(got, f.Name())
 		}
 	}
-	return false
+	if len(got) != expected {
+		t.Errorf("expected %d files in the sample directory, got %d: %v", expected, len(got), got)
+	}
+	for _, f := range got {
+		_, err := os.Stat(filepath.Join(testdata, f))
+		if err != nil {
+			t.Errorf("expected %s to exist in %s, but it does not", f, testdata)
+		}
+	}
 }
