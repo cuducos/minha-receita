@@ -14,12 +14,12 @@ type file struct {
 	path string
 }
 
-type getURLsHandler func(c *http.Client, url string) ([]string, error)
+type getURLsHandler func(c *http.Client, url, dir string) ([]string, error)
 
-func getURLs(client *http.Client, confs []getFilesConfig) ([]string, error) {
+func getURLs(client *http.Client, confs []getFilesConfig, dir string) ([]string, error) {
 	var urls []string
 	for _, c := range confs {
-		u, err := c.handler(client, c.url)
+		u, err := c.handler(client, c.url, dir)
 		if err != nil {
 			return nil, fmt.Errorf("error getting urls: %w", err)
 		}
@@ -30,7 +30,7 @@ func getURLs(client *http.Client, confs []getFilesConfig) ([]string, error) {
 
 func getFiles(client *http.Client, hs []getFilesConfig, dir string, skip bool) ([]file, error) {
 	var fs []file
-	urls, err := getURLs(client, hs)
+	urls, err := getURLs(client, hs, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files: %w", err)
 	}

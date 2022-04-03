@@ -18,7 +18,7 @@ func TestGetURLs(t *testing.T) {
 	} {
 		ts := httpTestServer(t, tc.fixture)
 		defer ts.Close()
-		got, err := getURLs(ts.Client(), []getFilesConfig{{tc.handler, ts.URL}})
+		got, err := getURLs(ts.Client(), []getFilesConfig{{tc.handler, ts.URL}}, t.TempDir())
 		if err != nil {
 			t.Errorf("expected to run withour errors, got: %v:", err)
 			return

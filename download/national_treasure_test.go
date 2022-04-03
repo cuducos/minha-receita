@@ -7,7 +7,7 @@ import (
 func TestNationalTreasureGetURLs(t *testing.T) {
 	ts := httpTestServer(t, "national-treasure.json")
 	defer ts.Close()
-	got, err := nationalTreasureGetURLs(ts.Client(), ts.URL)
+	got, err := nationalTreasureGetURLs(ts.Client(), ts.URL, t.TempDir())
 	if err != nil {
 		t.Errorf("expected to run withour errors, got: %v:", err)
 		return
