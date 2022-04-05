@@ -13,9 +13,15 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 1. Consolidar todas as informações em um banco de dados único
 1. Fornecendo uma API web para a consulta de dados de um CNPJ
 
-## Qual a URL para acesso?
+## Como usar? 
 
 Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, mas existe um protótipo no ar em [`https://minhareceita.org/`](https://minhareceita.org).
+
+Para fazer uma consulta usando o protótipo, acrescente o CNPJ a ser consultado ao final da URL. Por exemplo:
+
+```
+https://minhareceita.org/99.999.999-9999/99
+```
 
 O protótipo não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade é contribuindo via [financiamento coletivo no GitHub](https://github.com/sponsors/cuducos) ou Bitcoin (`13WCAR21g1LGqzzn6WTNV5g7QdN1J35BDk`).
 
