@@ -1,6 +1,6 @@
-# Cliente
+# Como usar
 
-A API web tem apenas dois _endpoints_:
+A API web tem apenas dois _endpoints_: `/` e `/healthz`. Nos exemplos a seguir, substituta `https://minhareceita.org` por `http://0.0.0.0:8000` caso esteja rodando o servidor localmente.
 
 ## `GET /<número do CNPJ>`
 
@@ -18,7 +18,7 @@ A API web tem apenas dois _endpoints_:
 ### Exemplo de requisição usando o `curl`
 
 ```console
-$ curl -i 0.0.0.0:8000/33683111000280
+$ curl https://minhareceita.org/33683111000280
 ```
 
 ### Exemplo de resposta válida

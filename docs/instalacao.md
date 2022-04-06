@@ -1,8 +1,8 @@
-# Instalação
+# Instalação local
 
 ## Requisitos
 
-Existem duas formas de rodar essa aplicação:
+Existem duas formas de rodar essa aplicação localmente:
 
 * ou diretamente a partir do seu sistema operacional
 * ou com Docker
