@@ -43,6 +43,10 @@ Com Docker:
 $ docker-compose run --rm minha-receita download --directory /mnt/data/
 ```
 
+## Verificação dos downloads
+
+O comando `check` verifica a integridade dos arquivos `.zip` baixados. A opção `--delete` exclui os arquivos que falharem na verificação.
+
 ## Tratamento dos dados
 
 O comando `transform` transforma os arquivos para o formato JSON, consolidando as informações de todos os arquivos CSV. Esse JSON é armazenado diretamente no banco de dados. Para tanto, é preciso criar a tabela no banco de dados com o comando `create` (o comando `drop` pode ser utilizado para excluir essa mesma tabela).
