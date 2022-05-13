@@ -1,6 +1,6 @@
 module github.com/cuducos/minha-receita
 
-go 1.17
+go 1.18
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
@@ -37,4 +37,4 @@ require (
 	mellium.im/sasl v0.2.1 // indirect
 )
 
-// +heroku goVersion go1.17
+// +heroku goVersion go1.18

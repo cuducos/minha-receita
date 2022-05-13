@@ -16,7 +16,7 @@ _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certe
 
 ### Requisitos e instalação sem Docker
 
-* [Go](https://golang.org/) versão 1.17
+* [Go](https://golang.org/) versão 1.18
 * Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
 
 Depois de clonar o repositório, baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:

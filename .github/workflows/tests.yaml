@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: golang:1.17.5-bullseye
+    container: golang:1.18-bullseye
     services:
       postgres:
         image: postgres:12.5
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@master
       - uses: actions/setup-go@v2
         with:
-          go-version: "1.17"
+          go-version: "1.18"
       - run: "apt update && apt install -y postgresql-client"
       - run: "go test --race ./..."
         env:
