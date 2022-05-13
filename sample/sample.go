@@ -9,16 +9,19 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"github.com/cuducos/minha-receita/transform"
 	"github.com/schollz/progressbar/v3"
 )
 
-// MaxLines to use when creating sample data
-const MaxLines = 10000
+const (
+	// MaxLines to use when creating sample data
+	MaxLines = 10000
 
-// TargetDir to use when creating sample data
-const TargetDir = "sample"
+	// TargetDir to use when creating sample data
+	TargetDir = "sample"
+)
 
 func sampleLines(r io.Reader, w io.Writer, m int) error {
 	var c int
@@ -148,11 +151,20 @@ func Sample(src, target string, m int) error {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
 
+	var shutdown uint32
 	q := make(chan error)
 	defer close(q)
 	for _, pth := range ls {
 		go func(pth string) {
-			q <- makeSample(pth, target, m)
+			err := makeSample(pth, target, m)
+			if err != nil {
+				atomic.StoreUint32(&shutdown, 1)
+				q <- err
+			} else {
+				if atomic.LoadUint32(&shutdown) == 0 {
+					q <- nil
+				}
+			}
 		}(pth)
 	}
 	for err := range q {
