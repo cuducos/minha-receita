@@ -2,10 +2,17 @@
 
 ## Requisitos
 
-Existem duas formas de rodar essa aplicação localmente:
+Existem três formas de rodar essa aplicação localmente:
 
-* ou diretamente a partir do seu sistema operacional
-* ou com Docker
+* ou com a imagem Docker
+* ou gerando o binário a partir do código fonte
+* ou com Docker Compose
+
+As duas últimas alternativas necessitam do código fonte. Você pode usar o Git para baixar o código do projeto:
+
+```console
+$ git clone https://github.com/cuducos/minha-receita.git
+```
 
 _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
@@ -14,7 +21,19 @@ _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certe
 * Os arquivos da Receita federal tem cerca de 6Gb
 * O banco de dados PostgreSQL gerado utiliza cerca de 140Gb
 
-### Requisitos e instalação sem Docker
+### Requisitos e instalação
+
+#### Imagem Docker
+
+* [Docker](https://www.docker.com/)
+
+Baixar a imagem com:
+
+```console
+$ docker pull ghcr.io/cuducos/minha-receita:main
+```
+
+#### A partir do código fonte
 
 * [Go](https://golang.org/) versão 1.18
 * Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
@@ -26,7 +45,7 @@ $ go get
 $ go build -o /usr/local/bin/minha-receita main.go
 ```
 
-### Requisitos e instalação com Docker
+#### Docker Compose
 
 * [Docker](https://www.docker.com/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
@@ -38,20 +57,27 @@ Gere as imagens dos containers com:
 $ docker-compose build
 ```
 
-## Configurações
+## Execução e configurações
 
 Várias configurações podem ser passadas para a CLI, e elas estão documentadas no `--help` de cada comando da aplicação.
 
-### Exemplo
+### Exemplos
 
-Sem Docker, por exemplo:
+#### Imagem Docker
+
+```console
+$ docker run --rm ghcr.io/cuducos/minha-receita:main --help --help
+$ docker run --rm ghcr.io/cuducos/minha-receita:main --help api --help
+```
+
+#### A partir do código fonte
 
 ```console
 $ minha-receita --help
 $ minha-receita api --help
 ```
 
-Com Docker, por exemplo:
+#### Docker Compose
 
 ```console
 $ docker-compose run --rm minha-receita --help
