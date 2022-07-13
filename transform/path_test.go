@@ -11,11 +11,11 @@ func TestPathsForSource(t *testing.T) {
 		source   sourceType
 		expected []string
 	}{
-		{venues, []string{filepath.Join(testdata, "K3241.K03200Y8.D11009.ESTABELE.zip")}},
-		{motives, []string{filepath.Join(testdata, "F.K03200$Z.D11009.MOTICSV.zip")}},
+		{venues, []string{filepath.Join(testdata, "Estabelecimentos0.zip")}},
+		{motives, []string{filepath.Join(testdata, "Motivos.zip")}},
 		{base, []string{
-			filepath.Join(testdata, "K3241.K03200Y5.D11009.EMPRECSV.zip"),
-			filepath.Join(testdata, "K3241.K03200Y8.D11009.EMPRECSV.zip"),
+			filepath.Join(testdata, "Empresas0.zip"),
+			filepath.Join(testdata, "Empresas1.zip"),
 		}},
 	}
 	for _, c := range tc {
