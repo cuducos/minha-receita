@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -19,12 +20,14 @@ const MaxRetries = 8
 const MaxParallel = 8
 
 type downloader struct {
-	files       []file
-	client      *http.Client
-	totalSize   int64
-	bar         *downloadProgressBar
-	maxParallel int
-	maxRetries  int
+	files          []file
+	client         *http.Client
+	totalSize      int64
+	bar            *downloadProgressBar
+	maxParallel    int
+	maxRetries     int
+	isShuttingDown bool
+	mutex          sync.Mutex
 }
 
 func (d *downloader) getSize(url string) (int64, error) {
@@ -44,20 +47,38 @@ func (d *downloader) getTotalSizeWorker(queue chan string, sizes chan int64, err
 	for u := range queue {
 		s, err := d.getSize(u)
 		if err != nil {
-			errors <- fmt.Errorf("error getting size of %s: %w", u, err)
+			func() {
+				d.mutex.Lock()
+				defer d.mutex.Unlock()
+
+				if !d.isShuttingDown {
+					d.isShuttingDown = true
+					errors <- fmt.Errorf("error getting size of %s: %w", u, err)
+				}
+			}()
 			break
 		}
-		sizes <- s
+		d.mutex.Lock()
+		if !d.isShuttingDown {
+			sizes <- s
+		}
+		d.mutex.Unlock()
 	}
 }
 
 func (d *downloader) getTotalSize() error {
 	d.totalSize = 0
-	queue := make(chan string)
+	queue := make(chan string, len(d.files))
 	sizes := make(chan int64)
 	errors := make(chan error)
 	for _, f := range d.files {
-		go func(u string) { queue <- u }(f.url)
+		go func(u string) {
+			d.mutex.Lock()
+			if !d.isShuttingDown {
+				queue <- u
+			}
+			d.mutex.Unlock()
+		}(f.url)
 	}
 	for i := 0; i < d.maxParallel; i++ {
 		go d.getTotalSizeWorker(queue, sizes, errors)
@@ -96,7 +117,11 @@ func (d *downloader) resetDownload(f file) error {
 		return fmt.Errorf("could not get info for failed download %s: %v", f.path, err)
 	}
 
-	d.bar.updateBytes <- int64(-1) * i.Size()
+	d.mutex.Lock()
+	if !d.isShuttingDown {
+		d.bar.updateBytes <- int64(-1) * i.Size()
+	}
+	d.mutex.Unlock()
 	os.Remove(f.path)
 	return nil
 }
@@ -144,20 +169,37 @@ func (d *downloader) download(f file, a int) error {
 
 func (d *downloader) downloadWorker(queue chan file, errors chan<- error) {
 	for f := range queue {
-		err := d.download(f, 0)
-		if err != nil {
-			errors <- err
+		if err := d.download(f, 0); err != nil {
+			func() {
+				d.mutex.Lock()
+				defer d.mutex.Unlock()
+
+				if !d.isShuttingDown {
+					d.isShuttingDown = true
+					errors <- err
+				}
+			}()
 			break
 		}
-		d.bar.updateTotal <- struct{}{}
+		d.mutex.Lock()
+		if !d.isShuttingDown {
+			d.bar.updateTotal <- struct{}{}
+		}
+		d.mutex.Unlock()
 	}
 }
 
 func (d *downloader) downloadAll() error {
-	queue := make(chan file)
+	queue := make(chan file, len(d.files))
 	errors := make(chan error)
 	for _, f := range d.files {
-		go func(f file) { queue <- f }(f)
+		go func(f file) {
+			d.mutex.Lock()
+			if !d.isShuttingDown {
+				queue <- f
+			}
+			d.mutex.Unlock()
+		}(f)
 	}
 	for i := 0; i < d.maxParallel; i++ {
 		go d.downloadWorker(queue, errors)
