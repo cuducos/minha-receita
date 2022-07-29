@@ -29,10 +29,6 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 	var a *archivedCSV
 	t := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
 	for _, z := range r.File {
-		if z.Name != t {
-			continue
-		}
-
 		if z.FileInfo().IsDir() {
 			continue
 		}
