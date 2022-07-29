@@ -10,16 +10,16 @@ import (
 type sourceType string
 
 const (
-	venues         sourceType = "ESTABELE"
-	motives        sourceType = "MOTICSV"
-	base           sourceType = "EMPRECSV"
-	cities         sourceType = "MUNICCSV"
-	cnaes          sourceType = "CNAECSV"
-	countries      sourceType = "PAISCSV"
-	natures        sourceType = "NATJUCSV"
-	partners       sourceType = "SOCIOCSV"
-	qualifications sourceType = "QUALSCSV"
-	taxes          sourceType = "SIMPLES"
+	venues         sourceType = "Estabelecimentos"
+	motives        sourceType = "Motivos"
+	base           sourceType = "Empresas"
+	cities         sourceType = "Municipios"
+	cnaes          sourceType = "Cnaes"
+	countries      sourceType = "Paises"
+	natures        sourceType = "Naturezas"
+	partners       sourceType = "Socios"
+	qualifications sourceType = "Qualificacoes"
+	taxes          sourceType = "Simples"
 )
 
 type source struct {

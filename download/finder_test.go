@@ -13,7 +13,7 @@ func TestGetURLs(t *testing.T) {
 		handler  getURLsHandler
 		expected int
 	}{
-		{"federal revenue", "dados-publicos-cnpj.html", federalRevenueGetURLs, 37},
+		{"federal revenue", "dados-publicos-cnpj.html", federalRevenueGetURLs, 38},
 		{"national treasure", "national-treasure.json", nationalTreasureGetURLs, 1},
 	} {
 		ts := httpTestServer(t, tc.fixture)
@@ -38,7 +38,7 @@ func TestGetFiles(t *testing.T) {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
 		return
 	}
-	expected := 37
+	expected := 38
 	if expected != len(got) {
 		t.Errorf("Expected getFiles to return %d files, got %d", expected, len(got))
 	}

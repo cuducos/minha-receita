@@ -73,7 +73,7 @@ func TestCheckZipFile(t *testing.T) {
 		pth      string
 		expected error
 	}{
-		{filepath.Join(testdata, "F.K03200$W.SIMPLES.CSV.D11009.zip"), nil},
+		{filepath.Join(testdata, "Simples.zip"), nil},
 		{badZipPath, fmt.Errorf("error opening %s: zip: not a valid zip file", badZipPath)},
 	}
 	for _, tc := range tt {
