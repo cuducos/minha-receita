@@ -37,6 +37,7 @@ func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries i
 			log.Output(2, fmt.Sprintf("Error downloading files: %s", err))
 			continue
 		}
+		break
 	}
 }
 
