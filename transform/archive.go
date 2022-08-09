@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,8 @@ import (
 )
 
 const separator = ';'
+
+var multipleSpaces = regexp.MustCompile(`\s{2,}`)
 
 type archivedCSV struct {
 	path    string
@@ -71,7 +74,7 @@ func (a *archivedCSV) read() ([]string, error) {
 		if err != nil {
 			return []string{}, fmt.Errorf("encoding error in text %s from %s: %w", l, a.path, err)
 		}
-		ls[i] = strings.Map(removeNulChar, ls[i])
+		ls[i] = multipleSpaces.ReplaceAllString(strings.Map(removeNulChar, ls[i]), " ")
 	}
 	return ls, nil
 }
