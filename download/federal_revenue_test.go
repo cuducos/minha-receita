@@ -1,7 +1,7 @@
 package download
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -65,7 +65,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 			t.Errorf("expected to run withour errors, got: %v:", err)
 		}
 		pth := filepath.Join(tmp, federalRevenueUpdatedAt)
-		got, err := ioutil.ReadFile(pth)
+		got, err := os.ReadFile(pth)
 		if err != nil {
 			t.Errorf("expected no error reading %s, updatedAt %s", pth, err)
 		}

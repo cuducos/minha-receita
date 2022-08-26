@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -34,7 +33,7 @@ func TestCompanyHandler(t *testing.T) {
 	if err != nil {
 		t.Errorf("Could understand path %s", f)
 	}
-	b, err := ioutil.ReadFile(f)
+	b, err := os.ReadFile(f)
 	if err != nil {
 		t.Errorf("Could not read from %s", f)
 	}

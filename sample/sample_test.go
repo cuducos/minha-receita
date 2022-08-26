@@ -1,7 +1,6 @@
 package sample
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ func TestSample(t *testing.T) {
 	if err := Sample(testdata, tmp, 42); err != nil {
 		t.Fatalf("expected no error running sample, got %s", err)
 	}
-	ls, err := ioutil.ReadDir(tmp)
+	ls, err := os.ReadDir(tmp)
 	if err != nil {
 		t.Errorf("expected no error readind dir %s, got %s", tmp, err)
 	}
