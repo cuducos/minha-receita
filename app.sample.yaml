@@ -1,0 +1,21 @@
+runtime: custom
+env: flex
+skip_files:
+  - .git
+  - data/
+env_variables:
+  POSTGRES_URI:
+  NEW_RELIC_LICENSE_KEY:
+  NEW_RELIC_LOG:
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 2
+resources:
+  cpu: 1
+  memory_gb: 1.0
+  disk_size_gb: 10
+liveness_check:
+  path: "/healthz"
+  check_interval_sec: 120
+  timeout_sec: 3
+  initial_delay_sec: 3600

@@ -1,7 +1,7 @@
 .env
-.ipynb_checkpoints/
+app.yaml
 bin/
 data/
+minha-receita
 site/
 ~/data/.gitkeep
-minha-receita
