@@ -36,7 +36,7 @@ As configurações padrão desses bancos são:
 
 | Serviço | Ambiente | Variável de ambiente | Valor |
 |---|---|---|---|
-| `postgrtes` | Desenvolvimento | `POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
+| `postgres` | Desenvolvimento | `POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
 | `postgres_test` | Testes | `TEST_POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
 
 ### Rodando o projeto todo com Docker
