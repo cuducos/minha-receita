@@ -43,9 +43,10 @@ func (d *downloader) getSize(url string) (int64, error) {
 	return r.ContentLength, nil
 }
 
-func (d *downloader) getTotalSizeWorker(queue chan string, sizes chan int64, errors chan error) {
-	for u := range queue {
-		s, err := d.getSize(u)
+func (d *downloader) getTotalSizeWorker(queue <-chan file, sizes chan<- file, errors chan error) {
+	var err error
+	for f := range queue {
+		f.size, err = d.getSize(f.url)
 		if err != nil {
 			func() {
 				d.mutex.Lock()
@@ -53,14 +54,14 @@ func (d *downloader) getTotalSizeWorker(queue chan string, sizes chan int64, err
 
 				if !d.isShuttingDown {
 					d.isShuttingDown = true
-					errors <- fmt.Errorf("error getting size of %s: %w", u, err)
+					errors <- fmt.Errorf("error getting size of %s: %w", f.url, err)
 				}
 			}()
 			break
 		}
 		d.mutex.Lock()
 		if !d.isShuttingDown {
-			sizes <- s
+			sizes <- f
 		}
 		d.mutex.Unlock()
 	}
@@ -68,17 +69,17 @@ func (d *downloader) getTotalSizeWorker(queue chan string, sizes chan int64, err
 
 func (d *downloader) getTotalSize() error {
 	d.totalSize = 0
-	queue := make(chan string, len(d.files))
-	sizes := make(chan int64)
+	queue := make(chan file, len(d.files))
+	sizes := make(chan file)
 	errors := make(chan error)
 	for _, f := range d.files {
-		go func(u string) {
+		go func(f file) {
 			d.mutex.Lock()
 			if !d.isShuttingDown {
-				queue <- u
+				queue <- f
 			}
 			d.mutex.Unlock()
-		}(f.url)
+		}(f)
 	}
 	for i := 0; i < d.maxParallel; i++ {
 		go d.getTotalSizeWorker(queue, sizes, errors)
@@ -94,8 +95,8 @@ func (d *downloader) getTotalSize() error {
 		select {
 		case err := <-errors:
 			return fmt.Errorf("error getting total size: %w", err)
-		case s := <-sizes:
-			d.totalSize += s
+		case f := <-sizes:
+			d.totalSize += f.size
 			bar.Add(1)
 		}
 		if bar.IsFinished() {

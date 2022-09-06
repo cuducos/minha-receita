@@ -12,6 +12,7 @@ import (
 type file struct {
 	url  string
 	path string
+	size int64
 }
 
 func newFile(url, dir string) file {
