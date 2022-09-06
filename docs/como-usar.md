@@ -1,6 +1,6 @@
 # Como usar
 
-A API web tem apenas dois _endpoints_: `/` e `/healthz`. Nos exemplos a seguir, substituta `https://minhareceita.org` por `http://0.0.0.0:8000` caso esteja rodando o servidor localmente.
+A API web tem apenas três _endpoints_: `/`, `/urls` e `/healthz`. Nos exemplos a seguir, substituta `https://minhareceita.org` por `http://0.0.0.0:8000` caso esteja rodando o servidor localmente.
 
 ## `GET /<número do CNPJ>`
 
@@ -192,6 +192,10 @@ $ curl https://minhareceita.org/33683111000280
     ]
 }
 ```
+
+## `GET /urls`
+
+Retorna uma lista de URLs para download no [formato requerido pelo Cloud Storage Transfer Service do Google Cloud](https://cloud.google.com/storage-transfer/docs/create-url-list).
 
 ## `GET /healthz`
 

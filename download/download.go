@@ -1,10 +1,13 @@
 package download
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -47,4 +50,30 @@ func Download(dir string, timeout time.Duration, urlsOnly, skip bool, parallel, 
 		return fmt.Errorf("error creating a downloader: %w", err)
 	}
 	return d.downloadAll()
+}
+
+// UrlList build a buffer with the contents matching the Google Cloud's Storage
+// Transfer service URL list.
+func UrlList() ([]byte, error) {
+	c := &http.Client{}
+	confs := []getFilesConfig{
+		{federalRevenueGetURLs, federalRevenueURL},
+		{nationalTreasureGetURLs, nationalTreasureBaseURL},
+	}
+	fs, err := getFiles(c, confs, os.TempDir(), false)
+	if err != nil {
+		return nil, fmt.Errorf("error gathering resources for download: %w", err)
+	}
+	fs, err = getSizes(c, fs, true)
+	if err != nil {
+		return nil, fmt.Errorf("error getting file sizes: %w", err)
+	}
+	var ls []string
+	buf := bytes.NewBufferString("TsvHttpData-1.0\n")
+	for _, f := range fs {
+		ls = append(ls, fmt.Sprintf("%s\t%d", f.url, f.size))
+	}
+	sort.Strings(ls)
+	buf.WriteString(strings.Join(ls, "\n"))
+	return buf.Bytes(), nil
 }

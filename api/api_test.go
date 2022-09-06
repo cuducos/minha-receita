@@ -116,7 +116,7 @@ func TestCompanyHandler(t *testing.T) {
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		}
 
-		app := api{&mockDatabase{}}
+		app := api{db: &mockDatabase{}}
 		resp := httptest.NewRecorder()
 		handler := http.HandlerFunc(app.companyHandler)
 		handler.ServeHTTP(resp, req)
@@ -175,7 +175,7 @@ func TestCompanyHandlerBackwardCompatibility(t *testing.T) {
 		}
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-		app := api{&mockDatabase{}}
+		app := api{db: &mockDatabase{}}
 		resp := httptest.NewRecorder()
 		handler := http.HandlerFunc(app.companyHandler)
 		handler.ServeHTTP(resp, req)
@@ -222,9 +222,39 @@ func TestHealthHandler(t *testing.T) {
 		if err != nil {
 			t.Fatal("Expected an HTTP request, but got an error.")
 		}
-		app := api{&mockDatabase{}}
+		app := api{db: &mockDatabase{}}
 		resp := httptest.NewRecorder()
 		handler := http.HandlerFunc(app.healthHandler)
+		handler.ServeHTTP(resp, req)
+
+		if resp.Code != c.status {
+			t.Errorf("Expected %s /healthz to return %v, but got %v", c.method, c.status, resp.Code)
+		}
+		if strings.TrimSpace(resp.Body.String()) != c.content {
+			t.Errorf("\nExpected HTTP contents to be %s, got %s", c.content, resp.Body.String())
+		}
+	}
+}
+
+func TestURLListHandler(t *testing.T) {
+	app := api{db: &mockDatabase{}, cache: newCache()}
+	app.cache.save("url-list", []byte("42"))
+	for _, c := range []struct {
+		method  string
+		status  int
+		content string
+	}{
+		{http.MethodGet, http.StatusOK, "42"},
+		{http.MethodPost, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
+		{http.MethodHead, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
+		{http.MethodOptions, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
+	} {
+		req, err := http.NewRequest(c.method, "/urls", nil)
+		if err != nil {
+			t.Fatal("Expected an HTTP request, but got an error.")
+		}
+		resp := httptest.NewRecorder()
+		handler := http.HandlerFunc(app.urlsHandler)
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {

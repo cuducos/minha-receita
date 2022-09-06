@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/download"
 )
 
 type database interface {
@@ -41,10 +42,11 @@ func messageResponse(w http.ResponseWriter, s int, m string) {
 }
 
 type api struct {
-	db database
+	db    database
+	cache cache
 }
 
-func (app api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
+func (app *api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != http.MethodPost {
 		return fmt.Errorf("no backward compatibilityt with method %s", r.Method)
 	}
@@ -67,7 +69,7 @@ func (app api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Reque
 	return nil
 }
 
-func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
+func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -107,7 +109,28 @@ func (app api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, s)
 }
 
-func (app api) healthHandler(w http.ResponseWriter, r *http.Request) {
+func (app *api) urlsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		return
+	}
+
+	var err error
+	b, ok := app.cache.read("url-list")
+	if !ok {
+		b, err = download.UrlList()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		app.cache.save("url-list", b)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+}
+
+func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
@@ -122,8 +145,9 @@ func Serve(db database, p, n string) {
 	}
 	fmt.Printf("Serving at port %s…\n", p[1:])
 	nr := newRelicApp(n)
-	app := api{db: db}
+	app := api{db: db, cache: newCache()}
 	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
+	http.HandleFunc(newRelicHandle(nr, "/urls", app.urlsHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
 	fmt.Printf("Serving at port %s…\n", p[1:])
 	log.Fatal(http.ListenAndServe(p, nil))
