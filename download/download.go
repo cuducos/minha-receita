@@ -38,7 +38,7 @@ func Download(dir string, timeout time.Duration, urlsOnly, skip bool, parallel, 
 		}
 		return nil
 	}
-	d, err := newDownloader(c, fs, parallel, retries)
+	d, err := newDownloader(c, fs, parallel, retries, false)
 	if err != nil {
 		return fmt.Errorf("error creating a downloader: %w", err)
 	}

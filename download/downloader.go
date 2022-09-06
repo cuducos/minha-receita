@@ -26,6 +26,7 @@ type downloader struct {
 	bar            *downloadProgressBar
 	maxParallel    int
 	maxRetries     int
+	silent         bool
 	isShuttingDown bool
 	mutex          sync.Mutex
 }
@@ -89,8 +90,11 @@ func (d *downloader) getTotalSize() error {
 		close(errors)
 		close(sizes)
 	}()
-
-	bar := progressbar.Default(int64(len(d.files)), "Gathering file sizes")
+	newBar := progressbar.Default
+	if d.silent {
+		newBar = progressbar.DefaultSilent
+	}
+	bar := newBar(int64(len(d.files)), "Gathering file sizes")
 	for {
 		select {
 		case err := <-errors:
@@ -222,8 +226,8 @@ func (d *downloader) downloadAll() error {
 	}
 }
 
-func newDownloader(c *http.Client, fs []file, p, r int) (*downloader, error) {
-	d := downloader{files: fs, client: c, maxParallel: p, maxRetries: r}
+func newDownloader(c *http.Client, fs []file, p, r int, s bool) (*downloader, error) {
+	d := downloader{files: fs, client: c, maxParallel: p, maxRetries: r, silent: s}
 	if err := d.getTotalSize(); err != nil {
 		return nil, err
 	}
@@ -232,6 +236,10 @@ func newDownloader(c *http.Client, fs []file, p, r int) (*downloader, error) {
 		updateBytes: make(chan int64),
 		updateTotal: make(chan struct{}),
 	}
-	d.bar.main = progressbar.DefaultBytes(d.totalSize, d.bar.description())
+	newBar := progressbar.DefaultBytes
+	if s {
+		newBar = progressbar.DefaultBytesSilent
+	}
+	d.bar.main = newBar(d.totalSize, d.bar.description())
 	return &d, nil
 }
