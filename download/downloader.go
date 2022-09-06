@@ -1,6 +1,8 @@
 package download
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -31,6 +33,26 @@ type downloader struct {
 	mutex          sync.Mutex
 }
 
+func (d *downloader) downloadAndGetSize(url string) (int64, error) {
+	r, err := d.client.Get(url)
+	if err != nil {
+		log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", url, err))
+		return 0, err
+	}
+	defer r.Body.Close()
+
+	if r.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("http request to %s got %s", url, r.Status)
+	}
+
+	var buf bytes.Buffer
+	s, err := io.Copy(bufio.NewWriter(&buf), r.Body)
+	if err != nil {
+		return 0, fmt.Errorf("could not get size for %s: %w", url, err)
+	}
+	return s, nil
+}
+
 func (d *downloader) getSize(url string) (int64, error) {
 	r, err := d.client.Head(url)
 	if err != nil {
@@ -38,8 +60,8 @@ func (d *downloader) getSize(url string) (int64, error) {
 	}
 	defer r.Body.Close()
 
-	if r.ContentLength == 0 {
-		return 0, fmt.Errorf("could not get size for %s", url)
+	if r.ContentLength <= 0 {
+		return d.downloadAndGetSize(url)
 	}
 	return r.ContentLength, nil
 }
