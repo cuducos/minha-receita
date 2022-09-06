@@ -199,7 +199,7 @@ $ curl https://minhareceita.org/33683111000280
 |---|---|---|---|
 | `/urls` | `GET` | 200 | Retorna uma lista de URLs para download no [formato requerido pelo Cloud Storage Transfer Service do Google Cloud](https://cloud.google.com/storage-transfer/docs/create-url-list) |
 | `/urls` | `HEAD` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
-| `/urls` | `POST` | 405 | `{"message": "conteúdo inválido na requisição GET."}` |
+| `/urls` | `POST` | 405 | `{"message":"Essa URL aceita apenas o método GET."}` |
 
 ## `GET /healthz`
 
@@ -207,4 +207,4 @@ $ curl https://minhareceita.org/33683111000280
 |---|---|---|---|
 | `/healthz` | `GET` | 200 | |
 | `/healthz` | `HEAD` | 405 | `{"message": "Essa URL aceita apenas o método GET."}` |
-| `/healthz` | `POST` | 405 | `{"message": "conteúdo inválido na requisição GET."}` |
+| `/healthz` | `POST` | 405 | `{"message":"Essa URL aceita apenas o método GET."}` |
