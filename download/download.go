@@ -38,6 +38,10 @@ func Download(dir string, timeout time.Duration, urlsOnly, skip bool, parallel, 
 		}
 		return nil
 	}
+	fs, err = getSizes(c, fs, false)
+	if err != nil {
+		return fmt.Errorf("error getting file sizes: %w", err)
+	}
 	d, err := newDownloader(c, fs, parallel, retries, false)
 	if err != nil {
 		return fmt.Errorf("error creating a downloader: %w", err)

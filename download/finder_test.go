@@ -51,3 +51,22 @@ func TestGetFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestGetSizes(t *testing.T) {
+	f := "dados-publicos-cnpj.html"
+	ts := httpTestServer(t, f)
+	defer ts.Close()
+	url := ts.URL + "/" + f
+	fs := []file{{url: url}}
+	got, err := getSizes(ts.Client(), fs, false)
+	if err != nil {
+		t.Errorf("Expected getSizes to run withour errors, got: %v:", err)
+		return
+	}
+	expected := int64(203867)
+	for _, g := range got {
+		if g.url == url && g.size != expected {
+			t.Errorf("Expected %s size to be %d, got: %d", f, expected, g.size)
+		}
+	}
+}

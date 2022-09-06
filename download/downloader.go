@@ -1,8 +1,6 @@
 package download
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -31,105 +29,6 @@ type downloader struct {
 	silent         bool
 	isShuttingDown bool
 	mutex          sync.Mutex
-}
-
-func (d *downloader) downloadAndGetSize(url string) (int64, error) {
-	r, err := d.client.Get(url)
-	if err != nil {
-		log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", url, err))
-		return 0, err
-	}
-	defer r.Body.Close()
-
-	if r.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("http request to %s got %s", url, r.Status)
-	}
-
-	var buf bytes.Buffer
-	s, err := io.Copy(bufio.NewWriter(&buf), r.Body)
-	if err != nil {
-		return 0, fmt.Errorf("could not get size for %s: %w", url, err)
-	}
-	return s, nil
-}
-
-func (d *downloader) getSize(url string) (int64, error) {
-	r, err := d.client.Head(url)
-	if err != nil {
-		return 0, fmt.Errorf("error sending a http head request to %s: %s", url, err)
-	}
-	defer r.Body.Close()
-
-	if r.ContentLength <= 0 {
-		return d.downloadAndGetSize(url)
-	}
-	return r.ContentLength, nil
-}
-
-func (d *downloader) getTotalSizeWorker(queue <-chan file, sizes chan<- file, errors chan error) {
-	var err error
-	for f := range queue {
-		f.size, err = d.getSize(f.url)
-		if err != nil {
-			func() {
-				d.mutex.Lock()
-				defer d.mutex.Unlock()
-
-				if !d.isShuttingDown {
-					d.isShuttingDown = true
-					errors <- fmt.Errorf("error getting size of %s: %w", f.url, err)
-				}
-			}()
-			break
-		}
-		d.mutex.Lock()
-		if !d.isShuttingDown {
-			sizes <- f
-		}
-		d.mutex.Unlock()
-	}
-}
-
-func (d *downloader) getTotalSize() error {
-	d.totalSize = 0
-	queue := make(chan file, len(d.files))
-	sizes := make(chan file)
-	errors := make(chan error)
-	for _, f := range d.files {
-		go func(f file) {
-			d.mutex.Lock()
-			if !d.isShuttingDown {
-				queue <- f
-			}
-			d.mutex.Unlock()
-		}(f)
-	}
-	for i := 0; i < d.maxParallel; i++ {
-		go d.getTotalSizeWorker(queue, sizes, errors)
-	}
-	defer func() {
-		close(queue)
-		close(errors)
-		close(sizes)
-	}()
-	newBar := progressbar.Default
-	if d.silent {
-		newBar = progressbar.DefaultSilent
-	}
-	bar := newBar(int64(len(d.files)), "Gathering file sizes")
-	for {
-		select {
-		case err := <-errors:
-			return fmt.Errorf("error getting total size: %w", err)
-		case f := <-sizes:
-			d.totalSize += f.size
-			bar.Add(1)
-		}
-		if bar.IsFinished() {
-			break
-		}
-	}
-	return nil
 }
 
 func (d *downloader) resetDownload(f file) error {
@@ -165,9 +64,7 @@ func (d *downloader) download(f file, a int) error {
 		if r.StatusCode != http.StatusOK {
 			return fmt.Errorf("http request to %s got %s", f.url, r.Status)
 		}
-
-		var h *os.File
-		h, err = os.Create(f.path)
+		h, err := os.Create(f.path)
 		if err != nil {
 			return fmt.Errorf("failed to create %s: %v", f.path, err)
 		}
@@ -250,8 +147,8 @@ func (d *downloader) downloadAll() error {
 
 func newDownloader(c *http.Client, fs []file, p, r int, s bool) (*downloader, error) {
 	d := downloader{files: fs, client: c, maxParallel: p, maxRetries: r, silent: s}
-	if err := d.getTotalSize(); err != nil {
-		return nil, err
+	for _, f := range fs {
+		d.totalSize += f.size
 	}
 	d.bar = &downloadProgressBar{
 		total:       len(fs),

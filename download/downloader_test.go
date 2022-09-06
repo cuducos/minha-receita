@@ -23,6 +23,10 @@ func TestNewDownloader(t *testing.T) {
 				newFile(ts.URL+"/file1.html", tmp),
 				newFile(ts.URL+"/file2.html", tmp),
 			}
+			fs, err := getSizes(ts.Client(), fs, tc.silent)
+			if err != nil {
+				t.Errorf("Expected getSizes to run without errors, got: %s", err)
+			}
 			d, err := newDownloader(ts.Client(), fs, 4, 4, tc.silent)
 			if err != nil {
 				t.Errorf("Expected newDownloader to return a downloader, got: %v", err)
@@ -62,6 +66,10 @@ func TestDownloadAll(t *testing.T) {
 			fs := []file{
 				newFile(ts.URL+"/file1.html", tmp),
 				newFile(ts.URL+"/file2.html", tmp),
+			}
+			fs, err := getSizes(ts.Client(), fs, tc.silent)
+			if err != nil {
+				t.Errorf("Expected getSizes to run without errors, got: %s", err)
 			}
 			d, err := newDownloader(ts.Client(), fs, 4, 4, tc.silent)
 			if err != nil {
