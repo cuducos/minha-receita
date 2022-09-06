@@ -1,9 +1,9 @@
 // Package transform incluse these cast functions to allow the project to
 // accomplish two things:
 //
-// * convert strings from the CSV files to other formats (e.g. int, float32,
-//   time.Time);
-// * differentiate empty values (such as 0 for int) from missing values.
+//   - convert strings from the CSV files to other formats (e.g. int, float32,
+//     time.Time);
+//   - differentiate empty values (such as 0 for int) from missing values.
 //
 // This is achieved using pointers, so we have nil as a marker for missing
 // value.
