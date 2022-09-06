@@ -2,7 +2,6 @@ package download
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -12,8 +11,8 @@ func TestNewDownloader(t *testing.T) {
 
 	tmp := t.TempDir()
 	fs := []file{
-		{ts.URL + "/file1.html", filepath.Join(tmp, "file1.html")},
-		{ts.URL + "/file2.html", filepath.Join(tmp, "file2.html")},
+		newFile(ts.URL+"/file1.html", tmp),
+		newFile(ts.URL+"/file2.html", tmp),
 	}
 	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {
@@ -41,8 +40,8 @@ func TestDownloadAll(t *testing.T) {
 
 	tmp := t.TempDir()
 	fs := []file{
-		{ts.URL + "/file1.html", filepath.Join(tmp, "file1.html")},
-		{ts.URL + "/file2.html", filepath.Join(tmp, "file2.html")},
+		newFile(ts.URL+"/file1.html", tmp),
+		newFile(ts.URL+"/file2.html", tmp),
 	}
 	d, err := newDownloader(ts.Client(), fs, 4, 4)
 	if err != nil {

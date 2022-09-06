@@ -14,6 +14,13 @@ type file struct {
 	path string
 }
 
+func newFile(url, dir string) file {
+	return file{
+		url:  url,
+		path: filepath.Join(dir, url[strings.LastIndex(url, "/")+1:]),
+	}
+}
+
 type getURLsHandler func(c *http.Client, url, dir string) ([]string, error)
 
 func getURLs(client *http.Client, confs []getFilesConfig, dir string) ([]string, error) {
@@ -35,7 +42,7 @@ func getFiles(client *http.Client, hs []getFilesConfig, dir string, skip bool) (
 		return nil, fmt.Errorf("error getting files: %w", err)
 	}
 	for _, u := range urls {
-		f := file{u, filepath.Join(dir, u[strings.LastIndex(u, "/")+1:])}
+		f := newFile(u, dir)
 		h, err := os.Open(f.path)
 		if !skip || errors.Is(err, os.ErrNotExist) {
 			fs = append(fs, f)
