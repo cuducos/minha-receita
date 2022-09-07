@@ -64,7 +64,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected to run withour errors, got: %v:", err)
 		}
-		pth := filepath.Join(tmp, federalRevenueUpdatedAt)
+		pth := filepath.Join(tmp, FederalRevenueUpdatedAt)
 		got, err := os.ReadFile(pth)
 		if err != nil {
 			t.Errorf("expected no error reading %s, updatedAt %s", pth, err)

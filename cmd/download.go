@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cuducos/minha-receita/check"
+	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/download"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,8 @@ var (
 	parallelDownloads int
 	skipExistingFiles bool
 	insist            bool
+	tsv               bool
+	saveToDB          bool
 )
 
 func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries int) {
@@ -33,7 +36,7 @@ func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries i
 				log.Output(2, fmt.Sprintf("Error while checking for already downloaded files: %s", err))
 			}
 		}
-		if err := download.Download(dir, timeout, false, true, parallel, retries); err != nil {
+		if err := download.Download(nil, dir, timeout, false, true, false, false, parallel, retries); err != nil {
 			log.Output(2, fmt.Sprintf("Error downloading files: %s", err))
 			continue
 		}
@@ -49,11 +52,21 @@ var downloadCmd = &cobra.Command{
 		if err := assertDirExists(); err != nil {
 			return err
 		}
+		var pg db.PostgreSQL
+		if saveToDB {
+			u, err := loadDatabaseURI()
+			if err != nil {
+				return err
+			}
+			pg, err = db.NewPostgreSQL(u, postgresSchema)
+			if err != nil {
+				return err
+			}
+		}
 		dur, err := time.ParseDuration(timeout)
 		if err != nil {
 			return err
 		}
-
 		if insist {
 			if !skipExistingFiles {
 				log.Output(2, "The option --insist does not work without --skip. Activating --skip option.")
@@ -64,14 +77,23 @@ var downloadCmd = &cobra.Command{
 			checkAndDownloadLoop(dir, dur, parallelDownloads, downloadRetries)
 			return nil
 		}
-
-		return download.Download(dir, dur, urlsOnly, skipExistingFiles, parallelDownloads, downloadRetries)
+		if !urlsOnly {
+			if tsv {
+				log.Output(2, "The option --tsv only works with --urls-only. Ignoring --tsv.")
+			}
+			if saveToDB {
+				log.Output(2, "The option --save-to-db only works with --urls-only. Ignoring --save-to-db.")
+			}
+		}
+		return download.Download(&pg, dir, dur, urlsOnly, skipExistingFiles, tsv, saveToDB, parallelDownloads, downloadRetries)
 	},
 }
 
 func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
+	downloadCmd.Flags().BoolVarP(&tsv, "tsv", "g", false, "use TSV when listing URLs")
+	downloadCmd.Flags().BoolVarP(&saveToDB, "save-to-db", "s", false, "save URL list to POSTGRES_URI when listing URLs")
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
 	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")

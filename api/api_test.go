@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -26,6 +27,10 @@ func (mockDatabase) GetCompany(n string) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func (mockDatabase) MetaRead(k string) string {
+	return "42"
 }
 
 func TestCompanyHandler(t *testing.T) {
@@ -108,30 +113,32 @@ func TestCompanyHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req, err := http.NewRequest(c.method, c.path, nil)
-		if err != nil {
-			t.Fatal("Expected an HTTP request, but got an error.")
-		}
-		if c.method == http.MethodPost {
-			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-		}
+		t.Run(fmt.Sprintf("%s %s", c.method, c.path), func(t *testing.T) {
+			req, err := http.NewRequest(c.method, c.path, nil)
+			if err != nil {
+				t.Fatal("Expected an HTTP request, but got an error.")
+			}
+			if c.method == http.MethodPost {
+				req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+			}
 
-		app := api{db: &mockDatabase{}}
-		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.companyHandler)
-		handler.ServeHTTP(resp, req)
+			app := api{db: &mockDatabase{}}
+			resp := httptest.NewRecorder()
+			handler := http.HandlerFunc(app.companyHandler)
+			handler.ServeHTTP(resp, req)
 
-		if resp.Code != c.status {
-			t.Errorf("Expected %s to return %v, but got %v", c.method, c.status, resp.Code)
-		}
-
-		if c := resp.Header().Get("Content-type"); c != "application/json" {
-			t.Errorf("\nExpected content-type to be application/json, but got %s", c)
-		}
-
-		if strings.TrimSpace(resp.Body.String()) != c.content {
-			t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.content, resp.Body.String())
-		}
+			if resp.Code != c.status {
+				t.Errorf("Expected %s to return %v, but got %v", c.method, c.status, resp.Code)
+			}
+			if c.content != "" {
+				if body := strings.TrimSpace(resp.Body.String()); body != c.content {
+					t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.content, resp.Body.String())
+				}
+				if c := resp.Header().Get("Content-type"); c != "application/json" {
+					t.Errorf("\nExpected content-type to be application/json, but got %s", c)
+				}
+			}
+		})
 	}
 }
 
@@ -184,10 +191,6 @@ func TestCompanyHandlerBackwardCompatibility(t *testing.T) {
 			t.Errorf("Expected POST to return %v, but got %v", c.status, resp.Code)
 		}
 
-		if c := resp.Header().Get("Content-type"); c != "application/json" {
-			t.Errorf("\nExpected content-type to be application/json, but got %s", c)
-		}
-
 		if strings.TrimSpace(resp.Body.String()) != c.body {
 			t.Errorf("\nExpected HTTP contents to be:\n\t%s\nGot:\n\t%s", c.body, resp.Body.String())
 		}
@@ -237,8 +240,7 @@ func TestHealthHandler(t *testing.T) {
 }
 
 func TestURLListHandler(t *testing.T) {
-	app := api{db: &mockDatabase{}, cache: newCache()}
-	app.cache.save("url-list", []byte("42"))
+	app := api{db: &mockDatabase{}}
 	for _, c := range []struct {
 		method  string
 		status  int
@@ -258,7 +260,36 @@ func TestURLListHandler(t *testing.T) {
 		handler.ServeHTTP(resp, req)
 
 		if resp.Code != c.status {
-			t.Errorf("Expected %s /healthz to return %v, but got %v", c.method, c.status, resp.Code)
+			t.Errorf("Expected %s /urls to return %v, but got %v", c.method, c.status, resp.Code)
+		}
+		if strings.TrimSpace(resp.Body.String()) != c.content {
+			t.Errorf("\nExpected HTTP contents to be %s, got %s", c.content, resp.Body.String())
+		}
+	}
+}
+
+func TestUpdatedHandler(t *testing.T) {
+	app := api{db: &mockDatabase{}}
+	for _, c := range []struct {
+		method  string
+		status  int
+		content string
+	}{
+		{http.MethodGet, http.StatusOK, `{"message":"42 é a data de extração dos dados pela Receita Federal."}`},
+		{http.MethodPost, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
+		{http.MethodHead, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
+		{http.MethodOptions, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
+	} {
+		req, err := http.NewRequest(c.method, "/updated", nil)
+		if err != nil {
+			t.Fatal("Expected an HTTP request, but got an error.")
+		}
+		resp := httptest.NewRecorder()
+		handler := http.HandlerFunc(app.updatedHandler)
+		handler.ServeHTTP(resp, req)
+
+		if resp.Code != c.status {
+			t.Errorf("Expected %s /urls to return %v, but got %v", c.method, c.status, resp.Code)
 		}
 		if strings.TrimSpace(resp.Body.String()) != c.content {
 			t.Errorf("\nExpected HTTP contents to be %s, got %s", c.content, resp.Body.String())

@@ -1,3 +1,3 @@
-UPDATE {{ .TableFullName }}
-SET {{ .JSONFieldName }} = {{ .TableName }}.{{ .JSONFieldName }} || ?
+UPDATE {{ .CompanyTableFullName }}
+SET {{ .JSONFieldName }} = {{ .CompanyTableName }}.{{ .JSONFieldName }} || ?
 WHERE {{ .IDFieldName }} >= ? AND {{ .IDFieldName }} <= ?;

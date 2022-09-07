@@ -20,11 +20,13 @@ import (
 )
 
 const (
-	tableName             = "cnpj"
+	companyTableName      = "cnpj"
+	metaTableName         = "meta"
 	idFieldName           = "id"
 	jsonFieldName         = "json"
+	keyFieldName          = "key"
+	valueFieldName        = "value"
 	partnersJSONFieldName = "qsa"
-	batchSize             = 2048
 )
 
 //go:embed postgres
@@ -36,9 +38,12 @@ type PostgreSQL struct {
 	uri                   string
 	schema                string
 	sql                   map[string]string
-	TableName             string
+	CompanyTableName      string
+	MetaTableName         string
 	IDFieldName           string
 	JSONFieldName         string
+	KeyFieldName          string
+	ValueFieldName        string
 	PartnersJSONFieldName string
 }
 
@@ -64,14 +69,19 @@ func (p *PostgreSQL) loadTemplates() error {
 // Close closes the PostgreSQL connection
 func (p *PostgreSQL) Close() { p.conn.Close() }
 
-// TableFullName is the name of the schame and table in dot-notation.
-func (p *PostgreSQL) TableFullName() string {
-	return fmt.Sprintf("%s.%s", p.schema, p.TableName)
+// CompanyTableFullName is the name of the schame and table in dot-notation.
+func (p *PostgreSQL) CompanyTableFullName() string {
+	return fmt.Sprintf("%s.%s", p.schema, p.CompanyTableName)
+}
+
+// MetaTableFullName is the name of the schame and table in dot-notation.
+func (p *PostgreSQL) MetaTableFullName() string {
+	return fmt.Sprintf("%s.%s", p.schema, p.MetaTableName)
 }
 
 // CreateTable creates the required database table.
 func (p *PostgreSQL) CreateTable() error {
-	log.Output(2, fmt.Sprintf("Creating table %s…", p.TableFullName()))
+	log.Output(2, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
 	if _, err := p.conn.Exec(p.sql["create.sql"]); err != nil {
 		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create.sql"], err)
 	}
@@ -80,7 +90,7 @@ func (p *PostgreSQL) CreateTable() error {
 
 // DropTable drops the database table created by `CreateTable`.
 func (p *PostgreSQL) DropTable() error {
-	log.Output(2, fmt.Sprintf("Dropping table %s…", p.TableFullName()))
+	log.Output(2, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
 	if _, err := p.conn.Exec(p.sql["drop.sql"]); err != nil {
 		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop.sql"], err)
 	}
@@ -114,7 +124,7 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 		"psql",
 		p.uri,
 		"-c",
-		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, tableName),
+		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, p.CompanyTableName),
 	)
 	cmd.Stdin = &data
 	cmd.Stderr = &out
@@ -184,14 +194,31 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
 	}
-	var row struct {
-		ID   int
-		JSON string
-	}
+	var row struct{ JSON string }
 	if _, err := p.conn.QueryOne(&row, p.sql["get.sql"], n); err != nil {
 		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), p.sql["get.sql"], err)
 	}
 	return row.JSON, nil
+}
+
+// MetaSave saves a key/value pair in the metadata table.
+func (p *PostgreSQL) MetaSave(k, v string) error {
+	if len(k) > 16 {
+		return fmt.Errorf("metatable can only take keys that are at maximum 16 chars long")
+	}
+	if _, err := p.conn.Exec(p.sql["meta_save.sql"], k, v, v); err != nil {
+		return fmt.Errorf("error saving %s to metadata: %w", k, err)
+	}
+	return nil
+}
+
+// MetaRead reads a key/value pair from the metadata table.
+func (p *PostgreSQL) MetaRead(k string) string {
+	var row struct{ Value string }
+	if _, err := p.conn.QueryOne(&row, p.sql["meta_read.sql"], k); err != nil {
+		return ""
+	}
+	return row.Value
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
@@ -201,14 +228,17 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", uri, err)
 	}
 	p := PostgreSQL{
-		pg.Connect(opt),
-		uri,
-		schema,
-		make(map[string]string),
-		tableName,
-		idFieldName,
-		jsonFieldName,
-		partnersJSONFieldName,
+		conn:                  pg.Connect(opt),
+		uri:                   uri,
+		schema:                schema,
+		sql:                   make(map[string]string),
+		CompanyTableName:      companyTableName,
+		MetaTableName:         metaTableName,
+		IDFieldName:           idFieldName,
+		JSONFieldName:         jsonFieldName,
+		KeyFieldName:          keyFieldName,
+		ValueFieldName:        valueFieldName,
+		PartnersJSONFieldName: partnersJSONFieldName,
 	}
 	if err = p.loadTemplates(); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not load the sql templates: %w", err)

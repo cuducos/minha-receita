@@ -1,3 +1,3 @@
-SELECT {{ .IDFieldName }}, {{ .JSONFieldName }}
-FROM {{ .TableFullName }}
+SELECT {{ .JSONFieldName }}
+FROM {{ .CompanyTableFullName }}
 WHERE id = ?;

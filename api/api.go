@@ -11,13 +11,18 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/cuducos/minha-receita/download"
 )
+
+const cacheMaxAge = time.Hour * 24
+
+var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 
 type database interface {
 	GetCompany(string) (string, error)
+	MetaRead(string) string
 }
 
 // errorMessage is a helper to serialize an error message to JSON.
@@ -38,13 +43,11 @@ func messageResponse(w http.ResponseWriter, s int, m string) {
 		fmt.Fprintf(os.Stderr, "Could not wrap message in JSON: %s", m)
 		return
 	}
+	w.Header().Set("Content-type", "application/json")
 	w.Write(b)
 }
 
-type api struct {
-	db    database
-	cache cache
-}
+type api struct{ db database }
 
 func (app *api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != http.MethodPost {
@@ -70,7 +73,7 @@ func (app *api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
+	w.Header().Set("Cache-Control", cacheControl)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
@@ -105,6 +108,7 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	io.WriteString(w, s)
 }
@@ -114,20 +118,29 @@ func (app *api) urlsHandler(w http.ResponseWriter, r *http.Request) {
 		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
-
-	var err error
-	b, ok := app.cache.read("url-list")
-	if !ok {
-		b, err = download.UrlList()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		app.cache.save("url-list", b)
+	s := app.db.MetaRead("url-list")
+	if s == "" {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-
+	w.Header().Set("Content-Type", "text/tab-separated-values; charset=utf-8")
+	w.Header().Set("Cache-Control", cacheControl)
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	w.Write([]byte(s))
+}
+
+func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		return
+	}
+	s := app.db.MetaRead("updated-at")
+	if s == "" {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Cache-Control", cacheControl)
+	messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s))
 }
 
 func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,12 +156,12 @@ func Serve(db database, p, n string) {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
-	fmt.Printf("Serving at port %s…\n", p[1:])
 	nr := newRelicApp(n)
-	app := api{db: db, cache: newCache()}
+	app := api{db: db}
 	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
 	http.HandleFunc(newRelicHandle(nr, "/urls", app.urlsHandler))
+	http.HandleFunc(newRelicHandle(nr, "/updated", app.updatedHandler))
 	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
-	fmt.Printf("Serving at port %s…\n", p[1:])
+	fmt.Printf("Serving at 0.0.0.0:%s…\n", p[1:])
 	log.Fatal(http.ListenAndServe(p, nil))
 }

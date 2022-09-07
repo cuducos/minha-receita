@@ -14,10 +14,13 @@ import (
 )
 
 const (
+	// FederalRevenueUpdatedAt is a file that contains the date the data was
+	// extracted by the Federal Revenue
+	FederalRevenueUpdatedAt = "updated_at.txt"
+
 	federalRevenueURL       = "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj"
 	federalRevenueSelector  = "a.external-link"
 	federalRevenueExtension = ".zip"
-	federalRevenueUpdatedAt = "updated_at.txt"
 )
 
 var updatedAtRegex = regexp.MustCompile(`(?i)data da última extração:\s*(\d{2}/\d{2}/\d{4})`)
@@ -67,7 +70,7 @@ func saveUpdatedAt(dir string, dom *goquery.Document) error {
 	if err != nil {
 		return fmt.Errorf("cannot parse date %s: %w", m[0][1], err)
 	}
-	pth := filepath.Join(dir, federalRevenueUpdatedAt)
+	pth := filepath.Join(dir, FederalRevenueUpdatedAt)
 	f, err := os.Create(pth)
 	if err != nil {
 		return fmt.Errorf("could not create %s: %w", pth, err)

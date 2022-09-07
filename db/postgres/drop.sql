@@ -1,1 +1,2 @@
-DROP TABLE IF EXISTS {{ .TableFullName }} CASCADE;
+DROP TABLE IF EXISTS {{ .CompanyTableFullName }} CASCADE;
+DROP TABLE IF EXISTS {{ .MetaTableFullName }} CASCADE;

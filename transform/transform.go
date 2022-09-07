@@ -16,11 +16,15 @@ type database interface {
 	CreateCompanies([][]string) error
 	UpdateCompanies([][]string) error
 	AddPartners([][]string) error
+	MetaSave(string, string) error
 }
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
 func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy bool) error {
+	if err := saveUpdatedAt(db, dir); err != nil {
+		return fmt.Errorf("error saving the update at date: %w", err)
+	}
 	j, err := createJSONRecordsTask(dir, db, batchSize, privacy)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)

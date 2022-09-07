@@ -1,4 +1,8 @@
-CREATE UNLOGGED TABLE IF NOT EXISTS {{ .TableFullName }} (
-    {{ .IDFieldName }}       bigint NOT NULL PRIMARY KEY,
-    {{ .JSONFieldName }}     jsonb NOT NULL
+CREATE UNLOGGED TABLE IF NOT EXISTS {{ .CompanyTableFullName }} (
+    {{ .IDFieldName }}   bigint NOT NULL PRIMARY KEY,
+    {{ .JSONFieldName }} jsonb NOT NULL
 );
+CREATE TABLE IF NOT EXISTS {{ .MetaTableFullName }} (
+    {{ .KeyFieldName }}   char(16) NOT NULL PRIMARY KEY,
+    {{ .ValueFieldName }} text NOT NULL
+)
