@@ -11,7 +11,7 @@ services:
       - ./data:/mnt/data
 
   postgres_test:
-    image: postgres:12.5-alpine
+    image: postgres:14-alpine
     ports:
       - 5555:5432
     environment: &credentials
@@ -21,7 +21,7 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
 
   postgres:
-    image: postgres:12.5-alpine
+    image: postgres:14-alpine
     ports:
       - 5432:5432
     volumes:
