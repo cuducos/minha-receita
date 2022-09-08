@@ -27,6 +27,7 @@ var (
 	insist            bool
 	tsv               bool
 	saveToDB          bool
+	googleStorage     string
 )
 
 func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries int) {
@@ -36,7 +37,7 @@ func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries i
 				log.Output(2, fmt.Sprintf("Error while checking for already downloaded files: %s", err))
 			}
 		}
-		if err := download.Download(nil, dir, timeout, false, true, false, false, parallel, retries); err != nil {
+		if err := download.Download(nil, dir, timeout, false, true, false, false, parallel, retries, ""); err != nil {
 			log.Output(2, fmt.Sprintf("Error downloading files: %s", err))
 			continue
 		}
@@ -85,17 +86,28 @@ var downloadCmd = &cobra.Command{
 				log.Output(2, "The option --save-to-db only works with --urls-only. Ignoring --save-to-db.")
 			}
 		}
-		return download.Download(&pg, dir, dur, urlsOnly, skipExistingFiles, tsv, saveToDB, parallelDownloads, downloadRetries)
+		return download.Download(
+			&pg,
+			dir,
+			dur,
+			urlsOnly,
+			skipExistingFiles,
+			tsv,
+			saveToDB,
+			parallelDownloads,
+			downloadRetries,
+			googleStorage,
+		)
 	},
 }
 
 func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
-	downloadCmd.Flags().BoolVarP(&tsv, "tsv", "g", false, "use TSV when listing URLs")
+	downloadCmd.Flags().BoolVarP(&tsv, "tsv", "t", false, "use TSV when listing URLs")
 	downloadCmd.Flags().BoolVarP(&saveToDB, "save-to-db", "s", false, "save URL list to POSTGRES_URI when listing URLs")
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
-	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", "15m0s", "timeout for each download")
+	downloadCmd.Flags().StringVarP(&timeout, "timeout", "w", "15m0s", "timeout for each download")
 	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")
 	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.MaxParallel, "maximum parallel downloads")
 	downloadCmd.Flags().BoolVarP(
@@ -104,6 +116,13 @@ func downloadCLI() *cobra.Command {
 		"i",
 		false,
 		"restart if connection is broken before completing the downloads (automatically uses --skip and ignores --urls-only)",
+	)
+	downloadCmd.Flags().StringVarP(
+		&googleStorage,
+		"google-storage",
+		"g",
+		"",
+		"start a gcloud transfer job to download to the bucket entered as a value (eg: gs://minha-receita/)",
 	)
 	return downloadCmd
 }
