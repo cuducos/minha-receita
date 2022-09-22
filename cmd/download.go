@@ -105,7 +105,7 @@ func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&urlsOnly, "urls-only", "u", false, "only list the URLs")
 	downloadCmd.Flags().BoolVarP(&tsv, "tsv", "t", false, "use TSV when listing URLs")
-	downloadCmd.Flags().BoolVarP(&saveToDB, "save-to-db", "s", false, "save URL list to POSTGRES_URI when listing URLs")
+	downloadCmd.Flags().BoolVarP(&saveToDB, "save-to-db", "s", false, "save URL list to DATABASE_URL when listing URLs")
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	downloadCmd.Flags().StringVarP(&timeout, "timeout", "w", "15m0s", "timeout for each download")
 	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.MaxRetries, "maximum retries per file")

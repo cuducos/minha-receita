@@ -2,7 +2,7 @@
 
 ## Banco de dados
 
-O projeto requer um banco de dados PostgreSQL e os comandos que requerem banco de dados aceitam `--database-uri` (ou `-u`) como argumento com a URI de acesso ao PostgreSQL (o padrão é o valor da variável de ambiente `POSTGRES_URI`).
+O projeto requer um banco de dados PostgreSQL e os comandos que requerem banco de dados aceitam `--database-uri` (ou `-u`) como argumento com a URI de acesso ao PostgreSQL (o padrão é o valor da variável de ambiente `DATABASE_URL`).
 
 Caso deseje usar o Docker Compose do projeto para subir uma instância do banco de dados:
 
@@ -57,7 +57,7 @@ Para especificar onde ficam os arquivos originais da Receita Federal e do Tesour
 
 ### Exemplos de uso
 
-Sem Docker, com a variável de ambiente `POSTGRES_URI` configurada:
+Sem Docker, com a variável de ambiente `DATABASE_URL` configurada:
 
 ```console
 $ minha-receita drop  # caso necessário
@@ -84,7 +84,7 @@ A API web é uma aplicação super simples que, por padrão, ficará disponível
 
 ### Exemplos de uso
 
-Sem Docker, com a variável de ambiente `POSTGRES_URI` configurada:
+Sem Docker, com a variável de ambiente `DATABASE_URL` configurada:
 
 ```console
 $ minha-receita api

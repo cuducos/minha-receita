@@ -45,9 +45,9 @@ func loadDatabaseURI() (string, error) {
 	if databaseURI != "" {
 		return databaseURI, nil
 	}
-	u := os.Getenv("POSTGRES_URI")
+	u := os.Getenv("DATABASE_URL")
 	if u == "" {
-		return "", fmt.Errorf("could not find a database URI, pass it as a flag or set POSTGRES_URI environment variable with the credentials for a PostgreSQL database")
+		return "", fmt.Errorf("could not find a database URI, pass it as a flag or set DATABASE_URL environment variable with the credentials for a PostgreSQL database")
 	}
 	return u, nil
 }
@@ -98,7 +98,7 @@ func addDataDir(c *cobra.Command) *cobra.Command {
 }
 
 func addDatabase(c *cobra.Command) *cobra.Command {
-	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URI environment variable)")
+	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default DATABASE_URL environment variable)")
 	c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
 	return c
 }

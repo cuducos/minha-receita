@@ -23,9 +23,9 @@ func companyFromString(j string) (company, error) {
 }
 
 func newTestDB(t *testing.T) *db.PostgreSQL {
-	u := os.Getenv("TEST_POSTGRES_URI")
+	u := os.Getenv("TEST_DATABASE_URL")
 	if u == "" {
-		t.Errorf("expected a posgres uri at TEST_POSTGRES_URI, found nothing")
+		t.Errorf("expected a posgres uri at TEST_DATABASE_URL, found nothing")
 		return nil
 	}
 	r, err := db.NewPostgreSQL(u, "public")

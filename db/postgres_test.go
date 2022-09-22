@@ -13,9 +13,9 @@ func TestPostgresDB(t *testing.T) {
 	partner2 := `[{"name":  "fourty-two"}]`
 	expected := `{"qsa": [{"name": 42}, {"name": "fourty-two"}], "again": "fourty-two", "answer": 42}`
 
-	u := os.Getenv("TEST_POSTGRES_URI")
+	u := os.Getenv("TEST_DATABASE_URL")
 	if u == "" {
-		t.Errorf("expected a posgres uri at TEST_POSTGRES_URI, found nothing")
+		t.Errorf("expected a posgres uri at TEST_DATABASE_URL, found nothing")
 		return
 	}
 	pg, err := NewPostgreSQL(u, "public")

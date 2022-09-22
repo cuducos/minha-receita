@@ -8,7 +8,7 @@ $ staticcheck ./...
 $ go test ./...
 ```
 
-Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_POSTGRES_URI` como no exemplo em `.env`.
+Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_DATABASE_URL` como no exemplo em `.env`.
 
 ## Docker
 
@@ -36,8 +36,8 @@ As configurações padrão desses bancos são:
 
 | Serviço | Ambiente | Variável de ambiente | Valor |
 |---|---|---|---|
-| `postgres` | Desenvolvimento | `POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
-| `postgres_test` | Testes | `TEST_POSTGRES_URI` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
+| `postgres` | Desenvolvimento | `DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
+| `postgres_test` | Testes | `TEST_DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
 
 ### Rodando o projeto todo com Docker
 
@@ -106,7 +106,7 @@ $ ./minha-receita transform -d data/sample
 
 Explore mais opções com `--help`.
 
-Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u $TEST_POSTGRES_URI` é uma boa forma de evitar isso.
+Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u $TEST_DATABASE_URL` é uma boa forma de evitar isso.
 
 ## Documentação
 

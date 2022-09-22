@@ -90,7 +90,7 @@ Para facilitar a manutenção, algumas variáveis de ambiente podem ser utilizad
 
 | Variável | Descrição |
 |---|---|
-| `POSTGRES_URI` | URI de acesso ao banco de dados PostgreSQL |
+| `DATABASE_URL` | URI de acesso ao banco de dados PostgreSQL |
 | `PORT` | Porta na qual a API web ficará disponível |
 | `NEW_RELIC_LICENSE_KEY` | Licença no New Relic para monitoramento |
-| `TEST_POSTGRES_URI` | URI de acesso ao banco de dados PostgreSQL para ser utilizado nos testes |
+| `TEST_DATABASE_URL` | URI de acesso ao banco de dados PostgreSQL para ser utilizado nos testes |
