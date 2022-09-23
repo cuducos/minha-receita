@@ -47,7 +47,10 @@ func messageResponse(w http.ResponseWriter, s int, m string) {
 	w.Write(b)
 }
 
-type api struct{ db database }
+type api struct {
+	db   database
+	host string
+}
 
 func (app *api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != http.MethodPost {
@@ -151,17 +154,32 @@ func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	if app.host == "" {
+		return h
+	}
+	w := func(w http.ResponseWriter, r *http.Request) {
+		if v := r.Header.Get("Host"); v != app.host {
+			log.Output(2, fmt.Sprintf("Host %s not allowed", v))
+			w.WriteHeader(http.StatusTeapot)
+			return
+		}
+		h(w, r)
+	}
+	return w
+}
+
 // Serve spins up the HTTP server.
 func Serve(db database, p, n string) {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
 	nr := newRelicApp(n)
-	app := api{db: db}
-	http.HandleFunc(newRelicHandle(nr, "/", app.companyHandler))
-	http.HandleFunc(newRelicHandle(nr, "/urls", app.urlsHandler))
-	http.HandleFunc(newRelicHandle(nr, "/updated", app.updatedHandler))
-	http.HandleFunc(newRelicHandle(nr, "/healthz", app.healthHandler))
+	app := api{db: db, host: os.Getenv("ALLOWED_HOST")}
+	http.HandleFunc(newRelicHandle(nr, "/", app.allowedHostWrapper(app.companyHandler)))
+	http.HandleFunc(newRelicHandle(nr, "/urls", app.allowedHostWrapper(app.urlsHandler)))
+	http.HandleFunc(newRelicHandle(nr, "/updated", app.allowedHostWrapper(app.updatedHandler)))
+	http.HandleFunc(newRelicHandle(nr, "/healthz", app.allowedHostWrapper(app.healthHandler)))
 	fmt.Printf("Serving at 0.0.0.0:%s…\n", p[1:])
 	log.Fatal(http.ListenAndServe(p, nil))
 }

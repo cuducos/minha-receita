@@ -296,3 +296,30 @@ func TestUpdatedHandler(t *testing.T) {
 		}
 	}
 }
+
+func TestAllowedHostWrap(t *testing.T) {
+	for _, c := range []struct {
+		allowedHost string
+		status      int
+	}{
+		{"", http.StatusOK},
+		{"127.0.0.1", http.StatusOK},
+		{"fourty-two", http.StatusTeapot},
+	} {
+		t.Run(fmt.Sprintf("test returns %d when allowed host is %s", c.status, c.allowedHost), func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodGet, "/19131243000197", nil)
+			req.Header.Set("Host", "127.0.0.1")
+			if err != nil {
+				t.Fatal("Expected an HTTP request, but got an error.")
+			}
+			resp := httptest.NewRecorder()
+			app := api{db: &mockDatabase{}, host: c.allowedHost}
+			handler := http.HandlerFunc(app.allowedHostWrapper(app.companyHandler))
+			handler.ServeHTTP(resp, req)
+			if resp.Code != c.status {
+				t.Errorf("Expected request with allowed host `%s` to return %d, but got %d (request header had `%s`) ", c.allowedHost, c.status, resp.Code, req.Header.Get("Host"))
+			}
+		})
+	}
+
+}

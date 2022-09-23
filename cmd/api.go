@@ -20,7 +20,11 @@ https://golang.org/pkg/net/http/
 
 The HTTP server is prepared to send logs to New Relic. If the
 NEW_RELIC_LICENSE_KEY environment variable is set, the app automatically
-reports to New Relic. Otherwise, the New Relic wrappers are just ignored.`
+reports to New Relic. Otherwise, the New Relic wrappers are just ignored.
+
+The HTTP server is prepared to do a host header validation agains the value of
+ALLOWED_HOST environment variable. If this variable is not set, this validation
+is skipped.`
 )
 
 var (
