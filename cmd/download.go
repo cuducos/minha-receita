@@ -27,7 +27,6 @@ var (
 	insist            bool
 	tsv               bool
 	saveToDB          bool
-	googleStorage     string
 )
 
 func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries int) {
@@ -37,7 +36,7 @@ func checkAndDownloadLoop(dir string, timeout time.Duration, parallel, retries i
 				log.Output(2, fmt.Sprintf("Error while checking for already downloaded files: %s", err))
 			}
 		}
-		if err := download.Download(nil, dir, timeout, false, true, false, false, parallel, retries, ""); err != nil {
+		if err := download.Download(nil, dir, timeout, false, true, false, false, parallel, retries); err != nil {
 			log.Output(2, fmt.Sprintf("Error downloading files: %s", err))
 			continue
 		}
@@ -86,18 +85,7 @@ var downloadCmd = &cobra.Command{
 				log.Output(2, "The option --save-to-db only works with --urls-only. Ignoring --save-to-db.")
 			}
 		}
-		return download.Download(
-			&pg,
-			dir,
-			dur,
-			urlsOnly,
-			skipExistingFiles,
-			tsv,
-			saveToDB,
-			parallelDownloads,
-			downloadRetries,
-			googleStorage,
-		)
+		return download.Download(&pg, dir, dur, urlsOnly, skipExistingFiles, tsv, saveToDB, parallelDownloads, downloadRetries)
 	},
 }
 
@@ -116,13 +104,6 @@ func downloadCLI() *cobra.Command {
 		"i",
 		false,
 		"restart if connection is broken before completing the downloads (automatically uses --skip and ignores --urls-only)",
-	)
-	downloadCmd.Flags().StringVarP(
-		&googleStorage,
-		"google-storage",
-		"g",
-		"",
-		"start a gcloud transfer job to download to the bucket entered as a value (eg: gs://minha-receita/)",
 	)
 	return downloadCmd
 }
