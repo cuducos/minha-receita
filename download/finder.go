@@ -19,7 +19,7 @@ import (
 type file struct {
 	url  string
 	path string
-	size int64
+	size uint64
 }
 
 func newFile(url, dir string) file {
@@ -99,7 +99,7 @@ func getSize(c *http.Client, url string) (int64, error) {
 func getSizes(c *http.Client, fs []file, s bool) ([]file, error) {
 	type result struct {
 		idx  int
-		size int64
+		size uint64
 	}
 	var isShuttingDown bool
 	var m sync.Mutex
@@ -115,7 +115,7 @@ func getSizes(c *http.Client, fs []file, s bool) ([]file, error) {
 					errors <- err
 					return
 				}
-				results <- result{idx, s}
+				results <- result{idx, uint64(s)}
 			}
 			m.Unlock()
 		}(f.url, i, &isShuttingDown)

@@ -63,7 +63,7 @@ func TestGetSizes(t *testing.T) {
 		t.Errorf("Expected getSizes to run withour errors, got: %v:", err)
 		return
 	}
-	expected := int64(203867)
+	expected := uint64(203867)
 	for _, g := range got {
 		if g.url == url && g.size != expected {
 			t.Errorf("Expected %s size to be %d, got: %d", f, expected, g.size)

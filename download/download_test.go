@@ -2,7 +2,6 @@ package download
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,14 +27,13 @@ func loadFixture(t *testing.T, n string) (*os.File, int64) {
 func httpTestServer(t *testing.T, n string) *httptest.Server {
 	return httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			f, s := loadFixture(t, n)
-			defer f.Close()
-
 			if r.Method == http.MethodHead {
+				f, s := loadFixture(t, n)
+				defer f.Close()
 				w.Header().Add("Content-Length", fmt.Sprint(s))
 				return
 			}
-			io.Copy(w, f)
+			http.ServeFile(w, r, path.Join("..", "testdata", n))
 		}))
 }
 

@@ -2,96 +2,68 @@ package download
 
 import (
 	"fmt"
-	"io"
-	"log"
-	"math"
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/schollz/progressbar/v3"
+	"github.com/melbahja/got"
 )
 
-// MaxRetries sets the maximum download attempt for each URL
-const MaxRetries = 8
+const (
+	// MaxRetries sets the maximum download attempt for each URL
+	MaxRetries = 8
 
-// MaxParallel setx the maximum parallel downloads
-const MaxParallel = 8
+	// MaxParallel sets the maximum parallels downloads
+	MaxParallel = 8
+)
 
 type downloader struct {
 	files          []file
-	client         *http.Client
-	totalSize      int64
+	got            *got.Got
 	bar            *downloadProgressBar
-	maxParallel    int
-	maxRetries     int
-	silent         bool
+	maxRetries     uint
+	maxParallel    uint
 	isShuttingDown bool
 	mutex          sync.Mutex
 }
 
-func (d *downloader) resetDownload(f file) error {
-	h, err := os.Open(f.path)
-	if err != nil {
-		return fmt.Errorf("error cleaning up failed download %s: %w", f.path, err)
-	}
-	defer h.Close()
-
-	i, err := h.Stat()
-	if err != nil {
-		return fmt.Errorf("could not get info for failed download %s: %v", f.path, err)
-	}
-
-	d.mutex.Lock()
-	if !d.isShuttingDown {
-		d.bar.updateBytes <- int64(-1) * i.Size()
-	}
-	d.mutex.Unlock()
-	os.Remove(f.path)
-	return nil
-}
-
-func (d *downloader) download(f file, a int) error {
+func (d *downloader) download(f file, a uint) error {
 	err := func(f file) error {
-		r, err := d.client.Get(f.url)
+		var done uint32
+		g := &got.Download{URL: f.url, Dest: f.path, Client: d.got.Client}
+		go func(g *got.Download, done *uint32) {
+			for {
+				d.bar.updateBytes <- bytesProgress{g.Dest, g.Size()}
+				if atomic.LoadUint32(done) == 1 {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
+		}(g, &done)
+		err := d.got.Do(g)
+		atomic.StoreUint32(&done, 1)
 		if err != nil {
-			log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", f.url, err))
-			return err
-		}
-		defer r.Body.Close()
-
-		if r.StatusCode != http.StatusOK {
-			return fmt.Errorf("http request to %s got %s", f.url, r.Status)
-		}
-		h, err := os.Create(f.path)
-		if err != nil {
-			return fmt.Errorf("failed to create %s: %v", f.path, err)
-		}
-		defer h.Close()
-
-		_, err = io.Copy(io.MultiWriter(h, d.bar), r.Body)
-		if err != nil {
-			return fmt.Errorf("error downloading %s: %v", f.url, err)
+			return fmt.Errorf("error downloading %s with got package: %v", f.url, err)
 		}
 		return nil
 	}(f)
 
 	if err != nil {
-		if err := d.resetDownload(f); err != nil {
-			return fmt.Errorf("error resetting failed download %s: %w", f.path, err)
+		d.bar.updateBytes <- bytesProgress{f.path, 0}
+		if err := os.Remove(f.path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("error cleaning up %s: %w", f.path, err)
 		}
 		if a < d.maxRetries {
-			time.Sleep(time.Duration(int(math.Pow(float64(2), float64(a)))) * time.Second)
-			d.download(f, a+1)
-			return nil
+			return d.download(f, a+1)
 		}
 		return fmt.Errorf("after %d attempts, could not download %s: %c", d.maxRetries, f.url, err)
 	}
 	return nil
 }
 
-func (d *downloader) downloadWorker(queue chan file, errors chan<- error) {
+func (d *downloader) worker(queue chan file, errors chan<- error) {
 	for f := range queue {
 		if err := d.download(f, 0); err != nil {
 			func() {
@@ -107,7 +79,7 @@ func (d *downloader) downloadWorker(queue chan file, errors chan<- error) {
 		}
 		d.mutex.Lock()
 		if !d.isShuttingDown {
-			d.bar.updateTotal <- struct{}{}
+			d.bar.updateFiles <- struct{}{}
 		}
 		d.mutex.Unlock()
 	}
@@ -116,6 +88,10 @@ func (d *downloader) downloadWorker(queue chan file, errors chan<- error) {
 func (d *downloader) downloadAll() error {
 	queue := make(chan file, len(d.files))
 	errors := make(chan error)
+	done := make(chan struct{})
+	go func() {
+		done <- d.bar.run()
+	}()
 	for _, f := range d.files {
 		go func(f file) {
 			d.mutex.Lock()
@@ -125,40 +101,36 @@ func (d *downloader) downloadAll() error {
 			d.mutex.Unlock()
 		}(f)
 	}
-	for i := 0; i < d.maxParallel; i++ {
-		go d.downloadWorker(queue, errors)
+	for i := 0; i < int(d.maxParallel); i++ {
+		go d.worker(queue, errors)
 	}
-	defer close(queue)
-
+	defer func() {
+		close(done)
+		close(queue)
+		close(errors)
+	}()
 	for {
 		select {
 		case err := <-errors:
 			return fmt.Errorf("error downloading files: %w", err)
-		case n := <-d.bar.updateBytes:
-			d.bar.addBytes(n)
-			if d.bar.main.IsFinished() {
-				return nil
-			}
-		case <-d.bar.updateTotal:
-			d.bar.addFile()
+		case <-done:
+			return nil
 		}
 	}
 }
 
-func newDownloader(c *http.Client, fs []file, p, r int, s bool) (*downloader, error) {
-	d := downloader{files: fs, client: c, maxParallel: p, maxRetries: r, silent: s}
+func newDownloader(c *http.Client, fs []file, p, r uint, s bool) (*downloader, error) {
+	d := downloader{
+		files:       fs,
+		got:         got.New(),
+		maxRetries:  r,
+		maxParallel: p,
+	}
+	d.got.Client = c
+	var t uint64
 	for _, f := range fs {
-		d.totalSize += f.size
+		t += f.size
 	}
-	d.bar = &downloadProgressBar{
-		total:       len(fs),
-		updateBytes: make(chan int64),
-		updateTotal: make(chan struct{}),
-	}
-	newBar := progressbar.DefaultBytes
-	if s {
-		newBar = progressbar.DefaultBytesSilent
-	}
-	d.bar.main = newBar(d.totalSize, d.bar.description())
+	d.bar = newBar(uint(len(fs)), t, s)
 	return &d, nil
 }

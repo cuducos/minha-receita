@@ -44,7 +44,7 @@ func Download(
 	if urlsOnly {
 		return listURLs(db, fs, tsv, saveToDB)
 	}
-	d, err := newDownloader(c, fs, parallel, retries, silent)
+	d, err := newDownloader(c, fs, uint(parallel), uint(retries), silent)
 	if err != nil {
 		return fmt.Errorf("error creating a downloader: %w", err)
 	}
