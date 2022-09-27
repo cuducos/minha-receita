@@ -36,8 +36,8 @@ func TestNewDownloader(t *testing.T) {
 			defer f.Close()
 
 			expectedTotalSize := int64(len(fs)) * s
-			if d.totalSize != expectedTotalSize {
-				t.Errorf("Expected totalSize to be %d, got %d", expectedTotalSize, d.totalSize)
+			if d.bar.main.GetMax64() != expectedTotalSize {
+				t.Errorf("Expected totalSize to be %d, got %d", expectedTotalSize, d.bar.main.GetMax64())
 			}
 			if d.bar == nil {
 				t.Errorf("Expected downloader to have a progess bar")
