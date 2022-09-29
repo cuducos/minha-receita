@@ -26,7 +26,8 @@ Caso o download falhe, é recomendado variar as configurações explicadas no `-
 * aumentar o números de tentativas de download de um mesmo arquivo com `--retries` (ou `-r`)
 * aumentar o tempo de `--timeout` (ou `-t`)
 * rodar o comando de download sucessivas vezes com a opção `--skip` (ou `-x`) para baixar apenas os arquivos que estão faltando
-* por fim, pode-se apenas listar as URLs para download dos arquivos com `--urls-only` (ou `-u`) e tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.)
+
+Em último caso, é possível listar as URLs para download dos arquivos com comando `urls`; e, então, tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.).
 
 ### Exemplos de uso
 

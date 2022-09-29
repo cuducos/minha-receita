@@ -93,7 +93,7 @@ var dropCmd = &cobra.Command{
 }
 
 func addDataDir(c *cobra.Command) *cobra.Command {
-	c.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded CSV files")
+	c.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files")
 	return c
 }
 
@@ -111,6 +111,7 @@ func CLI() *cobra.Command {
 	for _, c := range []*cobra.Command{
 		apiCLI(),
 		downloadCLI(),
+		urlsCLI(),
 		checkCLI(),
 		createCmd,
 		dropCmd,

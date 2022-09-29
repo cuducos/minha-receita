@@ -1,7 +1,7 @@
 {
     "cron": [
         {
-            "command": "bin/minha-receita download --urls-only --tsv --save-to-db",
+            "command": "bin/minha-receita urls --tsv --save-to-db",
             "schedule": "@daily"
         }
     ]

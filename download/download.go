@@ -15,18 +15,9 @@ type getFilesConfig struct {
 }
 
 // Download all the files (might take several minutes).
-func Download(
-	db database,
-	dir string,
-	timeout time.Duration,
-	urlsOnly, skip, tsv, saveToDB bool,
-	parallel, retries int,
-) error {
+func Download(dir string, timeout time.Duration, skip bool, parallel, retries int) error {
 	c := &http.Client{Timeout: timeout}
-	silent := urlsOnly
-	if !silent {
-		log.Output(2, "Preparing to download from the Federal Revenue official website…")
-	}
+	log.Output(2, "Preparing to download from the Federal Revenue official website…")
 	confs := []getFilesConfig{
 		{federalRevenueGetURLs, federalRevenueURL},
 		{nationalTreasureGetURLs, nationalTreasureBaseURL},
@@ -35,18 +26,33 @@ func Download(
 	if err != nil {
 		return fmt.Errorf("error gathering resources for download: %w", err)
 	}
-	if !urlsOnly || tsv {
-		fs, err = getSizes(c, fs, silent)
-		if err != nil {
-			return fmt.Errorf("error getting file sizes: %w", err)
-		}
+	fs, err = getSizes(c, fs, false)
+	if err != nil {
+		return fmt.Errorf("error getting file sizes: %w", err)
 	}
-	if urlsOnly {
-		return listURLs(db, fs, tsv, saveToDB)
-	}
-	d, err := newDownloader(c, fs, uint(parallel), uint(retries), silent)
+	d, err := newDownloader(c, fs, uint(parallel), uint(retries), false)
 	if err != nil {
 		return fmt.Errorf("error creating a downloader: %w", err)
 	}
 	return d.downloadAll()
+}
+
+// URLs shows the URLs to be downloaded.
+func URLs(db database, dir string, skip, tsv, saveToDB bool) error {
+	c := &http.Client{}
+	confs := []getFilesConfig{
+		{federalRevenueGetURLsNoUpdatedAt, federalRevenueURL},
+		{nationalTreasureGetURLs, nationalTreasureBaseURL},
+	}
+	fs, err := getFiles(c, confs, dir, skip)
+	if err != nil {
+		return fmt.Errorf("error gathering resources for download: %w", err)
+	}
+	if tsv {
+		fs, err = getSizes(c, fs, true)
+		if err != nil {
+			return fmt.Errorf("error getting file sizes: %w", err)
+		}
+	}
+	return listURLs(db, fs, tsv, saveToDB)
 }
