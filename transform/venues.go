@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -40,6 +41,7 @@ type venuesTask struct {
 	companies         chan struct{}
 	saved             chan int
 	errors            chan error
+	cache             *cache
 	bar               *progressbar.ProgressBar
 	shutdown          int32
 	shutdownWaitGroup sync.WaitGroup
@@ -72,6 +74,7 @@ func (t *venuesTask) produceRows() {
 func (t *venuesTask) consumeRows() {
 	defer t.shutdownWaitGroup.Done()
 	var b []company
+	var s int
 	for r := range t.rows {
 		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
 			return
@@ -82,7 +85,17 @@ func (t *venuesTask) consumeRows() {
 			atomic.StoreInt32(&t.shutdown, 1)
 			return
 		}
-		b = append(b, c)
+		exist, err := t.cache.check(c.CNPJ)
+		if err != nil {
+			t.errors <- fmt.Errorf("error checking cache for company %s: %w", c.CNPJ, err)
+			atomic.StoreInt32(&t.shutdown, 1)
+			return
+		}
+		if exist {
+			s++
+		} else {
+			b = append(b, c)
+		}
 		t.companies <- struct{}{}
 		if len(b) >= t.batchSize {
 			n, err := saveBatch(t.db, b)
@@ -91,11 +104,13 @@ func (t *venuesTask) consumeRows() {
 				atomic.StoreInt32(&t.shutdown, 1)
 				return
 			}
-			t.saved <- n
+			t.saved <- n + s
 			b = []company{}
+			s = 0
 		}
 	}
 	if len(b) == 0 || atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
+		t.saved <- s
 		return
 	}
 	// send the remaining items in the batch
@@ -105,7 +120,7 @@ func (t *venuesTask) consumeRows() {
 		atomic.StoreInt32(&t.shutdown, 1)
 		return
 	}
-	t.saved <- n
+	t.saved <- n + s
 }
 
 func (t *venuesTask) run(m int) error {
@@ -114,6 +129,14 @@ func (t *venuesTask) run(m int) error {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
 	t.produceRows()
+
+	tmp, err := os.MkdirTemp("", "minha-receita")
+	if err != nil {
+		return fmt.Errorf("error creating tmp dir for cache: %w", err)
+	}
+	defer os.RemoveAll(tmp)
+	t.cache = &cache{dir: tmp}
+
 	for i := 0; i < m; i++ {
 		t.shutdownWaitGroup.Add(1)
 		go t.consumeRows()
