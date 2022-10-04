@@ -138,7 +138,7 @@ func (t *venuesTask) run(m int) error {
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
-				return nil
+				return t.db.CreateIndex()
 			}
 		}
 	}

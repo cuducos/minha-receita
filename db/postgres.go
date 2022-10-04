@@ -134,6 +134,16 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 	return nil
 }
 
+// CreateIndex runs after all the data is creates. It drops duplicates and
+// create a primary key on the ID field.
+func (p *PostgreSQL) CreateIndex() error {
+	log.Output(2, "Creating indexess…")
+	if _, err := p.conn.Exec(p.sql["create_index.sql"]); err != nil {
+		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index.sql"], err)
+	}
+	return nil
+}
+
 // Returns the minimum and maximum CNPJ possible given a base CNPJ.
 func rangeFor(base string) (int64, int64, error) {
 	n, err := strconv.ParseInt(base, 10, 64)

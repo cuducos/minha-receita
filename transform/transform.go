@@ -14,6 +14,7 @@ const BatchSize = 8192
 
 type database interface {
 	CreateCompanies([][]string) error
+	CreateIndex() error
 	UpdateCompanies([][]string) error
 	AddPartners([][]string) error
 	MetaSave(string, string) error
