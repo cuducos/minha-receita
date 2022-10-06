@@ -15,18 +15,16 @@ type line struct {
 }
 
 type updateTask struct {
-	db                database
-	sources           []*source
-	totalLines        int64
-	lookups           *lookups
-	batchSize         int
-	queues            []chan line
-	updated           chan int
-	errors            chan error
-	readersWaitGroup  sync.WaitGroup
-	shutdownWaitGroup sync.WaitGroup
-	shutdown          int32
-	bar               *progressbar.ProgressBar
+	db         database
+	sources    []*source
+	totalLines int64
+	lookups    *lookups
+	batchSize  int
+	queues     []chan line
+	updated    chan int
+	errors     chan error
+	shutdown   int32
+	bar        *progressbar.ProgressBar
 }
 
 // optimize batch merges updates of the same base cnpj in the a single update
@@ -52,22 +50,30 @@ func optimizeBatch(b *[][]string) [][]string {
 	return n
 }
 
-func (t *updateTask) sendBatch(s sourceType, b *[][]string) (int, error) {
+func (t *updateTask) sendBatch(s sourceType, b *[][]string) {
+	n := len(*b)
+	if n == 0 {
+		return
+	}
 	var f func([][]string) error
 	if s == partners {
 		f = t.db.AddPartners
 	} else {
 		f = t.db.UpdateCompanies
 	}
-	n := len(*b)
 	if err := f(optimizeBatch(b)); err != nil {
-		return 0, fmt.Errorf("error updating %s: %w", string(s), err)
+		if atomic.LoadInt32(&t.shutdown) != 1 {
+			t.errors <- fmt.Errorf("error sending a batch of updates: %w", err)
+			atomic.StoreInt32(&t.shutdown, 1)
+		}
+		return
 	}
-	return n, nil
+	if atomic.LoadInt32(&t.shutdown) != 1 {
+		t.updated <- n
+	}
 }
 
 func (t *updateTask) consumeShard(n int) {
-	defer t.shutdownWaitGroup.Done()
 	var batches struct {
 		companies [][]string
 		partners  [][]string
@@ -86,9 +92,11 @@ func (t *updateTask) consumeShard(n int) {
 			h = addTax
 		}
 		u, err := h(t.lookups, l.content)
-		if err != nil { // initiate graceful shutdown
-			t.errors <- fmt.Errorf("error processing %v: %w", l.content, err)
-			atomic.StoreInt32(&t.shutdown, 1)
+		if err != nil {
+			if atomic.LoadInt32(&t.shutdown) != 1 {
+				t.errors <- fmt.Errorf("error processing %v: %w", l.content, err)
+				atomic.StoreInt32(&t.shutdown, 1)
+			}
 			return
 		}
 		var b *[][]string
@@ -99,87 +107,58 @@ func (t *updateTask) consumeShard(n int) {
 		}
 		*b = append(*b, u)
 		if len(*b) >= t.batchSize {
-			c, err := t.sendBatch(l.source, b)
-			if err != nil {
-				t.errors <- fmt.Errorf("error sending update batch: %w", err)
-				atomic.StoreInt32(&t.shutdown, 1)
-				return
-			}
-			if atomic.LoadInt32(&t.shutdown) == 1 {
-				return
-			}
-			t.updated <- c
+			t.sendBatch(l.source, b)
 		}
 	}
-	for _, b := range []*[][]string{&batches.partners, &batches.companies} {
-		if len(*b) == 0 {
-			continue
-		}
-		var src sourceType
-		if b == &batches.partners {
-			src = partners
-		} else {
-			src = taxes // this includes base cnpj batch too
-		}
-		c, err := t.sendBatch(src, b)
-		if err != nil {
-			t.errors <- fmt.Errorf("error sending the remaining update batch: %w", err)
-			atomic.StoreInt32(&t.shutdown, 1)
-			return
-		}
-		if atomic.LoadInt32(&t.shutdown) == 1 {
-			return
-		}
-		t.updated <- c
-	}
+	t.sendBatch(base, &batches.companies)
+	t.sendBatch(partners, &batches.partners)
 }
 
-func (t *updateTask) sendLinesToShards(a *archivedCSV, s sourceType) {
-	defer func() {
-		t.readersWaitGroup.Done()
-		t.shutdownWaitGroup.Done()
-		a.close()
-	}()
-	for {
-		if atomic.LoadInt32(&t.shutdown) == 1 {
-			return
-		}
-		r, err := a.read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.errors <- fmt.Errorf("error reading line %v: %w", r, err)
-			atomic.StoreInt32(&t.shutdown, 1)
-			return
-		}
-		n, err := shard(r[0])
-		if err != nil {
-			t.errors <- fmt.Errorf("error getting shard number for %s: %w", r[0], err)
-			atomic.StoreInt32(&t.shutdown, 1)
-			return
-		}
-		t.queues[n] <- line{r, s}
+func (t *updateTask) sendLinesToShards(s *source) {
+	var wg sync.WaitGroup
+	for _, a := range s.readers {
+		wg.Add(1)
+		go func(a *archivedCSV) {
+			defer wg.Done()
+			for {
+				if atomic.LoadInt32(&t.shutdown) == 1 {
+					return
+				}
+				r, err := a.read()
+				if err == io.EOF {
+					return
+				}
+				if err != nil {
+					if atomic.LoadInt32(&t.shutdown) != 0 {
+						t.errors <- fmt.Errorf("error reading line %v: %w", r, err)
+						atomic.StoreInt32(&t.shutdown, 1)
+					}
+					return
+				}
+				n, err := shard(r[0])
+				if err != nil {
+					if atomic.LoadInt32(&t.shutdown) != 0 {
+						t.errors <- fmt.Errorf("error getting shard number for %s: %w", r[0], err)
+						atomic.StoreInt32(&t.shutdown, 1)
+					}
+					return
+				}
+				if atomic.LoadInt32(&t.shutdown) != 1 {
+					t.queues[n] <- line{r, s.kind}
+				}
+			}
+		}(a)
 	}
+	wg.Wait()
 }
 
 func (t *updateTask) closeReaders() {
-	defer fmt.Printf("Closing readers…\n")
-	t.readersWaitGroup.Wait()
 	for _, q := range t.queues {
 		close(q)
 	}
 	for _, s := range t.sources {
 		s.close()
 	}
-}
-
-func (t *updateTask) close() {
-	if atomic.LoadInt32(&t.shutdown) == 1 {
-		t.shutdownWaitGroup.Wait()
-	}
-	close(t.updated)
-	close(t.errors)
 }
 
 func (t *updateTask) run() error {
@@ -190,19 +169,25 @@ func (t *updateTask) run() error {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
 	for n := 0; n < numOfShards; n++ {
-		t.shutdownWaitGroup.Add(1)
 		t.queues[n] = make(chan line)
 		go t.consumeShard(n)
 	}
+	var wg sync.WaitGroup
 	for _, s := range t.sources {
-		for _, r := range s.readers {
-			t.readersWaitGroup.Add(1)
-			t.shutdownWaitGroup.Add(1)
-			go t.sendLinesToShards(r, s.kind)
-		}
+		wg.Add(1)
+		go func(s *source) {
+			t.sendLinesToShards(s)
+			wg.Done()
+		}(s)
 	}
-	go t.closeReaders()
-	defer t.close()
+	go func() {
+		defer t.closeReaders()
+		wg.Wait()
+	}()
+	defer func() {
+		close(t.updated)
+		close(t.errors)
+	}()
 	for {
 		select {
 		case err := <-t.errors:

@@ -137,7 +137,7 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 // CreateIndex runs after all the data is creates. It drops duplicates and
 // create a primary key on the ID field.
 func (p *PostgreSQL) CreateIndex() error {
-	log.Output(2, "Creating indexess…")
+	log.Output(2, "Creating indexes…")
 	if _, err := p.conn.Exec(p.sql["create_index.sql"]); err != nil {
 		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index.sql"], err)
 	}
