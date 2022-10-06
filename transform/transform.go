@@ -6,7 +6,7 @@ import (
 
 // MaxParallelDBQueries is the default for maximum number of parallels save
 // queries sent to the database
-const MaxParallelDBQueries = 32
+const MaxParallelDBQueries = 8
 
 // BatchSize determines the size of the batches used to create the initial JSON
 // data in the database.
