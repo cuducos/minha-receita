@@ -9,16 +9,9 @@ services:
       - .env
     volumes:
       - ./data:/mnt/data
-
-  postgres_test:
-    image: postgres:14-alpine
-    ports:
-      - 5555:5432
-    environment: &credentials
-      POSTGRES_PASSWORD: minhareceita
-      POSTGRES_USER: minhareceita
-      POSTGRES_DB: minhareceita
-    command: ["postgres", "-c", "log_statement=all"]
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:14-alpine
@@ -26,4 +19,19 @@ services:
       - 5432:5432
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    environment: &credentials
+      POSTGRES_PASSWORD: minhareceita
+      POSTGRES_USER: minhareceita
+      POSTGRES_DB: minhareceita
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U $${POSTGRES_USER}'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres_test:
+    image: postgres:14-alpine
+    ports:
+      - 5555:5432
     environment: *credentials
+    command: ["postgres", "-c", "log_statement=all"]
