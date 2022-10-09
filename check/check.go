@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 )
 
 func checkZipFile(pth string) error {
@@ -37,6 +36,11 @@ func checkZipFile(pth string) error {
 	return nil
 }
 
+type check struct {
+	path string
+	err  error
+}
+
 func checkZipFiles(dir string) (map[string]error, error) {
 	r := make(map[string]error)
 	ls, err := filepath.Glob(filepath.Join(dir, "*.zip"))
@@ -50,19 +54,22 @@ func checkZipFiles(dir string) (map[string]error, error) {
 	if err != nil {
 		return r, fmt.Errorf("error logging: %w", err)
 	}
-	var wg sync.WaitGroup
+	checks := make(chan check)
 	for _, pth := range ls {
-		wg.Add(1)
 		go func(pth string) {
-			defer wg.Done()
 			err := checkZipFile(pth)
 			if err != nil {
 				log.Output(2, fmt.Sprintf("%s\tFAILED with\t%s", pth, err))
-				r[pth] = err
 			}
+			checks <- check{pth, err}
 		}(pth)
 	}
-	wg.Wait()
+	for i := 0; i < len(ls); i++ {
+		c := <-checks
+		if c.err != nil {
+			r[c.path] = c.err
+		}
+	}
 	return r, nil
 }
 
