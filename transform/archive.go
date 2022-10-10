@@ -19,6 +19,7 @@ var multipleSpaces = regexp.MustCompile(`\s{2,}`)
 
 type archivedCSV struct {
 	path    string
+	file    io.ReadCloser
 	reader  *csv.Reader
 	toClose []io.Closer
 }
@@ -43,7 +44,7 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 
 		c := csv.NewReader(f)
 		c.Comma = s
-		a = &archivedCSV{p, c, []io.Closer{f, r}}
+		a = &archivedCSV{p, f, c, []io.Closer{f, r}}
 		break
 	}
 
