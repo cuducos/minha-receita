@@ -228,6 +228,7 @@ func download(client *http.Client, files []file, parallel, retries int, chunkSiz
 		progressbar.OptionShowCount(),
 		progressbar.OptionFullWidth(),
 		progressbar.OptionSetRenderBlankState(true),
+		progressbar.OptionShowElapsedTimeOnFinish(),
 	)
 	defer c.bar.Close()
 	c.progressBarDescription()
