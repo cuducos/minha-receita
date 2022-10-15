@@ -143,6 +143,7 @@ func Sample(src, target string, m int) error {
 	ls = append(ls, filepath.Join(src, transform.NationalTreasureFileName))
 
 	bar := progressbar.Default(int64(len(ls)))
+	defer bar.Close()
 	bar.Describe("Creating sample files")
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)

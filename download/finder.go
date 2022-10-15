@@ -129,6 +129,7 @@ func getSizes(c *http.Client, fs []file, s bool) ([]file, error) {
 		newBar = progressbar.DefaultSilent
 	}
 	bar := newBar(int64(len(fs)), "Gathering file sizes")
+	defer bar.Close()
 	for {
 		select {
 		case err := <-errors:

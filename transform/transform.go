@@ -30,12 +30,17 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}
-	if err := j.run(maxParallelDBQueries); err != nil {
+	err = func() error {
+		defer j.bar.Close()
+		return j.run(maxParallelDBQueries)
+	}()
+	if err != nil {
 		return err
 	}
 	u, err := newUpdateTask(dir, db, batchSize, j.lookups)
 	if err != nil {
 		return fmt.Errorf("error creating update task: %w", err)
 	}
+	defer u.bar.Close()
 	return u.run()
 }

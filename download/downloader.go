@@ -229,6 +229,7 @@ func download(client *http.Client, files []file, parallel, retries int, chunkSiz
 		progressbar.OptionFullWidth(),
 		progressbar.OptionSetRenderBlankState(true),
 	)
+	defer c.bar.Close()
 	c.progressBarDescription()
 	if err := c.bar.RenderBlank(); err != nil {
 		return fmt.Errorf("could not render the progress bar: %w", err)
