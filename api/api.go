@@ -52,45 +52,20 @@ type api struct {
 	host string
 }
 
-func (app *api) backwardCompatibilityHandler(w http.ResponseWriter, r *http.Request) error {
-	if r.Method != http.MethodPost {
-		return fmt.Errorf("no backward compatibilityt with method %s", r.Method)
-	}
-
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("invalid payload")
-	}
-
-	v := r.Form.Get("cnpj")
-	if v == "" {
-		return fmt.Errorf("no CNPJ sent in the payload")
-	}
-
-	v = cnpj.Unmask(v)
-	if !cnpj.IsValid(v) {
-		return fmt.Errorf("invalid CNPJ")
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/%s", v), http.StatusSeeOther)
-	return nil
-}
-
 func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", cacheControl)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
 
-	if r.Method == http.MethodOptions {
+	switch r.Method {
+	case http.MethodGet:
+		break
+	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
 		return
-	}
-
-	if r.Method != http.MethodGet {
-		err := app.backwardCompatibilityHandler(w, r)
-		if err != nil {
-			messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
-		}
+	default:
+		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
 
@@ -99,7 +74,6 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
 		return
 	}
-
 	if !cnpj.IsValid(v) {
 		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v[1:])))
 		return
@@ -110,7 +84,6 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
-
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	io.WriteString(w, s)
@@ -176,10 +149,17 @@ func Serve(db database, p, n string) {
 	}
 	nr := newRelicApp(n)
 	app := api{db: db, host: os.Getenv("ALLOWED_HOST")}
-	http.HandleFunc(newRelicHandle(nr, "/", app.allowedHostWrapper(app.companyHandler)))
-	http.HandleFunc(newRelicHandle(nr, "/urls", app.allowedHostWrapper(app.urlsHandler)))
-	http.HandleFunc(newRelicHandle(nr, "/updated", app.allowedHostWrapper(app.updatedHandler)))
-	http.HandleFunc(newRelicHandle(nr, "/healthz", app.allowedHostWrapper(app.healthHandler)))
+	for _, r := range []struct {
+		path    string
+		handler func(http.ResponseWriter, *http.Request)
+	}{
+		{"/", app.companyHandler},
+		{"/urls", app.urlsHandler},
+		{"/updated", app.updatedHandler},
+		{"/healthz", app.healthHandler},
+	} {
+		http.HandleFunc(newRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
+	}
 	fmt.Printf("Serving at 0.0.0.0:%s…\n", p[1:])
 	log.Fatal(http.ListenAndServe(p, nil))
 }
