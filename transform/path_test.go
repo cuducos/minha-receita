@@ -11,7 +11,9 @@ func TestPathsForSource(t *testing.T) {
 		source   sourceType
 		expected []string
 	}{
-		{venues, []string{filepath.Join(testdata, "Estabelecimentos0.zip")}},
+		{venues, []string{
+			filepath.Join(testdata, "Estabelecimentos0.zip"),
+		}},
 		{motives, []string{filepath.Join(testdata, "Motivos.zip")}},
 		{base, []string{
 			filepath.Join(testdata, "Empresas0.zip"),

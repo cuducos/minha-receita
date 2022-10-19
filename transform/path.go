@@ -14,7 +14,7 @@ func PathsForSource(t sourceType, dir string) ([]string, error) {
 	}
 	var ls []string
 	for _, f := range r {
-		if f.IsDir() {
+		if f.IsDir() || filepath.Ext(f.Name()) == ".md5" {
 			continue
 		}
 		if strings.Contains(strings.ToLower(f.Name()), strings.ToLower(string(t))) {
