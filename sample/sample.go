@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
+	"time"
 
+	"github.com/cuducos/minha-receita/download"
 	"github.com/cuducos/minha-receita/transform"
 	"github.com/schollz/progressbar/v3"
 )
@@ -113,7 +115,51 @@ func makeSampleFromZIP(src, outDir string, m int) error {
 	return nil
 }
 
-func makeSample(src, outDir string, m int) error {
+func createUpdateAt(src, outDir string, dt string) error {
+	name := filepath.Base(src)
+	out := filepath.Join(outDir, name)
+
+	r, err := os.Open(src)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if dt != "" {
+				if _, err := time.Parse("2006-01-02", dt); err != nil {
+					log.Output(2, fmt.Sprintf("updated_at sample will not be created, date %s format is invalid. (must be YYYY-MM-DD)", dt))
+					return nil
+				}
+
+				if err := os.WriteFile(out, []byte(dt), 0755); err != nil {
+					return fmt.Errorf("error copying %s to sample directory: %w", name, err)
+				}
+
+				return nil
+			}
+
+			log.Output(2, fmt.Sprintf("%s file not found in %s", name, src))
+			return nil
+		}
+
+		return fmt.Errorf("error opening %s in sample directory: %w", name, err)
+
+	}
+	defer r.Close()
+
+	w, err := os.Create(out)
+	if err != nil {
+		return fmt.Errorf("error creating %s in sample directory: %w", name, err)
+	}
+	if _, err := io.Copy(w, r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func makeSample(src, outDir string, m int, dt string) error {
+	if filepath.Base(src) == download.FederalRevenueUpdatedAt {
+		return createUpdateAt(src, outDir, dt)
+	}
+
 	ext := strings.ToLower(filepath.Ext(src))
 	switch ext {
 	case ".zip":
@@ -126,7 +172,7 @@ func makeSample(src, outDir string, m int) error {
 
 // Sample generates sample data on the target directory, coping the first `m`
 // lines of each file from the source directory.
-func Sample(src, target string, m int) error {
+func Sample(src, target string, m int, updatedAt string) error {
 	if src == target {
 		return fmt.Errorf("data directory and target directory cannot be the same")
 	}
@@ -140,38 +186,31 @@ func Sample(src, target string, m int) error {
 	if len(ls) == 0 {
 		return errors.New("source directory %s has no zip files")
 	}
-	ls = append(ls, filepath.Join(src, transform.NationalTreasureFileName))
-
+	for _, p := range []string{
+		transform.NationalTreasureFileName,
+		download.FederalRevenueUpdatedAt,
+	} {
+		ls = append(ls, filepath.Join(src, p))
+	}
 	bar := progressbar.Default(int64(len(ls)))
 	defer bar.Close()
 	bar.Describe("Creating sample files")
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
-
-	var shutdown uint32
 	q := make(chan error)
 	defer close(q)
-	for _, pth := range ls {
-		go func(pth string) {
-			err := makeSample(pth, target, m)
-			if err != nil {
-				atomic.StoreUint32(&shutdown, 1)
-				q <- err
-			} else {
-				if atomic.LoadUint32(&shutdown) == 0 {
-					q <- nil
-				}
-			}
-		}(pth)
+	for _, p := range ls {
+		go func(p string) { q <- makeSample(p, target, m, updatedAt) }(p)
 	}
-	for err := range q {
-		if err != nil {
-			return err
-		}
+	for i := 0; i < len(ls); i++ {
+		err := <-q
 		bar.Add(1)
+		if err != nil {
+			return fmt.Errorf("error creating samples: %w", err)
+		}
 		if bar.IsFinished() {
-			return nil
+			break
 		}
 	}
 	return nil

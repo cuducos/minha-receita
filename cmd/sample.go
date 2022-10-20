@@ -14,6 +14,7 @@ number of lines, allowing us to manually test the process quicker.`
 var (
 	maxLines  int
 	targetDir string
+	updatedAt string
 )
 
 var sampleCmd = &cobra.Command{
@@ -24,7 +25,8 @@ var sampleCmd = &cobra.Command{
 		if err := assertDirExists(); err != nil {
 			return err
 		}
-		return sample.Sample(dir, targetDir, maxLines)
+
+		return sample.Sample(dir, targetDir, maxLines, updatedAt)
 	},
 }
 
@@ -38,5 +40,13 @@ func sampleCLI() *cobra.Command {
 		filepath.Join(defaultDataDir, sample.TargetDir),
 		"directory for the sample CSV files",
 	)
+	sampleCmd.Flags().StringVarP(
+		&updatedAt,
+		"mock-updated-at",
+		"u",
+		"",
+		"updated_at date to be used if the data directory does not have a updated_at.txt file, format YYYY-MM-DD",
+	)
+
 	return sampleCmd
 }
