@@ -10,10 +10,7 @@ import (
 	"github.com/cuducos/minha-receita/download"
 )
 
-var (
-	testdata         = filepath.Join("..", "testdata")
-	defaultUpdatedAt = time.Now().Format("2006-01-02")
-)
+var testdata = filepath.Join("..", "testdata")
 
 func testdataWithoutUpdatedAt(t *testing.T) string {
 	tmp := t.TempDir()
@@ -64,7 +61,7 @@ func TestSample(t *testing.T) {
 		{
 			"Copy existing updated_at.txt file",
 			testdata,
-			defaultUpdatedAt,
+			"",
 			13,
 			false,
 		},
@@ -76,16 +73,16 @@ func TestSample(t *testing.T) {
 			false,
 		},
 		{
-			"Mock updated_at.txt file with invalid date format",
+			"updated_at.txt file with invalid date format",
 			testdataWithoutUpdatedAt(t),
 			"17-10-2022",
 			12,
 			true,
 		},
 		{
-			"Mock updated_at.txt file",
+			"updated_at.txt from user input",
 			testdataWithoutUpdatedAt(t),
-			defaultUpdatedAt,
+			time.Now().Format("2006-01-02"),
 			13,
 			false,
 		},
@@ -94,17 +91,14 @@ func TestSample(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			out := t.TempDir()
-
-			err := Sample(tc.src, out, 42, tc.updatedAt)
+			err := Sample(tc.src, out, 2, tc.updatedAt)
 			if !tc.err && err != nil {
 				t.Fatalf("expected no error running sample, got %s", err)
 			}
-
 			ls, err := os.ReadDir(out)
 			if err != nil {
 				t.Errorf("expected no error reading dir %s, got %s", out, err)
 			}
-
 			var got int
 			for _, f := range ls {
 				if !f.IsDir() {

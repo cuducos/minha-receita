@@ -115,43 +115,35 @@ func makeSampleFromZIP(src, outDir string, m int) error {
 	return nil
 }
 
-func createUpdateAt(src, outDir string, dt string) error {
-	name := filepath.Base(src)
-	out := filepath.Join(outDir, name)
-
+func createUpdateAt(src, dir string, dt string) error {
+	n := filepath.Base(src)
+	out := filepath.Join(dir, n)
 	r, err := os.Open(src)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if dt != "" {
-				if _, err := time.Parse("2006-01-02", dt); err != nil {
-					log.Output(2, fmt.Sprintf("updated_at sample will not be created, date %s format is invalid. (must be YYYY-MM-DD)", dt))
-					return nil
-				}
-
-				if err := os.WriteFile(out, []byte(dt), 0755); err != nil {
-					return fmt.Errorf("error copying %s to sample directory: %w", name, err)
-				}
-
-				return nil
-			}
-
-			log.Output(2, fmt.Sprintf("%s file not found in %s", name, src))
+	if os.IsNotExist(err) {
+		if dt == "" {
+			log.Output(2, fmt.Sprintf("%s not found", src))
 			return nil
 		}
-
-		return fmt.Errorf("error opening %s in sample directory: %w", name, err)
-
+		if _, err := time.Parse("2006-01-02", dt); err != nil {
+			log.Output(2, fmt.Sprintf("updated_at.txt will not be created, date %s is not YYYY-MM-DD", dt))
+			return nil
+		}
+		if err := os.WriteFile(out, []byte(dt), 0755); err != nil {
+			return fmt.Errorf("error writing %s: %w", out, err)
+		}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("error opening %s in sample directory: %w", n, err)
 	}
 	defer r.Close()
-
 	w, err := os.Create(out)
 	if err != nil {
-		return fmt.Errorf("error creating %s in sample directory: %w", name, err)
+		return fmt.Errorf("error creating %s: %w", out, err)
 	}
 	if _, err := io.Copy(w, r); err != nil {
-		return err
+		return fmt.Errorf("error copying %s to %s: %w", src, out, err)
 	}
-
 	return nil
 }
 
@@ -159,7 +151,6 @@ func makeSample(src, outDir string, m int, dt string) error {
 	if filepath.Base(src) == download.FederalRevenueUpdatedAt {
 		return createUpdateAt(src, outDir, dt)
 	}
-
 	ext := strings.ToLower(filepath.Ext(src))
 	switch ext {
 	case ".zip":

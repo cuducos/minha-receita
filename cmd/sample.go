@@ -25,7 +25,6 @@ var sampleCmd = &cobra.Command{
 		if err := assertDirExists(); err != nil {
 			return err
 		}
-
 		return sample.Sample(dir, targetDir, maxLines, updatedAt)
 	},
 }
@@ -42,10 +41,10 @@ func sampleCLI() *cobra.Command {
 	)
 	sampleCmd.Flags().StringVarP(
 		&updatedAt,
-		"mock-updated-at",
+		"updated-at",
 		"u",
 		"",
-		"updated_at date to be used if the data directory does not have a updated_at.txt file, format YYYY-MM-DD",
+		"updated at date to be used if the data directory does not have a updated_at.txt file, format YYYY-MM-DD",
 	)
 
 	return sampleCmd
