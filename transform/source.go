@@ -28,8 +28,8 @@ type source struct {
 	dir        string
 	files      []string
 	readers    []*archivedCSV
-	totalLines int64
-	shutdown   uint32
+	totalLines int
+	shutdown   int32
 }
 
 func (s *source) createReaders() error {
@@ -63,30 +63,30 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV, count chan<- int64, errs chan<- error) {
-	var t int64
+func (s *source) countLinesFor(a *archivedCSV, count chan<- int, errs chan<- error) {
+	var t int
 	buf := make([]byte, 32*1024)
 	for {
 		c, err := a.file.Read(buf)
-		t += int64(bytes.Count(buf[:c], []byte{'\n'}))
+		t += bytes.Count(buf[:c], []byte{'\n'})
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			if atomic.CompareAndSwapUint32(&s.shutdown, 0, 1) {
+			if atomic.CompareAndSwapInt32(&s.shutdown, 0, 1) {
 				errs <- err
 			}
 			return
 		}
 	}
-	if atomic.LoadUint32(&s.shutdown) == 1 {
+	if atomic.LoadInt32(&s.shutdown) == 1 {
 		return
 	}
 	count <- t
 }
 
 func (s *source) countLines() error {
-	count := make(chan int64)
+	count := make(chan int)
 	errs := make(chan error)
 	for _, r := range s.readers {
 		go s.countLinesFor(r, count, errs)

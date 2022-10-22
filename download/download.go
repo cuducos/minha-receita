@@ -15,7 +15,12 @@ type getFilesConfig struct {
 }
 
 // Download all the files (might take several minutes).
-func Download(dir string, timeout time.Duration, skip bool, parallel, retries, chunkSize int) error {
+func Download(dir string, timeout time.Duration, skip, restart bool, parallel, retries, chunkSize int) error {
+	r, err := newRecover(dir, chunkSize, restart)
+	if err != nil {
+		return fmt.Errorf("error creating a download recover struct: %w", err)
+	}
+	defer r.close()
 	c := &http.Client{Timeout: timeout}
 	log.Output(1, "Preparing to download from the Federal Revenue official website…")
 	confs := []getFilesConfig{
@@ -33,7 +38,7 @@ func Download(dir string, timeout time.Duration, skip bool, parallel, retries, c
 	if err != nil {
 		return fmt.Errorf("error getting file sizes: %w", err)
 	}
-	return download(c, fs, parallel, retries, uint64(chunkSize))
+	return download(c, fs, r, parallel, retries, chunkSize)
 }
 
 // URLs shows the URLs to be downloaded.
