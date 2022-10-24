@@ -17,7 +17,7 @@ type getFilesConfig struct {
 // Download all the files (might take several minutes).
 func Download(dir string, timeout time.Duration, skip bool, parallel, retries, chunkSize int) error {
 	c := &http.Client{Timeout: timeout}
-	log.Output(2, "Preparing to download from the Federal Revenue official website…")
+	log.Output(1, "Preparing to download from the Federal Revenue official website…")
 	confs := []getFilesConfig{
 		{federalRevenueGetURLs, federalRevenueURL},
 		{nationalTreasureGetURLs, nationalTreasureBaseURL},

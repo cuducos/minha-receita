@@ -82,7 +82,7 @@ func toDate(v string) (*date, error) {
 		// TODO: waiting for response from falabr.cgu.gov.br
 		// ticket #03005.005925/2022-17
 		// return nil, fmt.Errorf("error converting %s to Time: %w", v, err)
-		log.Output(2, fmt.Sprintf("invalid date %s", v))
+		log.Output(1, fmt.Sprintf("invalid date %s", v))
 		return nil, nil
 	}
 

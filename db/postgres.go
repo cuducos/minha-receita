@@ -81,7 +81,7 @@ func (p *PostgreSQL) MetaTableFullName() string {
 
 // CreateTable creates the required database table.
 func (p *PostgreSQL) CreateTable() error {
-	log.Output(2, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
+	log.Output(1, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
 	if _, err := p.conn.Exec(p.sql["create.sql"]); err != nil {
 		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create.sql"], err)
 	}
@@ -90,7 +90,7 @@ func (p *PostgreSQL) CreateTable() error {
 
 // DropTable drops the database table created by `CreateTable`.
 func (p *PostgreSQL) DropTable() error {
-	log.Output(2, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
+	log.Output(1, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
 	if _, err := p.conn.Exec(p.sql["drop.sql"]); err != nil {
 		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop.sql"], err)
 	}
@@ -137,7 +137,7 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 // CreateIndex runs after all the data is creates. It drops duplicates and
 // create a primary key on the ID field.
 func (p *PostgreSQL) CreateIndex() error {
-	log.Output(2, "Creating indexes…")
+	log.Output(1, "Creating indexes…")
 	if _, err := p.conn.Exec(p.sql["create_index.sql"]); err != nil {
 		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index.sql"], err)
 	}

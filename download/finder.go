@@ -66,7 +66,7 @@ func getFiles(client *http.Client, hs []getFilesConfig, dir string, skip bool) (
 func downloadAndGetSize(c *http.Client, url string) (int64, error) {
 	r, err := c.Get(url)
 	if err != nil {
-		log.Output(2, fmt.Sprintf("HTTP request to %s failed: %v", url, err))
+		log.Output(1, fmt.Sprintf("HTTP request to %s failed: %v", url, err))
 		return 0, err
 	}
 	defer r.Body.Close()

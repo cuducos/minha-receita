@@ -108,7 +108,7 @@ func (c *company) municipio(l *lookups, v string) error {
 	c.Municipio = &s
 	ibge, ok := l.ibge[*i]
 	if !ok {
-		log.Output(2, fmt.Sprintf("Could not find IBGE city code for %s-%s (%d)", *c.Municipio, c.UF, *i))
+		log.Output(1, fmt.Sprintf("Could not find IBGE city code for %s-%s (%d)", *c.Municipio, c.UF, *i))
 		return nil
 	}
 	c.CodigoMunicipioIBGE, err = toInt(ibge)
