@@ -121,11 +121,11 @@ func createUpdateAt(src, dir string, dt string) error {
 	r, err := os.Open(src)
 	if os.IsNotExist(err) {
 		if dt == "" {
-			log.Output(2, fmt.Sprintf("%s not found", src))
+			log.Output(1, fmt.Sprintf("%s not found", src))
 			return nil
 		}
 		if _, err := time.Parse("2006-01-02", dt); err != nil {
-			log.Output(2, fmt.Sprintf("updated_at.txt will not be created, date %s is not YYYY-MM-DD", dt))
+			log.Output(1, fmt.Sprintf("updated_at.txt will not be created, date %s is not YYYY-MM-DD", dt))
 			return nil
 		}
 		if err := os.WriteFile(out, []byte(dt), 0755); err != nil {

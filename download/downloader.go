@@ -211,7 +211,7 @@ func download(client *http.Client, files []file, parallel, retries int, chunkSiz
 		if err != nil {
 			return fmt.Errorf("could not create log file: %w", err)
 		}
-		log.Output(2, fmt.Sprintf("Creating detailed logs at %s", tmp.Name()))
+		log.Output(1, fmt.Sprintf("Creating detailed logs at %s", tmp.Name()))
 		defer tmp.Close()
 		c.logger = log.New(tmp, "", log.LstdFlags)
 	}

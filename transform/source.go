@@ -112,7 +112,7 @@ func (s *source) countLines() error {
 }
 
 func newSource(t sourceType, d string) (*source, error) {
-	log.Output(2, fmt.Sprintf("Loading %s files…", string(t)))
+	log.Output(1, fmt.Sprintf("Loading %s files…", string(t)))
 	ls, err := PathsForSource(t, d)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
