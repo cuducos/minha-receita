@@ -97,7 +97,7 @@ func (c *chunk) download(h *http.Client, r int) ([]byte, error) {
 		func() error {
 			d, err := c.downloadWithTimeout(h)
 			if err != nil {
-				return fmt.Errorf("%s chunk %d: failed after %d retries", c.dest.Name(), c.idx+1, r)
+				return fmt.Errorf("%s chunk %d: error %w", c.dest.Name(), c.idx+1, err)
 			}
 			b = d
 			return nil

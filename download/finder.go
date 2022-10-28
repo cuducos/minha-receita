@@ -31,21 +31,19 @@ func newFile(url, dir string) file {
 
 type getURLsHandler func(c *http.Client, url, dir string) ([]string, error)
 
-func getURLs(client *http.Client, confs []getFilesConfig, dir string) ([]string, error) {
+func getURLs(client *http.Client, conf getFilesConfig, dir string) ([]string, error) {
 	var urls []string
-	for _, c := range confs {
-		u, err := c.handler(client, c.url, dir)
-		if err != nil {
-			return nil, fmt.Errorf("error getting urls: %w", err)
-		}
-		urls = append(urls, u...)
+	u, err := conf.handler(client, conf.url, dir)
+	if err != nil {
+		return nil, fmt.Errorf("error getting urls: %w", err)
 	}
+	urls = append(urls, u...)
 	return urls, nil
 }
 
-func getFiles(client *http.Client, hs []getFilesConfig, dir string, skip bool) ([]file, error) {
+func getFiles(client *http.Client, conf getFilesConfig, dir string, skip bool) ([]file, error) {
 	var fs []file
-	urls, err := getURLs(client, hs, dir)
+	urls, err := getURLs(client, conf, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files: %w", err)
 	}

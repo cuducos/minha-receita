@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
+	github.com/avast/retry-go/v4 v4.3.0
 	github.com/cuducos/go-cnpj v0.0.1
 	github.com/go-pg/pg/v10 v10.10.7
 	github.com/newrelic/go-agent/v3 v3.19.2
@@ -14,7 +15,6 @@ require (
 
 require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
-	github.com/avast/retry-go/v4 v4.3.0 // indirect
 	github.com/go-pg/zerochecker v0.2.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
