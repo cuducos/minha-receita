@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -61,7 +62,11 @@ func (t *updateTask) sendBatch(s sourceType, b *[][]string) {
 	} else {
 		f = t.db.UpdateCompanies
 	}
-	if err := f(optimizeBatch(b)); err != nil {
+	err := retry.Do(
+		func() error { return f(optimizeBatch(b)) },
+		retry.Attempts(32),
+	)
+	if err != nil {
 		if atomic.LoadInt32(&t.shutdown) != 1 {
 			t.errors <- fmt.Errorf("error sending a batch of updates: %w", err)
 			atomic.StoreInt32(&t.shutdown, 1)
