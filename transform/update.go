@@ -17,7 +17,7 @@ type line struct {
 type updateTask struct {
 	db         database
 	sources    []*source
-	totalLines int64
+	totalLines int
 	lookups    *lookups
 	batchSize  int
 	queues     []chan line
@@ -210,7 +210,7 @@ func newUpdateTask(dir string, db database, b int, l *lookups) (*updateTask, err
 		}
 		srcs[i] = s
 	}
-	var t int64
+	var t int
 	for _, s := range srcs {
 		t += s.totalLines
 	}
@@ -223,7 +223,7 @@ func newUpdateTask(dir string, db database, b int, l *lookups) (*updateTask, err
 		queues:     make([]chan line, numOfShards),
 		updated:    make(chan int),
 		errors:     make(chan error),
-		bar:        progressbar.Default(t),
+		bar:        progressbar.Default(int64(t)),
 	}
 	u.bar.Describe("Adding base CNPJ, partners and taxes info")
 	return &u, nil

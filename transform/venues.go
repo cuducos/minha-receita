@@ -35,7 +35,7 @@ type venuesTask struct {
 	dir               string
 	db                database
 	batchSize         int
-	sentToBatches     int64
+	sentToBatches     int
 	rows              chan []string
 	companies         chan struct{}
 	saved             chan int
@@ -165,7 +165,7 @@ func createJSONRecordsTask(dir string, db database, b int, p bool) (*venuesTask,
 		companies:     make(chan struct{}),
 		saved:         make(chan int),
 		errors:        make(chan error),
-		bar:           progressbar.Default(v.totalLines),
+		bar:           progressbar.Default(int64(v.totalLines)),
 	}
 	t.bar.Describe("Creating the JSON data for each CNPJ")
 	return &t, nil

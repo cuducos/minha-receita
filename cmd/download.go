@@ -32,6 +32,7 @@ var (
 	skipExistingFiles bool
 	tsv               bool
 	saveToDB          bool
+	restart           bool
 )
 
 var downloadCmd = &cobra.Command{
@@ -46,7 +47,7 @@ var downloadCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return download.Download(dir, dur, skipExistingFiles, parallelDownloads, downloadRetries, chunkSize)
+		return download.Download(dir, dur, skipExistingFiles, restart, parallelDownloads, downloadRetries, chunkSize)
 	},
 }
 
@@ -82,6 +83,7 @@ func downloadCLI() *cobra.Command {
 	downloadCmd.Flags().IntVarP(&downloadRetries, "retries", "r", download.DefaultMaxRetries, "maximum retries per download, use -1 for unlimited")
 	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.DefaultMaxParallel, "maximum parallel downloads")
 	downloadCmd.Flags().IntVarP(&chunkSize, "chunk-size", "c", download.DefaultChunkSize, "max length of the bytes range for each HTTP request")
+	downloadCmd.Flags().BoolVarP(&restart, "restart", "e", false, "restart all downloads from the beginning")
 	return downloadCmd
 }
 

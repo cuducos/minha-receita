@@ -3,6 +3,7 @@ package download
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 func TestDownloader(t *testing.T) {
@@ -20,12 +21,16 @@ func TestDownloader(t *testing.T) {
 	for i := range fs {
 		fs[i].size = 203867
 	}
-
-	err := download(ts.Client(), fs, DefaultMaxParallel, DefaultMaxRetries, DefaultChunkSize)
+	r, err := newRecover(tmp, DefaultChunkSize, false)
 	if err != nil {
+		t.Errorf("expected no error creating recover, got %s", err)
+	}
+	c := ts.Client()
+	c.Timeout = time.Second
+	t.Log(fs)
+	if err := download(ts.Client(), fs, r, DefaultMaxParallel, DefaultMaxRetries, DefaultChunkSize); err != nil {
 		t.Errorf("Expected downloadAll to run without errors, got: %v", err)
 	}
-
 	for _, f := range fs {
 		i, err := os.Stat(f.path)
 		if err != nil {
