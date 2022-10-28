@@ -6,7 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"time"
+
+	"github.com/avast/retry-go/v4"
 )
 
 // DefaultChunkSize sets the size of the chunks to be dowloaded using HTTP
@@ -91,15 +92,20 @@ func (c *chunk) downloadWithTimeout(h *http.Client) ([]byte, error) {
 }
 
 func (c *chunk) download(h *http.Client, r int) ([]byte, error) {
-	var a int
-	b, err := c.downloadWithTimeout(h)
+	var b []byte
+	err := retry.Do(
+		func() error {
+			d, err := c.downloadWithTimeout(h)
+			if err != nil {
+				return fmt.Errorf("%s chunk %d: failed after %d retries", c.dest.Name(), c.idx+1, r)
+			}
+			b = d
+			return nil
+		},
+		retry.Attempts(uint(r)),
+	)
 	if err != nil {
-		a++
-		if a <= r {
-			time.Sleep(time.Duration(a*10) * time.Second)
-			return c.download(h, r)
-		}
-		return nil, fmt.Errorf("%s chunk %d: failed after %d retries", c.dest.Name(), c.idx+1, r)
+		return nil, err
 	}
 	return b, nil
 }
