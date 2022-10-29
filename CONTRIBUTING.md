@@ -63,37 +63,37 @@ Uma mesma pessoa jurídica tem sempre a mesma base, e só varia a ordem (nas fil
 
 ### Dados
 
-O grosso dos dados está nos arquivos CSV de estabelecimentos que tem `ESTABELE` como sufixo.
+O grosso dos dados está nos arquivos CSV de estabelecimentos que tem `Estabelecimentos` como prefixo.
 
 #### Dados que tem o CNPJ base (8 primeiros dígitos do número de CNPJ) como chave
 
-* Arquivos CSV com o sufixo `EMPRECSV` tem o básico dos dados, como razão social, natureza jurídica e porte.
-* Arquivos CSV com o sufixo `SOCIOCSV` tem informações sobre o quadro societário de cada pessoa jurídica.
-* Arquivos CSV com o sufixo `SIMPLES` tem informações sobre adesão das pessoas jurídicas ao Simples.
+* Arquivos com o prefixo `Empresas` (ex.: `Empresas0.zip`) tem o básico dos dados, como razão social, natureza jurídica e porte.
+* Arquivos com o prefixo `Socios` (ex.: `Socios0.zip`) tem informações sobre o quadro societário de cada pessoa jurídica.
+* Arquivos `Simples.zip` tem informações sobre adesão das pessoas jurídicas ao Simples.
 
 #### Dados com outras chaves
 
 Na leitura desses arquivos existem campos que contém um código numérico, mas sem descrição do significado (por exemplo, temos o código 9701 para o município de Brasília). Esses arquivos são chamados de tabelas de _look up_:
 
-* Arquivos CSV com o sufixo `CNAECSV` com descrição dos CNAEs
-* Arquivos CSV com o sufixo `MOTICSV` com descrição dos motivos cadastrais
-* Arquivos CSV com o sufixo `MUNICCSV` com o nome dos municípios
-* Arquivos CSV com o sufixo `PAISCSV` com o nome dos países
-* Arquivos CSV com o sufixo `NATJUCSV` com o nome da natureza jurídica
-* Arquivos CSV com o sufixo `QUALSCSV` com a descrição da qualificação de cada pessoa do quadro societário
+* Arquivo `Cnaes.zip` com descrição dos CNAEs
+* Arquivo `Motivos.zip` com descrição dos motivos cadastrais
+* Arquivo `Municipios.zip` com o nome dos municípios
+* Arquivo `Paises.zip` com o nome dos países
+* Arquivo `Naturezas.zip` com o nome da natureza jurídica
+* Arquivo `Qualificacoes.zip` com a descrição da qualificação de cada pessoa do quadro societário
 * [Arquivo do Tesouro Nacional com os códigos dos municípios do IBGE](https://www.tesourotransparente.gov.br/ckan/dataset/lista-de-municipios-do-siafi/resource/eebb3bc6-9eea-4496-8bcf-304f33155282)
 
 ### Estratégia
 
 A etapa de transformação dos dados cria uma linha no banco de dados para cada CNPJ listado em `ESTABELE`, e depois “enriquece” essa linha com os CSVs auxiliares:
 
-1. Ler os arquivos CSV com o sufixo `ESTABELE` e criar um registro por CNPJ completo
+1. Ler os arquivos com o prefixo `Estabelecimentos` (ex.: `Estabelecimentos0.zip`) e criar um registro por CNPJ completo
     1. Incorporar nessa leitura as informações das tabelas de _look up_ `CNAECSV`, `MOTICSV`, `MUNICCSV`, `PAISCSV` e códigos dos municípios do IBGE
-1. Ler os arquivos CSV com sufixo `EMPRECSV` e enriquecer as linhas do banco de dados com essas informações
+1. Ler os arquivos com prefixo `Empresas` e enriquecer as linhas do banco de dados com essas informações
     1. Incorporar nessa leitura as informações da tabela de _look up_ `NATJUCSV`
-1. Ler os arquivos CSV com sufixo `SOCIOCSV` e enriquecer as linhas do banco de dados com essas informações
+1. Ler os arquivos com prefixo `Socios` e enriquecer as linhas do banco de dados com essas informações
     1. Incorporar nessa leitura as informações da tabela de _look up_ `QUALSCSV`
-1. Ler os arquivos CSV com sufixo `SIMPLES` e enriquecer as linhas do banco de dados com essas informações
+1. Ler o arquivo `Simples.zip` e enriquecer as linhas do banco de dados com essas informações
 
 ## Amostra dos arquivos para testes
 
