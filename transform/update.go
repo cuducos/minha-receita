@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"log"
 	"sync"
 	"sync/atomic"
 
@@ -64,14 +65,19 @@ func (t *updateTask) sendBatch(s sourceType, b *[][]string) {
 	}
 	err := retry.Do(
 		func() error { return f(optimizeBatch(b)) },
-		retry.Attempts(32),
+		retry.Attempts(13),
 	)
 	if err != nil {
-		if atomic.LoadInt32(&t.shutdown) != 1 {
-			t.errors <- fmt.Errorf("error sending a batch of updates: %w", err)
-			atomic.StoreInt32(&t.shutdown, 1)
+		for _, l := range *b {
+			if err := f([][]string{l}); err != nil {
+				log.Output(1, fmt.Sprintf("could not update company details: %s\n\t%v", err, l))
+				if atomic.LoadInt32(&t.shutdown) != 1 {
+					t.errors <- fmt.Errorf("error sending a batch of updates: %w", err)
+					atomic.StoreInt32(&t.shutdown, 1)
+					return
+				}
+			}
 		}
-		return
 	}
 	if atomic.LoadInt32(&t.shutdown) != 1 {
 		t.updated <- n
