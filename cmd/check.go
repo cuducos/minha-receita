@@ -14,7 +14,7 @@ var (
 const checksumHelper = `
 Checksum of the downloaded files.
 
-Even though the official website of the Brazilian Federal Revenue does not offer 
+Even though the official website of the Brazilian Federal Revenue does not offer
 a checksum for their files, this command can be used to create or check the checksum
 of downloaded files.`
 
