@@ -1,6 +1,5 @@
 # Sobre os dados
 
-
 Os dados servidos pela API estão disponibilizados tal como foram publicados pela Receita Federal, salvo as [exceções feitas para em prol da privacidade](/servidor/#questoes-de-privacidade).
 
 Devido à experiência utilizando dados públicos, é bom lembrar que esses dados _podem_ conter problemas como desatualização, incorreção, incompletude ou inconsistência, por exemplo. Como essa API é apenas uma fonte secundária para os dados, não temos como identificar ou corrigir esses problemas, então tenha isso em mente ao consultar o _Minha Receita_.
@@ -14,3 +13,12 @@ Caso queira, [abra uma _issue_ no GithHub](https://github.com/cuducos/minha-rece
 1. como localizou este problema
 
 Isso permite que a gente junte casos para alertar formalmente a Receita Federal do Brasil sobre a questão, para que eles tomem as medidas necessárias para corrigir os dados.
+
+## Espelho dos dados
+
+O _Minha Receita_ mantém um espelho dos dados em uma diretório compartilhado: [https://mirror.minhareceita.org](https://mirror.minhareceita.org).
+
+Nele está disponível:
+
+* Uma cópia dos públicos baixados da Receita Federal em , organizados por diretórios com a data de extração divulgada pela Receita Federal
+* Executáveis do _Minha Receita_
