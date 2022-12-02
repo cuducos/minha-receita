@@ -58,6 +58,5 @@ services:
        - PREST_HTTP_PORT=8081
        - PREST_QUERIES_LOCATION=/prest/data/queries/
        - PREST_CONF=/prest/data/config/prest.toml
-    
     volumes:
       - ./prest/:/prest/data/
