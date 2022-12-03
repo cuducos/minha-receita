@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-type database interface{ MetaSave(string, string) error }
-
 type getFilesConfig struct {
 	handler getURLsHandler
 	url     string
@@ -60,7 +58,7 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel, r
 }
 
 // URLs shows the URLs to be downloaded.
-func URLs(db database, dir string, skip, tsv, saveToDB bool) error {
+func URLs(dir string, skip, tsv bool) error {
 	c := &http.Client{}
 	confs := []getFilesConfig{
 		{federalRevenueGetURLsNoUpdatedAt, federalRevenueURL},
@@ -80,7 +78,7 @@ func URLs(db database, dir string, skip, tsv, saveToDB bool) error {
 		}
 		urls = append(urls, fs...)
 	}
-	if err := listURLs(db, urls, tsv, saveToDB); err != nil {
+	if err := listURLs(urls, tsv); err != nil {
 		return err
 	}
 	return nil

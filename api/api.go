@@ -89,22 +89,6 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, s)
 }
 
-func (app *api) urlsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
-		return
-	}
-	s := app.db.MetaRead("url-list")
-	if s == "" {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/tab-separated-values; charset=utf-8")
-	w.Header().Set("Cache-Control", cacheControl)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(s))
-}
-
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
@@ -154,7 +138,6 @@ func Serve(db database, p, n string) {
 		handler func(http.ResponseWriter, *http.Request)
 	}{
 		{"/", app.companyHandler},
-		{"/urls", app.urlsHandler},
 		{"/updated", app.updatedHandler},
 		{"/healthz", app.healthHandler},
 	} {

@@ -197,6 +197,5 @@ Todos esses _endpoints_ apenas aceitam requisições do tipo `GET` e, é esperad
 
 | Caminho da URL | Conteúdo esperado na resposta |
 ---|---|
-| `/urls` | Lista de URLs para download no [formato requerido pelo Cloud Storage Transfer Service do Google Cloud](https://cloud.google.com/storage-transfer/docs/create-url-list) |
 | `/updated` | JSON contendo a data de extração dos dados pela Receita Federal. |
 | `/healthz` | Resposta sem conteúdo |

@@ -3,7 +3,6 @@ package cmd
 import (
 	"time"
 
-	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/download"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +30,6 @@ var (
 	chunkSize         int
 	skipExistingFiles bool
 	tsv               bool
-	saveToDB          bool
 	restart           bool
 )
 
@@ -61,18 +59,7 @@ var urlsCmd = &cobra.Command{
 				return err
 			}
 		}
-		var pg db.PostgreSQL
-		if saveToDB {
-			u, err := loadDatabaseURI()
-			if err != nil {
-				return err
-			}
-			pg, err = db.NewPostgreSQL(u, postgresSchema)
-			if err != nil {
-				return err
-			}
-		}
-		return download.URLs(&pg, dir, skipExistingFiles, tsv, saveToDB)
+		return download.URLs(dir, skipExistingFiles, tsv)
 	},
 }
 
@@ -90,7 +77,6 @@ func downloadCLI() *cobra.Command {
 func urlsCLI() *cobra.Command {
 	urlsCmd.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files, used only with --skip")
 	urlsCmd.Flags().BoolVarP(&tsv, "tsv", "t", false, "use TSV when listing URLs")
-	urlsCmd.Flags().BoolVarP(&saveToDB, "save-to-db", "s", false, "save URL list to DATABASE_URL when listing URLs")
 	urlsCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	return urlsCmd
 }

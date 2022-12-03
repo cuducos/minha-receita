@@ -27,7 +27,7 @@ func tsvURLList(fs []file) (string, error) {
 	return buf.String(), nil
 }
 
-func listURLs(db database, fs []file, tsv, saveToDB bool) error {
+func listURLs(fs []file, tsv bool) error {
 	var err error
 	var s string
 	if tsv {
@@ -38,10 +38,6 @@ func listURLs(db database, fs []file, tsv, saveToDB bool) error {
 	} else {
 		s = simpleURLList(fs)
 	}
-	if saveToDB {
-		db.MetaSave("url-list", s)
-	} else {
-		fmt.Print(s)
-	}
+	fmt.Print(s)
 	return nil
 }
