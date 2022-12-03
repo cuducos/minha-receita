@@ -2,33 +2,12 @@ package download
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
 )
-
-func simpleDownload(f file) error {
-	h, err := os.Create(f.path)
-	if err != nil {
-		return fmt.Errorf("could not create %s: %w", f.path, err)
-	}
-	defer h.Close()
-	resp, err := http.Get(f.url)
-	if err != nil {
-		return fmt.Errorf("error requesting %s: %w", f.url, err)
-
-	}
-	defer resp.Body.Close()
-	_, err = io.Copy(h, resp.Body)
-	if err != nil {
-		return fmt.Errorf("error writing to %s: %w", f.path, err)
-	}
-	return nil
-}
 
 // this server says it accepts HTTP range but it responds with the full file,
 // so let's download it in a isolated step

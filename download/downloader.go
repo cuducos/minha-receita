@@ -2,6 +2,7 @@ package download
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -159,4 +160,23 @@ func download(client *http.Client, files []file, r *recover, parallel, retries, 
 			return nil
 		}
 	}
+}
+
+func simpleDownload(f file) error {
+	h, err := os.Create(f.path)
+	if err != nil {
+		return fmt.Errorf("could not create %s: %w", f.path, err)
+	}
+	defer h.Close()
+	resp, err := http.Get(f.url)
+	if err != nil {
+		return fmt.Errorf("error requesting %s: %w", f.url, err)
+
+	}
+	defer resp.Body.Close()
+	_, err = io.Copy(h, resp.Body)
+	if err != nil {
+		return fmt.Errorf("error writing to %s: %w", f.path, err)
+	}
+	return nil
 }
