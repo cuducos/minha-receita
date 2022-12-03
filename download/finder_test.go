@@ -18,7 +18,7 @@ func TestGetURLs(t *testing.T) {
 	} {
 		ts := httpTestServer(t, tc.fixture)
 		defer ts.Close()
-		got, err := getURLs(ts.Client(), getFilesConfig{tc.handler, ts.URL}, t.TempDir())
+		got, err := getURLs(getFilesConfig{tc.handler, ts.URL}, t.TempDir())
 		if err != nil {
 			t.Errorf("expected to run withour errors, got: %v:", err)
 			return
@@ -33,7 +33,7 @@ func TestGetFiles(t *testing.T) {
 	ts := httpTestServer(t, "cadastro-nacional-de-pessoa-juridica-cnpj.json")
 	defer ts.Close()
 	tmp := t.TempDir()
-	got, err := getFiles(ts.Client(), getFilesConfig{federalRevenueGetURLs, ts.URL}, tmp, false)
+	got, err := getFiles(getFilesConfig{federalRevenueGetURLs, ts.URL}, tmp, false)
 	if err != nil {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
 		return

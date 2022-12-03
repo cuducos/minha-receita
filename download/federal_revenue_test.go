@@ -12,7 +12,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 	defer ts.Close()
 
 	t.Run("returns download urls", func(t *testing.T) {
-		got, err := federalRevenueGetURLs(ts.Client(), ts.URL, tmp)
+		got, err := federalRevenueGetURLs(ts.URL, tmp)
 		if err != nil {
 			t.Errorf("expected to run withour errors, got: %v:", err)
 		}
@@ -59,7 +59,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 	})
 
 	t.Run("saves updated at date", func(t *testing.T) {
-		_, err := federalRevenueGetURLs(ts.Client(), ts.URL, tmp)
+		_, err := federalRevenueGetURLs(ts.URL, tmp)
 		if err != nil {
 			t.Errorf("expected to run withour errors, got: %v:", err)
 		}

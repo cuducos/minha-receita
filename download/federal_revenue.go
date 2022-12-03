@@ -48,8 +48,8 @@ type federalRevenueResponse struct {
 	Resources []federalRevenueResource `json:"resources"`
 }
 
-func federalRevenueGetURLsBase(client *http.Client, url, dir string, updatedAt bool) ([]string, error) {
-	r, err := client.Get(url)
+func federalRevenueGetURLsBase(url, dir string, updatedAt bool) ([]string, error) {
+	r, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("error getting %s: %w", url, err)
 	}
@@ -83,12 +83,12 @@ func federalRevenueGetURLsBase(client *http.Client, url, dir string, updatedAt b
 	return u, nil
 }
 
-func federalRevenueGetURLs(client *http.Client, url, dir string) ([]string, error) {
-	return federalRevenueGetURLsBase(client, url, dir, true)
+func federalRevenueGetURLs(url, dir string) ([]string, error) {
+	return federalRevenueGetURLsBase(url, dir, true)
 }
 
-func federalRevenueGetURLsNoUpdatedAt(client *http.Client, url, dir string) ([]string, error) {
-	return federalRevenueGetURLsBase(client, url, dir, false)
+func federalRevenueGetURLsNoUpdatedAt(url, dir string) ([]string, error) {
+	return federalRevenueGetURLsBase(url, dir, false)
 }
 
 func saveUpdatedAt(dir string, u time.Time) error {

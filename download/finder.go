@@ -29,11 +29,11 @@ func newFile(url, dir string) file {
 	}
 }
 
-type getURLsHandler func(c *http.Client, url, dir string) ([]string, error)
+type getURLsHandler func(url, dir string) ([]string, error)
 
-func getURLs(client *http.Client, conf getFilesConfig, dir string) ([]string, error) {
+func getURLs(conf getFilesConfig, dir string) ([]string, error) {
 	var urls []string
-	u, err := conf.handler(client, conf.url, dir)
+	u, err := conf.handler(conf.url, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting urls: %w", err)
 	}
@@ -41,9 +41,9 @@ func getURLs(client *http.Client, conf getFilesConfig, dir string) ([]string, er
 	return urls, nil
 }
 
-func getFiles(client *http.Client, conf getFilesConfig, dir string, skip bool) ([]file, error) {
+func getFiles(conf getFilesConfig, dir string, skip bool) ([]file, error) {
 	var fs []file
-	urls, err := getURLs(client, conf, dir)
+	urls, err := getURLs(conf, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files: %w", err)
 	}
