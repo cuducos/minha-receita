@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-type getFilesConfig struct {
-	handler getURLsHandler
-	url     string
-}
-
 func simpleDownload(f file) error {
 	h, err := os.Create(f.path)
 	if err != nil {
@@ -38,7 +33,7 @@ func simpleDownload(f file) error {
 // this server says it accepts HTTP range but it responds with the full file,
 // so let's download it in a isolated step
 func downloadNationalTreasure(dir string, skip bool) error {
-	fs, err := getFiles(getFilesConfig{nationalTreasureGetURLs, nationalTreasureBaseURL}, dir, skip)
+	fs, err := getFiles(nationalTreasureBaseURL, nationalTreasureGetURLs, dir, skip)
 	if err != nil {
 		return fmt.Errorf("error gathering resources for national treasure download: %w", err)
 	}
@@ -66,7 +61,7 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel, r
 		return err
 	}
 	log.Output(1, "Preparing to download from the Federal Revenue official website…")
-	fs, err := getFiles(getFilesConfig{federalRevenueGetURLs, federalRevenueURL}, dir, skip)
+	fs, err := getFiles(federalRevenueURL, federalRevenueGetURLs, dir, skip)
 	if err != nil {
 		return fmt.Errorf("error gathering resources for download: %w", err)
 	}
@@ -82,13 +77,11 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel, r
 
 // URLs shows the URLs to be downloaded.
 func URLs(dir string, skip bool) error {
-	confs := []getFilesConfig{
-		{federalRevenueGetURLsNoUpdatedAt, federalRevenueURL},
-		{nationalTreasureGetURLs, nationalTreasureBaseURL},
-	}
+	urls := []string{federalRevenueURL, nationalTreasureBaseURL}
+	handlers := []getURLsHandler{federalRevenueGetURLsNoUpdatedAt, nationalTreasureGetURLs}
 	var out []string
-	for _, conf := range confs {
-		u, err := getURLs(conf, dir)
+	for idx := range urls {
+		u, err := getURLs(urls[idx], handlers[idx], dir, skip)
 		if err != nil {
 			return fmt.Errorf("error gathering resources for download: %w", err)
 		}

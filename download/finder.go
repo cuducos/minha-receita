@@ -3,7 +3,6 @@ package download
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -31,32 +30,37 @@ func newFile(url, dir string) file {
 
 type getURLsHandler func(url, dir string) ([]string, error)
 
-func getURLs(conf getFilesConfig, dir string) ([]string, error) {
-	var urls []string
-	u, err := conf.handler(conf.url, dir)
+func getURLs(url string, handler getURLsHandler, dir string, skip bool) ([]string, error) {
+	var out []string
+	urls, err := handler(url, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting urls: %w", err)
 	}
-	urls = append(urls, u...)
-	return urls, nil
+	if skip {
+		for _, u := range urls {
+			h, err := os.Open(filepath.Join(dir, filepath.Base(u)))
+			if os.IsNotExist(err) {
+				out = append(out, u)
+				continue
+			}
+			if err == nil {
+				h.Close()
+			}
+		}
+	} else {
+		out = append(out, urls...)
+	}
+	return out, nil
 }
 
-func getFiles(conf getFilesConfig, dir string, skip bool) ([]file, error) {
+func getFiles(url string, handler getURLsHandler, dir string, skip bool) ([]file, error) {
 	var fs []file
-	urls, err := getURLs(conf, dir)
+	urls, err := getURLs(url, handler, dir, skip)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files: %w", err)
 	}
 	for _, u := range urls {
-		f := newFile(u, dir)
-		h, err := os.Open(f.path)
-		if !skip || errors.Is(err, os.ErrNotExist) {
-			fs = append(fs, f)
-			continue
-		}
-		if err == nil {
-			h.Close()
-		}
+		fs = append(fs, newFile(u, dir))
 	}
 	return fs, nil
 }
