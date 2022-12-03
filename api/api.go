@@ -160,6 +160,6 @@ func Serve(db database, p, n string) {
 	} {
 		http.HandleFunc(newRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
-	fmt.Printf("Serving at 0.0.0.0:%s…\n", p[1:])
+	log.Output(1, fmt.Sprintf("Serving at http://0.0.0.0%s", p))
 	log.Fatal(http.ListenAndServe(p, nil))
 }
