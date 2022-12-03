@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -58,28 +60,21 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel, r
 }
 
 // URLs shows the URLs to be downloaded.
-func URLs(dir string, skip, tsv bool) error {
+func URLs(dir string, skip bool) error {
 	c := &http.Client{}
 	confs := []getFilesConfig{
 		{federalRevenueGetURLsNoUpdatedAt, federalRevenueURL},
 		{nationalTreasureGetURLs, nationalTreasureBaseURL},
 	}
-	var urls []file
+	var out []string
 	for _, conf := range confs {
-		fs, err := getFiles(c, conf, dir, skip)
+		u, err := getURLs(c, conf, dir)
 		if err != nil {
 			return fmt.Errorf("error gathering resources for download: %w", err)
 		}
-		if tsv {
-			fs, err = getSizes(c, fs, true)
-			if err != nil {
-				return fmt.Errorf("error getting file sizes: %w", err)
-			}
-		}
-		urls = append(urls, fs...)
+		out = append(out, u...)
 	}
-	if err := listURLs(urls, tsv); err != nil {
-		return err
-	}
+	sort.Strings(out)
+	fmt.Println(strings.Join(out, "\n"))
 	return nil
 }

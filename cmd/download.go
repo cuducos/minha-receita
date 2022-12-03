@@ -29,7 +29,6 @@ var (
 	parallelDownloads int
 	chunkSize         int
 	skipExistingFiles bool
-	tsv               bool
 	restart           bool
 )
 
@@ -59,7 +58,7 @@ var urlsCmd = &cobra.Command{
 				return err
 			}
 		}
-		return download.URLs(dir, skipExistingFiles, tsv)
+		return download.URLs(dir, skipExistingFiles)
 	},
 }
 
@@ -76,7 +75,6 @@ func downloadCLI() *cobra.Command {
 
 func urlsCLI() *cobra.Command {
 	urlsCmd.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files, used only with --skip")
-	urlsCmd.Flags().BoolVarP(&tsv, "tsv", "t", false, "use TSV when listing URLs")
 	urlsCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	return urlsCmd
 }
