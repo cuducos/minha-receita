@@ -13,7 +13,7 @@ func TestGetURLs(t *testing.T) {
 		handler  getURLsHandler
 		expected int
 	}{
-		{"federal revenue", "dados-publicos-cnpj.html", federalRevenueGetURLs, 38},
+		{"federal revenue", "cadastro-nacional-de-pessoa-juridica-cnpj.json", federalRevenueGetURLs, 37},
 		{"national treasure", "national-treasure.json", nationalTreasureGetURLs, 1},
 	} {
 		ts := httpTestServer(t, tc.fixture)
@@ -30,7 +30,7 @@ func TestGetURLs(t *testing.T) {
 }
 
 func TestGetFiles(t *testing.T) {
-	ts := httpTestServer(t, "dados-publicos-cnpj.html")
+	ts := httpTestServer(t, "cadastro-nacional-de-pessoa-juridica-cnpj.json")
 	defer ts.Close()
 	tmp := t.TempDir()
 	got, err := getFiles(ts.Client(), getFilesConfig{federalRevenueGetURLs, ts.URL}, tmp, false)
@@ -38,7 +38,7 @@ func TestGetFiles(t *testing.T) {
 		t.Errorf("Expected getFiles to run withour errors, got: %v:", err)
 		return
 	}
-	expected := 38
+	expected := 37
 	if expected != len(got) {
 		t.Errorf("Expected getFiles to return %d files, got %d", expected, len(got))
 	}
@@ -53,7 +53,7 @@ func TestGetFiles(t *testing.T) {
 }
 
 func TestGetSizes(t *testing.T) {
-	f := "dados-publicos-cnpj.html"
+	f := "cadastro-nacional-de-pessoa-juridica-cnpj.json"
 	ts := httpTestServer(t, f)
 	defer ts.Close()
 	url := ts.URL + "/" + f
@@ -63,7 +63,7 @@ func TestGetSizes(t *testing.T) {
 		t.Errorf("Expected getSizes to run withour errors, got: %v:", err)
 		return
 	}
-	expected := int64(203867)
+	expected := int64(25398)
 	for _, g := range got {
 		if g.url == url && g.size != expected {
 			t.Errorf("Expected %s size to be %d, got: %d", f, expected, g.size)

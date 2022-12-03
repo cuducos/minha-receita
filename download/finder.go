@@ -95,6 +95,9 @@ func getSize(c *http.Client, url string) (int64, error) {
 }
 
 func getSizes(c *http.Client, fs []file, s bool) ([]file, error) {
+	if len(fs) == 0 {
+		return nil, nil
+	}
 	type result struct {
 		idx  int
 		size int64

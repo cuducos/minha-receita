@@ -66,6 +66,7 @@ func URLs(db database, dir string, skip, tsv, saveToDB bool) error {
 		{federalRevenueGetURLsNoUpdatedAt, federalRevenueURL},
 		{nationalTreasureGetURLs, nationalTreasureBaseURL},
 	}
+	var urls []file
 	for _, conf := range confs {
 		fs, err := getFiles(c, conf, dir, skip)
 		if err != nil {
@@ -77,9 +78,10 @@ func URLs(db database, dir string, skip, tsv, saveToDB bool) error {
 				return fmt.Errorf("error getting file sizes: %w", err)
 			}
 		}
-		if err := listURLs(db, fs, tsv, saveToDB); err != nil {
-			return err
-		}
+		urls = append(urls, fs...)
+	}
+	if err := listURLs(db, urls, tsv, saveToDB); err != nil {
+		return err
 	}
 	return nil
 }

@@ -7,10 +7,10 @@ import (
 )
 
 func TestDownloader(t *testing.T) {
-	ts := httpTestServer(t, "dados-publicos-cnpj.html")
+	ts := httpTestServer(t, "cadastro-nacional-de-pessoa-juridica-cnpj.json")
 	defer ts.Close()
 
-	f, s := loadFixture(t, "dados-publicos-cnpj.html")
+	f, s := loadFixture(t, "cadastro-nacional-de-pessoa-juridica-cnpj.json")
 	defer f.Close()
 
 	tmp := t.TempDir()
@@ -19,7 +19,7 @@ func TestDownloader(t *testing.T) {
 		newFile(ts.URL+"/file2.html", tmp),
 	}
 	for i := range fs {
-		fs[i].size = 203867
+		fs[i].size = 25398
 	}
 	r, err := newRecover(tmp, DefaultChunkSize, false)
 	if err != nil {
