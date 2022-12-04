@@ -21,7 +21,6 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: "1.19"
-      - run: "apt update && apt install -y postgresql-client"
       - run: "go test --race ./..."
         env:
           TEST_DATABASE_URL: postgres://minhareceita:minhareceita@postgres:5432/minhareceita?sslmode=disable
