@@ -1,6 +1,6 @@
 module github.com/cuducos/minha-receita
 
-go 1.18
+go 1.19
 
 require (
 	github.com/avast/retry-go/v4 v4.3.0
@@ -33,4 +33,4 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 )
 
-// +heroku goVersion go1.18
+// +heroku goVersion go1.19
