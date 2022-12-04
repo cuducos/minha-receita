@@ -65,13 +65,21 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.MetaSave("answer", "42"); err != nil {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}
-	if got := pg.MetaRead("answer"); got != "42" {
-		t.Errorf("expected 42 as the answer, got %s", got)
+	metadata, err := pg.MetaRead("answer")
+	if err != nil {
+		t.Errorf("expected no error getting metadata, got %s", err)
+	}
+	if metadata != "42" {
+		t.Errorf("expected 42 as the answer, got %s", metadata)
 	}
 	if err := pg.MetaSave("answer", "fourty-two"); err != nil {
 		t.Errorf("expected no error re-writing to the metadata table, got %s", err)
 	}
-	if got := pg.MetaRead("answer"); got != "fourty-two" {
-		t.Errorf("expected foruty-two as the answer, got %s", got)
+	metadata2, err := pg.MetaRead("answer")
+	if err != nil {
+		t.Errorf("expected no error getting metadata for the second time, got %s", err)
+	}
+	if metadata2 != "fourty-two" {
+		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
 }

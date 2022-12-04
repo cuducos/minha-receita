@@ -1,3 +1,3 @@
 SELECT {{ .ValueFieldName }}
 FROM {{ .MetaTableFullName }}
-WHERE key = ?;
+WHERE key = $1;

@@ -28,7 +28,7 @@ func (mockDatabase) GetCompany(n string) (string, error) {
 	return string(b), nil
 }
 
-func (mockDatabase) MetaRead(k string) string { return "42" }
+func (mockDatabase) MetaRead(k string) (string, error) { return "42", nil }
 
 func TestCompanyHandler(t *testing.T) {
 	f, err := filepath.Abs(filepath.Join("..", "testdata", "response.json"))

@@ -1,5 +1,5 @@
 INSERT INTO {{ .MetaTableName }} ({{ .KeyFieldName }}, {{ .ValueFieldName }})
-VALUES (?, ?)
+VALUES ($1, $2)
 ON CONFLICT ({{ .KeyFieldName }})
 DO UPDATE
-SET {{ .ValueFieldName }} = ?
+SET {{ .ValueFieldName }} = $2
