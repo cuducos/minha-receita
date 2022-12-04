@@ -3,16 +3,17 @@ module github.com/cuducos/minha-receita
 go 1.19
 
 require (
-	github.com/avast/retry-go/v4 v4.3.0
+	github.com/cuducos/chunk v0.0.0-20221203222223-da68b1ea2d2d
 	github.com/cuducos/go-cnpj v0.0.1
 	github.com/jackc/pgx/v5 v5.1.1
 	github.com/newrelic/go-agent/v3 v3.19.2
 	github.com/schollz/progressbar/v3 v3.11.0
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	golang.org/x/text v0.3.8
 )
 
 require (
+	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
