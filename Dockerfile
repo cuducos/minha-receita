@@ -1,4 +1,4 @@
-FROM golang:1.18-bullseye AS build
+FROM golang:1.19-bullseye AS build
 WORKDIR /minha-receita
 COPY go.mod .
 COPY go.sum .
