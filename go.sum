@@ -14,8 +14,8 @@ github.com/cncf/xds/go v0.0.0-20210312221358-fbca930ec8ed/go.mod h1:eXthEFrGJvWH
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/cuducos/chunk v0.0.0-20221203222223-da68b1ea2d2d h1:KaY25vwqGB32xyaeijc9XAjaRTVwqopJzFa/WSG7/ak=
 github.com/cuducos/chunk v0.0.0-20221203222223-da68b1ea2d2d/go.mod h1:KQ8TL8O6ammHyniLCSMqcn7yv855iPMowvQWlG3ha8g=
-github.com/cuducos/go-cnpj v0.0.1 h1:qx3CbujuZaugm/1HE0sN65BoqAO8bzRZtP7qEvvwMT8=
-github.com/cuducos/go-cnpj v0.0.1/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGtEey/f4Y=
+github.com/cuducos/go-cnpj v0.1.1 h1:ahG8SmCa7cBMv2vuR+5GU5Se0RW2RwRwIbfFHXH1/P4=
+github.com/cuducos/go-cnpj v0.1.1/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGtEey/f4Y=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

@@ -3,6 +3,8 @@ package db
 import (
 	"os"
 	"testing"
+
+	"github.com/cuducos/go-cnpj"
 )
 
 func TestPostgresDB(t *testing.T) {
@@ -50,10 +52,10 @@ func TestPostgresDB(t *testing.T) {
 	if got != json {
 		t.Errorf("expected json to be %s, got %s", json, got)
 	}
-	if err := pg.UpdateCompanies([][]string{{idAsStr[:8], newJSON}}); err != nil {
+	if err := pg.UpdateCompanies([][]string{{cnpj.Base(idAsStr), newJSON}}); err != nil {
 		t.Errorf("expected no error updating a company, got %s", err)
 	}
-	if err := pg.AddPartners([][]string{{idAsStr[:8], partner1}, {idAsStr[:8], partner2}}); err != nil {
+	if err := pg.AddPartners([][]string{{cnpj.Base(idAsStr), partner1}, {cnpj.Base(idAsStr), partner2}}); err != nil {
 		t.Errorf("expected no error adding partners, got %s", err)
 	}
 	got, err = pg.GetCompany("33683111000280")
