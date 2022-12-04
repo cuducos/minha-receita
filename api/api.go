@@ -22,7 +22,7 @@ var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 
 type database interface {
 	GetCompany(string) (string, error)
-	MetaRead(string) string
+	MetaRead(string) (string, error)
 }
 
 // errorMessage is a helper to serialize an error message to JSON.
@@ -94,7 +94,11 @@ func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
-	s := app.db.MetaRead("updated-at")
+	s, err := app.db.MetaRead("updated-at")
+	if err != nil {
+		messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.")
+		return
+	}
 	if s == "" {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
