@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"encoding/csv"
-	"errors"
 	"fmt"
 	"log"
 	"math"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"text/template"
@@ -96,39 +93,18 @@ func (p *PostgreSQL) DropTable() error {
 	return nil
 }
 
-// AssertPostgresCLIExists searches for the PostgreSQL executable (psql) in the
-// environment's PATH. It will return an error if no executable is found.
-func AssertPostgresCLIExists() error {
-	_, err := exec.LookPath("psql")
-	if err != nil {
-		return errors.New("postgres client (psql) not installed or not in PATH")
-	}
-	return nil
-}
-
 // CreateCompanies performs a copy to create a batch of companies in the
 // database. It expects an array and each item should be another array with only
 // two items: the ID and the JSON field values.
-func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
-	var data bytes.Buffer
-	w := csv.NewWriter(&data)
-	w.Write([]string{idFieldName, jsonFieldName})
-	for _, r := range batch {
-		w.Write([]string{r[0], r[1]})
-	}
-	w.Flush()
-
-	var out bytes.Buffer
-	cmd := exec.Command(
-		"psql",
-		p.uri,
-		"-c",
-		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, p.CompanyTableName),
+func (p *PostgreSQL) CreateCompanies(batch [][]any) error {
+	_, err := p.pool.CopyFrom(
+		context.Background(),
+		pgx.Identifier{p.CompanyTableName},
+		[]string{idFieldName, jsonFieldName},
+		pgx.CopyFromRows(batch),
 	)
-	cmd.Stdin = &data
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error while importing data to postgres %s: %w", out.String(), err)
+	if err != nil {
+		return fmt.Errorf("error while importing data to postgres: %w", err)
 	}
 	return nil
 }

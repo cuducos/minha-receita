@@ -6,7 +6,8 @@ import (
 )
 
 func TestPostgresDB(t *testing.T) {
-	id := "33683111000280"
+	id := 33683111000280
+	idAsStr := "33683111000280"
 	json := `{"qsa": null, "answer": 42}`
 	newJSON := `{"again": "fourty-two"}`
 	partner1 := `[{"name": 42}]`
@@ -33,10 +34,10 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.CreateTable(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	if err := pg.CreateIndex(); err != nil {
@@ -49,10 +50,10 @@ func TestPostgresDB(t *testing.T) {
 	if got != json {
 		t.Errorf("expected json to be %s, got %s", json, got)
 	}
-	if err := pg.UpdateCompanies([][]string{{id[:8], newJSON}}); err != nil {
+	if err := pg.UpdateCompanies([][]string{{idAsStr[:8], newJSON}}); err != nil {
 		t.Errorf("expected no error updating a company, got %s", err)
 	}
-	if err := pg.AddPartners([][]string{{id[:8], partner1}, {id[:8], partner2}}); err != nil {
+	if err := pg.AddPartners([][]string{{idAsStr[:8], partner1}, {idAsStr[:8], partner2}}); err != nil {
 		t.Errorf("expected no error adding partners, got %s", err)
 	}
 	got, err = pg.GetCompany("33683111000280")

@@ -13,7 +13,7 @@ const MaxParallelDBQueries = 8
 const BatchSize = 8192
 
 type database interface {
-	CreateCompanies([][]string) error
+	CreateCompanies([][]any) error
 	CreateIndex() error
 	UpdateCompanies([][]string) error
 	AddPartners([][]string) error
