@@ -9,6 +9,7 @@ import (
 	"math"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/jackc/pgx/v5"
@@ -57,7 +58,7 @@ func (p *PostgreSQL) loadTemplates() error {
 		if err = t.Execute(&b, p); err != nil {
 			return fmt.Errorf("error rendering %s template: %w", f, err)
 		}
-		p.sql[f.Name()] = b.String()
+		p.sql[strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))] = b.String()
 	}
 	return nil
 }
@@ -78,8 +79,8 @@ func (p *PostgreSQL) MetaTableFullName() string {
 // CreateTable creates the required database table.
 func (p *PostgreSQL) CreateTable() error {
 	log.Output(1, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
-	if _, err := p.pool.Exec(context.Background(), p.sql["create.sql"]); err != nil {
-		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create.sql"], err)
+	if _, err := p.pool.Exec(context.Background(), p.sql["create"]); err != nil {
+		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create"], err)
 	}
 	return nil
 }
@@ -87,8 +88,8 @@ func (p *PostgreSQL) CreateTable() error {
 // DropTable drops the database table created by `CreateTable`.
 func (p *PostgreSQL) DropTable() error {
 	log.Output(1, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
-	if _, err := p.pool.Exec(context.Background(), p.sql["drop.sql"]); err != nil {
-		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop.sql"], err)
+	if _, err := p.pool.Exec(context.Background(), p.sql["drop"]); err != nil {
+		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop"], err)
 	}
 	return nil
 }
@@ -113,8 +114,8 @@ func (p *PostgreSQL) CreateCompanies(batch [][]any) error {
 // create a primary key on the ID field.
 func (p *PostgreSQL) CreateIndex() error {
 	log.Output(1, "Creating indexes…")
-	if _, err := p.pool.Exec(context.Background(), p.sql["create_index.sql"]); err != nil {
-		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index.sql"], err)
+	if _, err := p.pool.Exec(context.Background(), p.sql["create_index"]); err != nil {
+		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index"], err)
 	}
 	return nil
 }
@@ -140,7 +141,7 @@ func (p *PostgreSQL) UpdateCompanies(data [][]string) error {
 		if err != nil {
 			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
 		}
-		b.Queue(p.sql["update.sql"], min, max, v[1])
+		b.Queue(p.sql["update"], min, max, v[1])
 	}
 	if err := p.pool.SendBatch(context.Background(), &b).Close(); err != nil {
 		return fmt.Errorf("error updating companies: %w", err)
@@ -158,7 +159,7 @@ func (p *PostgreSQL) AddPartners(data [][]string) error {
 		if err != nil {
 			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
 		}
-		b.Queue(p.sql["add_partner.sql"], min, max, v[1])
+		b.Queue(p.sql["add_partner"], min, max, v[1])
 	}
 	if err := p.pool.SendBatch(context.Background(), &b).Close(); err != nil {
 		return fmt.Errorf("error adding partners: %w", err)
@@ -172,7 +173,7 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
 	}
-	rows, err := p.pool.Query(context.Background(), p.sql["get.sql"], n)
+	rows, err := p.pool.Query(context.Background(), p.sql["get"], n)
 	if err != nil {
 		return "", fmt.Errorf("error looking for cnpj %d: %w", n, err)
 	}
@@ -183,12 +184,30 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return j, nil
 }
 
+// PreLoad runs before starting to load data into the database. Currently it
+// disables autovacuum on PostgreSQL.
+func (p *PostgreSQL) PreLoad() error {
+	if _, err := p.pool.Exec(context.Background(), p.sql["pre_load"]); err != nil {
+		return fmt.Errorf("error disabling autovacuum with: %s\n%w", p.sql["autovacuum"], err)
+	}
+	return nil
+}
+
+// PostLoad runs after loading data into the database. Currenlty it re-enables
+// autovacuum on PostgreSQL.
+func (p *PostgreSQL) PostLoad() error {
+	if _, err := p.pool.Exec(context.Background(), p.sql["post_load"]); err != nil {
+		return fmt.Errorf("error re-renabling autovacuum with: %s\n%w", p.sql["autovacuum"], err)
+	}
+	return nil
+}
+
 // MetaSave saves a key/value pair in the metadata table.
 func (p *PostgreSQL) MetaSave(k, v string) error {
 	if len(k) > 16 {
 		return fmt.Errorf("metatable can only take keys that are at maximum 16 chars long")
 	}
-	if _, err := p.pool.Exec(context.Background(), p.sql["meta_save.sql"], k, v); err != nil {
+	if _, err := p.pool.Exec(context.Background(), p.sql["meta_save"], k, v); err != nil {
 		return fmt.Errorf("error saving %s to metadata: %w", k, err)
 	}
 	return nil
@@ -196,7 +215,7 @@ func (p *PostgreSQL) MetaSave(k, v string) error {
 
 // MetaRead reads a key/value pair from the metadata table.
 func (p *PostgreSQL) MetaRead(k string) (string, error) {
-	rows, err := p.pool.Query(context.Background(), p.sql["meta_read.sql"], k)
+	rows, err := p.pool.Query(context.Background(), p.sql["meta_read"], k)
 	if err != nil {
 		return "", fmt.Errorf("error looking for metadata key %s: %w", k, err)
 	}
