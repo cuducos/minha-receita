@@ -2,6 +2,11 @@ package transform
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+
+	"github.com/cuducos/minha-receita/download"
 )
 
 // MaxParallelDBQueries is the default for maximum number of parallels save
@@ -22,6 +27,17 @@ type database interface {
 	PostLoad() error
 }
 
+func saveUpdatedAt(db database, dir string) error {
+	log.Output(1, "Saving the updated at date to the database…")
+	p := filepath.Join(dir, download.FederalRevenueUpdatedAt)
+	v, err := os.ReadFile(p)
+	if err != nil {
+		return fmt.Errorf("error reading %s: %w", p, err)
+
+	}
+	return db.MetaSave("updated-at", string(v))
+}
+
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
 func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy bool) error {
@@ -31,7 +47,19 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 	if err := saveUpdatedAt(db, dir); err != nil {
 		return fmt.Errorf("error saving the update at date: %w", err)
 	}
-	j, err := createJSONRecordsTask(dir, db, batchSize, privacy)
+	l, err := newLookups(dir)
+	if err != nil {
+		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
+	}
+	kv, err := newBadgerStorage()
+	if err != nil {
+		return fmt.Errorf("could not create badger storage: %w", err)
+	}
+	defer kv.close()
+	if err := loadKeyValues(kv, &l, dir); err != nil {
+		return fmt.Errorf("error loading data to badger: %w", err)
+	}
+	j, err := createJSONRecordsTask(dir, db, &l, kv, batchSize, privacy)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}
@@ -41,14 +69,6 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 	}()
 	if err != nil {
 		return err
-	}
-	u, err := newUpdateTask(dir, db, batchSize, j.lookups)
-	if err != nil {
-		return fmt.Errorf("error creating update task: %w", err)
-	}
-	defer u.bar.Close()
-	if err := u.run(); err != nil {
-		return fmt.Errorf("error running update task: %w", err)
 	}
 	if err := db.PostLoad(); err != nil {
 		return fmt.Errorf("error running post-load: %w", err)

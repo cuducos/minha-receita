@@ -1,9 +1,6 @@
 package transform
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "fmt"
 
 type baseData struct {
 	CodigoPorte               *int     `json:"codigo_porte"`
@@ -73,14 +70,10 @@ func (d *baseData) base(r []string, l *lookups) error {
 	return nil
 }
 
-func addBase(l *lookups, r []string) ([]string, error) {
+func newBaseData(l *lookups, r []string) (baseData, error) {
 	var d baseData
 	if err := d.base(r, l); err != nil {
-		return []string{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
+		return baseData{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
 	}
-	b, err := json.Marshal(&d)
-	if err != nil {
-		return []string{}, fmt.Errorf("error converting base cnpj data to json for %s: %w", r[0], err)
-	}
-	return []string{r[0], string(b)}, nil
+	return d, nil
 }

@@ -124,3 +124,34 @@ func newSource(t sourceType, d string) (*source, error) {
 	}
 	return &s, nil
 }
+
+func newSources(dir string, kinds []sourceType) ([]*source, error) {
+	srcs := []*source{}
+	done := make(chan *source)
+	errs := make(chan error)
+	defer func() {
+		close(done)
+		close(errs)
+	}()
+	for _, s := range kinds {
+		go func(s sourceType) {
+			src, err := newSource(s, dir)
+			if err != nil {
+				errs <- fmt.Errorf("could not load source %s: %w", string(s), err)
+				return
+			}
+			done <- src
+		}(s)
+	}
+	for {
+		select {
+		case err := <-errs:
+			return nil, fmt.Errorf("error loading sources: %w", err)
+		case src := <-done:
+			srcs = append(srcs, src)
+			if len(srcs) == len(kinds) {
+				return srcs, nil
+			}
+		}
+	}
+}

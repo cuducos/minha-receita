@@ -1,9 +1,6 @@
 package transform
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "fmt"
 
 type partner struct {
 	IdentificadorDeSocio                 *int    `json:"identificador_de_socio"`
@@ -96,18 +93,4 @@ func newPartner(l *lookups, r []string) (partner, error) {
 	p.faixaEtaria(r[10])
 	p.qualificacaoSocio(l, r[4], r[9])
 	return p, nil
-}
-
-func addPartners(l *lookups, r []string) ([]string, error) {
-	p, err := newPartner(l, r)
-	if err != nil {
-		return []string{}, fmt.Errorf("error creating partner for %v: %w", r, err)
-	}
-	a := make([]partner, 1) // db.AddPartner expects an array
-	a[0] = p
-	b, err := json.Marshal(a)
-	if err != nil {
-		return []string{}, fmt.Errorf("error while mashaling partner: %w", err)
-	}
-	return []string{r[0], string(b)}, nil
 }

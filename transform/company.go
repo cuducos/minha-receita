@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cuducos/go-cnpj"
 )
 
 var companyNameClenupRegex = regexp.MustCompile(`(\D)(\d{3})(\d{5})(\d{3})$`) // masks CPF in MEI names
@@ -112,7 +114,7 @@ func (c *company) identificadorMatrizFilial(v string) error {
 	return nil
 }
 
-func newCompany(row []string, l *lookups, privacy bool) (company, error) {
+func newCompany(row []string, l *lookups, kv *badgerStorage, privacy bool) (company, error) {
 	var c company
 	c.CNPJ = row[0] + row[1] + row[2]
 	c.NomeFantasia = row[4]
@@ -186,6 +188,9 @@ func newCompany(row []string, l *lookups, privacy bool) (company, error) {
 	}
 	c.DataSituacaoEspecial = dataSituacaoEspecial
 
+	if err := enrichCompany(kv, &c); err != nil {
+		return c, fmt.Errorf("error enriching company %s: %w", cnpj.Mask(c.CNPJ), err)
+	}
 	return c, nil
 }
 

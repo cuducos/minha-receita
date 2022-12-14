@@ -6,7 +6,19 @@ import (
 
 func TestTaskRun(t *testing.T) {
 	db := newTestDB(t)
-	r, err := createJSONRecordsTask(testdata, db, 2, false)
+	kv, err := newBadgerStorage()
+	if err != nil {
+		t.Errorf("expected no error creating badger, got %s", err)
+	}
+	defer kv.close()
+	lookups, err := newLookups(testdata)
+	if err != nil {
+		t.Errorf("expected no errors creating look up tables, got %v", err)
+	}
+	if err := loadKeyValues(kv, &lookups, testdata); err != nil {
+		t.Errorf("expected no error loading values to badger, got %s", err)
+	}
+	r, err := createJSONRecordsTask(testdata, db, &lookups, kv, 2, false)
 	if err != nil {
 		t.Errorf("expected no error creating task, got %s", err)
 	}
