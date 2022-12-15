@@ -22,7 +22,7 @@ func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
 	switch s {
 	case partners:
 		i.key = []byte(keyForPartners(r[0]))
-		h = loadPartnersRow
+		h = loadPartnerRow
 	case base:
 		i.key = []byte(keyForBase(r[0]))
 		h = loadBaseRow
@@ -110,7 +110,7 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 
 func (kv *badgerStorage) enrichCompany(c *company) error {
 	n := cnpj.Base(c.CNPJ)
-	ps := make(chan []partner)
+	ps := make(chan []partnerData)
 	bs := make(chan baseData)
 	ts := make(chan taxesData)
 	errs := make(chan error)

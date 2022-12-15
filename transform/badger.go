@@ -16,8 +16,8 @@ func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }
 
 // fucntions to read data from Badger
 
-func partnersOf(db *badger.DB, n string) ([]partner, error) {
-	p := []partner{}
+func partnersOf(db *badger.DB, n string) ([]partnerData, error) {
+	p := []partnerData{}
 	err := db.View(func(txn *badger.Txn) error {
 		i, err := txn.Get([]byte(keyForPartners(n)))
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -112,13 +112,13 @@ func mergePartners(db *badger.DB, k, b []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting current partners: %w", err)
 	}
-	qsa := []partner{}
+	qsa := []partnerData{}
 	if curr != nil {
 		if err := json.Unmarshal(curr, &qsa); err != nil {
 			return nil, fmt.Errorf("could not parse partners: %w", err)
 		}
 	}
-	var p partner
+	var p partnerData
 	if err := json.Unmarshal(b, &p); err != nil {
 		return nil, fmt.Errorf("could not parse partner: %w", err)
 	}

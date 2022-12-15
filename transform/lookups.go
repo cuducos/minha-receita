@@ -155,7 +155,7 @@ func (c *company) cnaes(l *lookups, p, s string) error {
 	return nil
 }
 
-func (p *partner) qualificacaoSocio(l *lookups, q, r string) error {
+func (p *partnerData) qualificacaoSocio(l *lookups, q, r string) error {
 	i, err := toInt(q)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoQualificacaoSocio %s: %w", q, err)
