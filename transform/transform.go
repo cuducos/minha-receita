@@ -42,7 +42,7 @@ func saveUpdatedAt(db database, dir string) error {
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
-func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy bool) error {
+func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy, mem bool) error {
 	if err := saveUpdatedAt(db, dir); err != nil {
 		return fmt.Errorf("error saving the update at date: %w", err)
 	}
@@ -50,7 +50,7 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
 	}
-	kv, err := newBadgerStorage()
+	kv, err := newBadgerStorage(mem)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}

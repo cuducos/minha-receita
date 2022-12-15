@@ -106,7 +106,7 @@ func TestNewCompany(t *testing.T) {
 	}
 
 	t.Run("with privacy", func(t *testing.T) {
-		kv, err := newBadgerStorage()
+		kv, err := newBadgerStorage(false)
 		if err != nil {
 			t.Errorf("expected no error creating badger, got %s", err)
 		}
@@ -257,7 +257,7 @@ func TestNewCompany(t *testing.T) {
 		}
 	})
 	t.Run("without privacy", func(t *testing.T) {
-		kv, err := newBadgerStorage()
+		kv, err := newBadgerStorage(true)
 		if err != nil {
 			t.Errorf("expected no error creating badger, got %s", err)
 		}

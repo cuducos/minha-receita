@@ -177,19 +177,24 @@ func (*badgerLogger) Warningf(string, ...interface{}) {}
 func (*badgerLogger) Infof(string, ...interface{})    {}
 func (*badgerLogger) Debugf(string, ...interface{})   {}
 
-func newBadgerStorage() (*badgerStorage, error) {
-	d, err := os.MkdirTemp("", badgerFilePrefix)
-	if err != nil {
-		return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
+func newBadgerStorage(m bool) (*badgerStorage, error) {
+	var dir string
+	var opt badger.Options
+	if !m {
+		d, err := os.MkdirTemp("", badgerFilePrefix)
+		if err != nil {
+			return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
+		}
+		if os.Getenv("DEBUG") != "" {
+			log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", d))
+		}
+		opt = badger.DefaultOptions(d)
+	} else {
+		opt = badger.DefaultOptions("").WithInMemory(m)
 	}
-	if os.Getenv("DEBUG") != "" {
-		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", d))
-	}
-	o := badger.DefaultOptions(d)
-	o.Logger = &badgerLogger{}
-	db, err := badger.Open(o)
+	db, err := badger.Open(opt.WithLogger(&badgerLogger{}))
 	if err != nil {
 		return nil, fmt.Errorf("error creating badger key-value object: %w", err)
 	}
-	return &badgerStorage{db: db, path: d}, nil
+	return &badgerStorage{db: db, path: dir}, nil
 }

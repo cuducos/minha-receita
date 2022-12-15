@@ -6,7 +6,7 @@ import (
 
 func TestTaskRun(t *testing.T) {
 	db := newTestDB(t)
-	kv, err := newBadgerStorage()
+	kv, err := newBadgerStorage(false)
 	if err != nil {
 		t.Errorf("expected no error creating badger, got %s", err)
 	}
