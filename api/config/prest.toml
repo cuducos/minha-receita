@@ -7,4 +7,4 @@ permissions = ["read"]
 
 [[access.tables]]
 name = "meta"
-permissions = ["write"]
+permissions = ["read"]
