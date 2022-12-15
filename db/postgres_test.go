@@ -3,10 +3,13 @@ package db
 import (
 	"os"
 	"testing"
+
+	"github.com/cuducos/go-cnpj"
 )
 
 func TestPostgresDB(t *testing.T) {
-	id := "33683111000280"
+	id := 33683111000280
+	idAsStr := "33683111000280"
 	json := `{"qsa": null, "answer": 42}`
 	newJSON := `{"again": "fourty-two"}`
 	partner1 := `[{"name": 42}]`
@@ -33,10 +36,10 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.CreateTable(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	if err := pg.CreateIndex(); err != nil {
@@ -49,10 +52,10 @@ func TestPostgresDB(t *testing.T) {
 	if got != json {
 		t.Errorf("expected json to be %s, got %s", json, got)
 	}
-	if err := pg.UpdateCompanies([][]string{{id[:8], newJSON}}); err != nil {
+	if err := pg.UpdateCompanies([][]string{{cnpj.Base(idAsStr), newJSON}}); err != nil {
 		t.Errorf("expected no error updating a company, got %s", err)
 	}
-	if err := pg.AddPartners([][]string{{id[:8], partner1}, {id[:8], partner2}}); err != nil {
+	if err := pg.AddPartners([][]string{{cnpj.Base(idAsStr), partner1}, {cnpj.Base(idAsStr), partner2}}); err != nil {
 		t.Errorf("expected no error adding partners, got %s", err)
 	}
 	got, err = pg.GetCompany("33683111000280")
@@ -65,13 +68,21 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.MetaSave("answer", "42"); err != nil {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}
-	if got := pg.MetaRead("answer"); got != "42" {
-		t.Errorf("expected 42 as the answer, got %s", got)
+	metadata, err := pg.MetaRead("answer")
+	if err != nil {
+		t.Errorf("expected no error getting metadata, got %s", err)
+	}
+	if metadata != "42" {
+		t.Errorf("expected 42 as the answer, got %s", metadata)
 	}
 	if err := pg.MetaSave("answer", "fourty-two"); err != nil {
 		t.Errorf("expected no error re-writing to the metadata table, got %s", err)
 	}
-	if got := pg.MetaRead("answer"); got != "fourty-two" {
-		t.Errorf("expected foruty-two as the answer, got %s", got)
+	metadata2, err := pg.MetaRead("answer")
+	if err != nil {
+		t.Errorf("expected no error getting metadata for the second time, got %s", err)
+	}
+	if metadata2 != "fourty-two" {
+		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
 }

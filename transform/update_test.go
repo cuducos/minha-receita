@@ -2,6 +2,7 @@ package transform
 
 import (
 	"encoding/json"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -200,7 +201,11 @@ func setupUpdateTaskTest(t *testing.T) company {
 	if err != nil {
 		t.Errorf("expected no error converting company struct to json, got %s", err)
 	}
-	if err := db.CreateCompanies([][]string{{c.CNPJ, j}}); err != nil {
+	n, err := strconv.Atoi(c.CNPJ)
+	if err != nil {
+		t.Errorf("expected no error converting cnpj to int, got %s", err)
+	}
+	if err := db.CreateCompanies([][]any{{n, j}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	l, err := newLookups(testdata)
@@ -219,7 +224,7 @@ func setupUpdateTaskTest(t *testing.T) company {
 		t.Errorf("expected no errors loading company, got %s", err)
 	}
 	if err = json.Unmarshal([]byte(j), &c); err != nil {
-		t.Errorf("expected no errors transforming company to stuct, got %s", err)
+		t.Errorf("expected no errors transforming company to struct, got %s", err)
 	}
 	return c
 }

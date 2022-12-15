@@ -13,16 +13,21 @@ const MaxParallelDBQueries = 8
 const BatchSize = 8192
 
 type database interface {
-	CreateCompanies([][]string) error
+	CreateCompanies([][]any) error
 	CreateIndex() error
 	UpdateCompanies([][]string) error
 	AddPartners([][]string) error
 	MetaSave(string, string) error
+	PreLoad() error
+	PostLoad() error
 }
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
 func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy bool) error {
+	if err := db.PreLoad(); err != nil {
+		return fmt.Errorf("error running pre-load: %w", err)
+	}
 	if err := saveUpdatedAt(db, dir); err != nil {
 		return fmt.Errorf("error saving the update at date: %w", err)
 	}
@@ -42,5 +47,11 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 		return fmt.Errorf("error creating update task: %w", err)
 	}
 	defer u.bar.Close()
-	return u.run()
+	if err := u.run(); err != nil {
+		return fmt.Errorf("error running update task: %w", err)
+	}
+	if err := db.PostLoad(); err != nil {
+		return fmt.Errorf("error running post-load: %w", err)
+	}
+	return nil
 }

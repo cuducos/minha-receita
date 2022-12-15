@@ -3,9 +3,9 @@ SET {{ .JSONFieldName }} = jsonb_set(
     {{ .CompanyTableFullName }}.{{ .JSONFieldName }},
     array['{{ .PartnersJSONFieldName }}'],
     CASE
-        WHEN {{ .CompanyTableFullName }}.{{ .JSONFieldName }}->'{{ .PartnersJSONFieldName }}'::text = 'null'  THEN ?
-        ELSE {{ .CompanyTableFullName }}.{{ .JSONFieldName }}->'{{ .PartnersJSONFieldName }}' || ?
+        WHEN {{ .CompanyTableFullName }}.{{ .JSONFieldName }}->'{{ .PartnersJSONFieldName }}'::text = 'null'  THEN $3
+        ELSE {{ .CompanyTableFullName }}.{{ .JSONFieldName }}->'{{ .PartnersJSONFieldName }}' || $3
     END,
     false
 )
-WHERE {{ .IDFieldName }} >= ? AND {{ .IDFieldName }} <= ?;
+WHERE {{ .IDFieldName }} >= $1 AND {{ .IDFieldName }} <= $2;

@@ -1,3 +1,3 @@
 SELECT {{ .JSONFieldName }}
 FROM {{ .CompanyTableFullName }}
-WHERE id = ?;
+WHERE id = $1;

@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -14,13 +15,17 @@ func saveBatch(db database, b []company) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
-	s := make([][]string, len(b))
+	s := make([][]any, len(b))
 	for i, c := range b {
 		j, err := c.JSON()
 		if err != nil {
 			return 0, fmt.Errorf("error getting company %s as json: %w", cnpj.Mask(c.CNPJ), err)
 		}
-		s[i] = []string{c.CNPJ, j}
+		n, err := strconv.Atoi(c.CNPJ)
+		if err != nil {
+			return 0, fmt.Errorf("copuld not convert cnpj %s to int: %w", c.CNPJ, err)
+		}
+		s[i] = []any{n, j}
 	}
 	if err := db.CreateCompanies(s); err != nil {
 		return 0, fmt.Errorf("error saving companies: %w", err)

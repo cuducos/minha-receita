@@ -35,8 +35,7 @@ $ docker pull ghcr.io/cuducos/minha-receita:main
 
 #### A partir do código fonte
 
-* [Go](https://golang.org/) versão 1.18
-* Cliente [PostgreSQL](https://www.postgresql.org/) (comando `psql` disponível no seu terminal — em sistemas Debian, `apt install postgresql-client` resolve)
+* [Go](https://golang.org/) versão 1.19
 
 Depois de clonar o repositório, baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
 

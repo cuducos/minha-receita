@@ -28,7 +28,7 @@ func (mockDatabase) GetCompany(n string) (string, error) {
 	return string(b), nil
 }
 
-func (mockDatabase) MetaRead(k string) string { return "42" }
+func (mockDatabase) MetaRead(k string) (string, error) { return "42", nil }
 
 func TestCompanyHandler(t *testing.T) {
 	f, err := filepath.Abs(filepath.Join("..", "testdata", "response.json"))
@@ -174,35 +174,6 @@ func TestHealthHandler(t *testing.T) {
 
 		if resp.Code != c.status {
 			t.Errorf("Expected %s /healthz to return %v, but got %v", c.method, c.status, resp.Code)
-		}
-		if strings.TrimSpace(resp.Body.String()) != c.content {
-			t.Errorf("\nExpected HTTP contents to be %s, got %s", c.content, resp.Body.String())
-		}
-	}
-}
-
-func TestURLListHandler(t *testing.T) {
-	app := api{db: &mockDatabase{}}
-	for _, c := range []struct {
-		method  string
-		status  int
-		content string
-	}{
-		{http.MethodGet, http.StatusOK, "42"},
-		{http.MethodPost, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
-		{http.MethodHead, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
-		{http.MethodOptions, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
-	} {
-		req, err := http.NewRequest(c.method, "/urls", nil)
-		if err != nil {
-			t.Fatal("Expected an HTTP request, but got an error.")
-		}
-		resp := httptest.NewRecorder()
-		handler := http.HandlerFunc(app.urlsHandler)
-		handler.ServeHTTP(resp, req)
-
-		if resp.Code != c.status {
-			t.Errorf("Expected %s /urls to return %v, but got %v", c.method, c.status, resp.Code)
 		}
 		if strings.TrimSpace(resp.Body.String()) != c.content {
 			t.Errorf("\nExpected HTTP contents to be %s, got %s", c.content, resp.Body.String())

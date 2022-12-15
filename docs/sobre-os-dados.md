@@ -13,12 +13,3 @@ Caso queira, [abra uma _issue_ no GithHub](https://github.com/cuducos/minha-rece
 1. como localizou este problema
 
 Isso permite que a gente junte casos para alertar formalmente a Receita Federal do Brasil sobre a questão, para que eles tomem as medidas necessárias para corrigir os dados.
-
-## Espelho dos dados
-
-O _Minha Receita_ mantém um espelho dos dados em uma diretório compartilhado: [https://mirror.minhareceita.org](https://mirror.minhareceita.org).
-
-Nele está disponível:
-
-* Uma cópia dos públicos baixados da Receita Federal em , organizados por diretórios com a data de extração divulgada pela Receita Federal
-* Executáveis do _Minha Receita_

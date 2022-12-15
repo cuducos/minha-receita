@@ -45,6 +45,7 @@ var apiCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		defer pg.Close()
 		if port == "" {
 			port = os.Getenv("PORT")
 		}

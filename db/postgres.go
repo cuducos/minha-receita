@@ -4,19 +4,16 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"encoding/csv"
-	"errors"
 	"fmt"
 	"log"
 	"math"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
 
-	"github.com/cuducos/go-cnpj"
-	"github.com/go-pg/pg/v10"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -34,7 +31,7 @@ var sql embed.FS
 
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	conn                  *pg.DB
+	pool                  *pgxpool.Pool
 	uri                   string
 	schema                string
 	sql                   map[string]string
@@ -61,13 +58,13 @@ func (p *PostgreSQL) loadTemplates() error {
 		if err = t.Execute(&b, p); err != nil {
 			return fmt.Errorf("error rendering %s template: %w", f, err)
 		}
-		p.sql[f.Name()] = b.String()
+		p.sql[strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))] = b.String()
 	}
 	return nil
 }
 
 // Close closes the PostgreSQL connection
-func (p *PostgreSQL) Close() { p.conn.Close() }
+func (p *PostgreSQL) Close() { p.pool.Close() }
 
 // CompanyTableFullName is the name of the schame and table in dot-notation.
 func (p *PostgreSQL) CompanyTableFullName() string {
@@ -82,8 +79,8 @@ func (p *PostgreSQL) MetaTableFullName() string {
 // CreateTable creates the required database table.
 func (p *PostgreSQL) CreateTable() error {
 	log.Output(1, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
-	if _, err := p.conn.Exec(p.sql["create.sql"]); err != nil {
-		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create.sql"], err)
+	if _, err := p.pool.Exec(context.Background(), p.sql["create"]); err != nil {
+		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create"], err)
 	}
 	return nil
 }
@@ -91,18 +88,8 @@ func (p *PostgreSQL) CreateTable() error {
 // DropTable drops the database table created by `CreateTable`.
 func (p *PostgreSQL) DropTable() error {
 	log.Output(1, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
-	if _, err := p.conn.Exec(p.sql["drop.sql"]); err != nil {
-		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop.sql"], err)
-	}
-	return nil
-}
-
-// AssertPostgresCLIExists searches for the PostgreSQL executable (psql) in the
-// environment's PATH. It will return an error if no executable is found.
-func AssertPostgresCLIExists() error {
-	_, err := exec.LookPath("psql")
-	if err != nil {
-		return errors.New("postgres client (psql) not installed or not in PATH")
+	if _, err := p.pool.Exec(context.Background(), p.sql["drop"]); err != nil {
+		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop"], err)
 	}
 	return nil
 }
@@ -110,26 +97,15 @@ func AssertPostgresCLIExists() error {
 // CreateCompanies performs a copy to create a batch of companies in the
 // database. It expects an array and each item should be another array with only
 // two items: the ID and the JSON field values.
-func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
-	var data bytes.Buffer
-	w := csv.NewWriter(&data)
-	w.Write([]string{idFieldName, jsonFieldName})
-	for _, r := range batch {
-		w.Write([]string{r[0], r[1]})
-	}
-	w.Flush()
-
-	var out bytes.Buffer
-	cmd := exec.Command(
-		"psql",
-		p.uri,
-		"-c",
-		fmt.Sprintf(`\copy %s FROM STDIN DELIMITER ',' CSV HEADER;`, p.CompanyTableName),
+func (p *PostgreSQL) CreateCompanies(batch [][]any) error {
+	_, err := p.pool.CopyFrom(
+		context.Background(),
+		pgx.Identifier{p.CompanyTableName},
+		[]string{idFieldName, jsonFieldName},
+		pgx.CopyFromRows(batch),
 	)
-	cmd.Stdin = &data
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error while importing data to postgres %s: %w", out.String(), err)
+	if err != nil {
+		return fmt.Errorf("error while importing data to postgres: %w", err)
 	}
 	return nil
 }
@@ -138,8 +114,8 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 // create a primary key on the ID field.
 func (p *PostgreSQL) CreateIndex() error {
 	log.Output(1, "Creating indexes…")
-	if _, err := p.conn.Exec(p.sql["create_index.sql"]); err != nil {
-		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index.sql"], err)
+	if _, err := p.pool.Exec(context.Background(), p.sql["create_index"]); err != nil {
+		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index"], err)
 	}
 	return nil
 }
@@ -159,18 +135,15 @@ func rangeFor(base string) (int64, int64, error) {
 // with `json`. It expects an array of two-items array containing a base CNPJ
 // and the new JSON data.
 func (p *PostgreSQL) UpdateCompanies(data [][]string) error {
-	args := make([]interface{}, len(data)*3)
-	for i, v := range data {
+	b := pgx.Batch{}
+	for _, v := range data {
 		min, max, err := rangeFor(v[0])
 		if err != nil {
 			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
 		}
-		args[i*3] = v[1]
-		args[(i*3)+1] = min
-		args[(i*3)+2] = max
+		b.Queue(p.sql["update"], min, max, v[1])
 	}
-	query := strings.Repeat(p.sql["update.sql"], len(data))
-	if _, err := p.conn.Exec(query, args...); err != nil {
+	if err := p.pool.SendBatch(context.Background(), &b).Close(); err != nil {
 		return fmt.Errorf("error updating companies: %w", err)
 	}
 	return nil
@@ -180,19 +153,15 @@ func (p *PostgreSQL) UpdateCompanies(data [][]string) error {
 // the database. It expects an array of two-items array containing a base CNPJ
 // and the new JSON data.
 func (p *PostgreSQL) AddPartners(data [][]string) error {
-	args := make([]interface{}, len(data)*4)
-	for i, v := range data {
+	b := pgx.Batch{}
+	for _, v := range data {
 		min, max, err := rangeFor(v[0])
 		if err != nil {
 			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
 		}
-		args[(i * 4)] = v[1]
-		args[(i*4)+1] = v[1]
-		args[(i*4)+2] = min
-		args[(i*4)+3] = max
+		b.Queue(p.sql["add_partner"], min, max, v[1])
 	}
-	query := strings.Repeat(p.sql["add_partner.sql"], len(data))
-	if _, err := p.conn.Exec(query, args...); err != nil {
+	if err := p.pool.SendBatch(context.Background(), &b).Close(); err != nil {
 		return fmt.Errorf("error adding partners: %w", err)
 	}
 	return nil
@@ -204,11 +173,33 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
 	}
-	var row struct{ JSON string }
-	if _, err := p.conn.QueryOne(&row, p.sql["get.sql"], n); err != nil {
-		return "", fmt.Errorf("error getting CNPJ %s with: %s\n%w", cnpj.Mask(id), p.sql["get.sql"], err)
+	rows, err := p.pool.Query(context.Background(), p.sql["get"], n)
+	if err != nil {
+		return "", fmt.Errorf("error looking for cnpj %d: %w", n, err)
 	}
-	return row.JSON, nil
+	j, err := pgx.CollectOneRow(rows, pgx.RowTo[string])
+	if err != nil {
+		return "", fmt.Errorf("error reading cnpj %d: %w", n, err)
+	}
+	return j, nil
+}
+
+// PreLoad runs before starting to load data into the database. Currently it
+// disables autovacuum on PostgreSQL.
+func (p *PostgreSQL) PreLoad() error {
+	if _, err := p.pool.Exec(context.Background(), p.sql["pre_load"]); err != nil {
+		return fmt.Errorf("error disabling autovacuum with: %s\n%w", p.sql["autovacuum"], err)
+	}
+	return nil
+}
+
+// PostLoad runs after loading data into the database. Currenlty it re-enables
+// autovacuum on PostgreSQL.
+func (p *PostgreSQL) PostLoad() error {
+	if _, err := p.pool.Exec(context.Background(), p.sql["post_load"]); err != nil {
+		return fmt.Errorf("error re-renabling autovacuum with: %s\n%w", p.sql["autovacuum"], err)
+	}
+	return nil
 }
 
 // MetaSave saves a key/value pair in the metadata table.
@@ -216,29 +207,33 @@ func (p *PostgreSQL) MetaSave(k, v string) error {
 	if len(k) > 16 {
 		return fmt.Errorf("metatable can only take keys that are at maximum 16 chars long")
 	}
-	if _, err := p.conn.Exec(p.sql["meta_save.sql"], k, v, v); err != nil {
+	if _, err := p.pool.Exec(context.Background(), p.sql["meta_save"], k, v); err != nil {
 		return fmt.Errorf("error saving %s to metadata: %w", k, err)
 	}
 	return nil
 }
 
 // MetaRead reads a key/value pair from the metadata table.
-func (p *PostgreSQL) MetaRead(k string) string {
-	var row struct{ Value string }
-	if _, err := p.conn.QueryOne(&row, p.sql["meta_read.sql"], k); err != nil {
-		return ""
+func (p *PostgreSQL) MetaRead(k string) (string, error) {
+	rows, err := p.pool.Query(context.Background(), p.sql["meta_read"], k)
+	if err != nil {
+		return "", fmt.Errorf("error looking for metadata key %s: %w", k, err)
 	}
-	return row.Value
+	v, err := pgx.CollectOneRow(rows, pgx.RowTo[string])
+	if err != nil {
+		return "", fmt.Errorf("error reading for metadata key %s: %w", k, err)
+	}
+	return v, nil
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
 func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
-	opt, err := pg.ParseURL(uri)
+	conn, err := pgxpool.New(context.Background(), uri)
 	if err != nil {
-		return PostgreSQL{}, fmt.Errorf("unable to parse postgres uri %s: %w", uri, err)
+		return PostgreSQL{}, fmt.Errorf("could not connect to the database: %w", err)
 	}
 	p := PostgreSQL{
-		conn:                  pg.Connect(opt),
+		pool:                  conn,
 		uri:                   uri,
 		schema:                schema,
 		sql:                   make(map[string]string),
@@ -253,7 +248,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	if err = p.loadTemplates(); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not load the sql templates: %w", err)
 	}
-	if err := p.conn.Ping(context.Background()); err != nil {
+	if err := p.pool.Ping(context.Background()); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}
 	return p, nil

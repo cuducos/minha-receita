@@ -26,15 +26,10 @@ var transformCmd = &cobra.Command{
 		if err := assertDirExists(); err != nil {
 			return err
 		}
-		if err := db.AssertPostgresCLIExists(); err != nil {
-			return err
-		}
-
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
-
 		pg, err := db.NewPostgreSQL(u, postgresSchema)
 		if err != nil {
 			return err
