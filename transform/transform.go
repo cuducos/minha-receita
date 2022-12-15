@@ -27,6 +27,12 @@ type database interface {
 	PostLoad() error
 }
 
+type kvStorage interface {
+	load(string, *lookups) error
+	enrichCompany(*company) error
+	close() error
+}
+
 func saveUpdatedAt(db database, dir string) error {
 	log.Output(1, "Saving the updated at date to the database…")
 	p := filepath.Join(dir, download.FederalRevenueUpdatedAt)
@@ -56,7 +62,7 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
 	defer kv.close()
-	if err := loadKeyValues(kv, &l, dir); err != nil {
+	if err := kv.load(dir, &l); err != nil {
 		return fmt.Errorf("error loading data to badger: %w", err)
 	}
 	j, err := createJSONRecordsTask(dir, db, &l, kv, batchSize, privacy)

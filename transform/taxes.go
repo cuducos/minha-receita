@@ -1,6 +1,9 @@
 package transform
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type taxesData struct {
 	OpcaoPeloSimples      *bool `json:"opcao_pelo_simples"`
@@ -34,4 +37,16 @@ func newTaxesData(r []string) (taxesData, error) {
 		return taxesData{}, fmt.Errorf("error parsing DataExclusaoDoMEI %s: %w", r[6], err)
 	}
 	return d, nil
+}
+
+func loadTaxesRow(_ *lookups, r []string) ([]byte, error) {
+	t, err := newTaxesData(r)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing taxes line: %w", err)
+	}
+	v, err := json.Marshal(t)
+	if err != nil {
+		return nil, fmt.Errorf("error while marshaling base: %w", err)
+	}
+	return v, nil
 }

@@ -115,7 +115,7 @@ func TestNewCompany(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected no errors creating look up tables, got %v", err)
 		}
-		if err := loadKeyValues(kv, &lookups, testdata); err != nil {
+		if err := kv.load(testdata, &lookups); err != nil {
 			t.Errorf("expected no error loading values to badger, got %s", err)
 		}
 		got, err := newCompany(row, &lookups, kv, true)
@@ -266,7 +266,7 @@ func TestNewCompany(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected no errors creating look up tables, got %v", err)
 		}
-		if err := loadKeyValues(kv, &lookups, testdata); err != nil {
+		if err := kv.load(testdata, &lookups); err != nil {
 			t.Errorf("expected no error loading values to badger, got %s", err)
 		}
 		email := "serpro@serpro.gov.br"

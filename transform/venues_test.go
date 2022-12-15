@@ -15,7 +15,7 @@ func TestTaskRun(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no errors creating look up tables, got %v", err)
 	}
-	if err := loadKeyValues(kv, &lookups, testdata); err != nil {
+	if err := kv.load(testdata, &lookups); err != nil {
 		t.Errorf("expected no error loading values to badger, got %s", err)
 	}
 	r, err := createJSONRecordsTask(testdata, db, &lookups, kv, 2, false)

@@ -1,10 +1,10 @@
 package transform
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"log"
+	"os"
 	"sync/atomic"
 
 	"github.com/cuducos/go-cnpj"
@@ -12,51 +12,13 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-type rowToBytesHandler func(l *lookups, r []string) ([]byte, error)
-
-func loadPartnersRow(l *lookups, r []string) ([]byte, error) {
-	p, err := newPartner(l, r)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing taxes line: %w", err)
-	}
-	v, err := json.Marshal(p)
-	if err != nil {
-		return nil, fmt.Errorf("error while marshaling base: %w", err)
-	}
-	return v, nil
-}
-
-func loadBaseRow(l *lookups, r []string) ([]byte, error) {
-	b, err := newBaseData(l, r)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing base line: %w", err)
-	}
-	v, err := json.Marshal(b)
-	if err != nil {
-		return nil, fmt.Errorf("error while marshaling base: %w", err)
-	}
-	return v, nil
-}
-
-func loadTaxesRow(_ *lookups, r []string) ([]byte, error) {
-	t, err := newTaxesData(r)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing taxes line: %w", err)
-	}
-	v, err := json.Marshal(t)
-	if err != nil {
-		return nil, fmt.Errorf("error while marshaling base: %w", err)
-	}
-	return v, nil
-}
-
 type item struct {
 	key, value []byte
 	kind       sourceType
 }
 
 func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
-	var h rowToBytesHandler
+	var h func(l *lookups, r []string) ([]byte, error)
 	switch s {
 	case partners:
 		i.key = []byte(keyForPartners(r[0]))
@@ -78,44 +40,12 @@ func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
 	return i, nil
 }
 
-func mergePartners(kv *badgerStorage, k, b []byte) ([]byte, error) {
-	curr := []byte("[]")
-	err := kv.db.View(func(tx *badger.Txn) error {
-		i, err := tx.Get(k)
-		if errors.Is(err, badger.ErrKeyNotFound) {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("error getting partner key: %w", err)
-		}
-		curr, err = i.ValueCopy(nil)
-		if err != nil {
-			return fmt.Errorf("error reading partner value: %w", err)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error getting current partners: %w", err)
-	}
-	qsa := []partner{}
-	if curr != nil {
-		if err := json.Unmarshal(curr, &qsa); err != nil {
-			return nil, fmt.Errorf("could not parse partners: %w", err)
-		}
-	}
-	var p partner
-	if err := json.Unmarshal(b, &p); err != nil {
-		return nil, fmt.Errorf("could not parse partner: %w", err)
-	}
-	qsa = append(qsa, p)
-	j, err := json.Marshal(&qsa)
-	if err != nil {
-		return nil, fmt.Errorf("could not convert partner to json: %w", err)
-	}
-	return j, nil
+type badgerStorage struct {
+	db   *badger.DB
+	path string
 }
 
-func loadKeyValues(kv *badgerStorage, l *lookups, dir string) error {
+func (kv *badgerStorage) load(dir string, l *lookups) error {
 	srcs, err := newSources(dir, []sourceType{base, partners, taxes})
 	if err != nil {
 		return fmt.Errorf("could not load sources: %w", err)
@@ -150,21 +80,9 @@ func loadKeyValues(kv *badgerStorage, l *lookups, dir string) error {
 						}
 						return
 					}
-					if i.kind == partners {
-						i.value, err = mergePartners(kv, i.key, i.value)
-						if err != nil {
-							if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-								errs <- fmt.Errorf("error merging partners: %w", err)
-							}
-							return
-						}
-					}
-					err = kv.db.Update(func(tx *badger.Txn) error {
-						return tx.Set(i.key, i.value)
-					})
-					if err != nil {
+					if err := saveItem(kv.db, i.kind, i.key, i.value); err != nil {
 						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("could save key-value storage: %w", err)
+							errs <- fmt.Errorf("could not save key-value: %w", err)
 						}
 						return
 					}
@@ -177,43 +95,41 @@ func loadKeyValues(kv *badgerStorage, l *lookups, dir string) error {
 	}
 	bar := progressbar.Default(int64(t), "Processing base CNPJ, partners and taxes")
 	defer bar.Close()
-	return kv.db.Update(func(tx *badger.Txn) error {
-		for {
-			select {
-			case <-items:
-				bar.Add(1)
-				if bar.IsFinished() {
-					return nil
-				}
-			case err := <-errs:
-				return fmt.Errorf("error creating key-value storage: %w", err)
+	for {
+		select {
+		case <-items:
+			bar.Add(1)
+			if bar.IsFinished() {
+				return nil
 			}
+		case err := <-errs:
+			return fmt.Errorf("error creating key-value storage: %w", err)
 		}
-	})
+	}
 }
 
-func enrichCompany(kv *badgerStorage, c *company) error {
+func (kv *badgerStorage) enrichCompany(c *company) error {
 	n := cnpj.Base(c.CNPJ)
 	ps := make(chan []partner)
 	bs := make(chan baseData)
 	ts := make(chan taxesData)
 	errs := make(chan error)
 	go func() {
-		p, err := partnersOf(kv, n)
+		p, err := partnersOf(kv.db, n)
 		if err != nil {
 			errs <- err
 		}
 		ps <- p
 	}()
 	go func() {
-		v, err := baseOf(kv, n)
+		v, err := baseOf(kv.db, n)
 		if err != nil {
 			errs <- err
 		}
 		bs <- v
 	}()
 	go func() {
-		t, err := taxesOf(kv, n)
+		t, err := taxesOf(kv.db, n)
 		if err != nil {
 			errs <- err
 		}
@@ -244,4 +160,36 @@ func enrichCompany(kv *badgerStorage, c *company) error {
 		}
 	}
 	return nil
+}
+
+func (b *badgerStorage) close() error {
+	b.db.Close()
+	if err := os.RemoveAll(b.path); err != nil {
+		return fmt.Errorf("error cleaning up badger storage directory: %w", err)
+	}
+	return nil
+}
+
+type badgerLogger struct{}
+
+func (*badgerLogger) Errorf(string, ...interface{})   {}
+func (*badgerLogger) Warningf(string, ...interface{}) {}
+func (*badgerLogger) Infof(string, ...interface{})    {}
+func (*badgerLogger) Debugf(string, ...interface{})   {}
+
+func newBadgerStorage() (*badgerStorage, error) {
+	d, err := os.MkdirTemp("", badgerFilePrefix)
+	if err != nil {
+		return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
+	}
+	if os.Getenv("DEBUG") != "" {
+		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", d))
+	}
+	o := badger.DefaultOptions(d)
+	o.Logger = &badgerLogger{}
+	db, err := badger.Open(o)
+	if err != nil {
+		return nil, fmt.Errorf("error creating badger key-value object: %w", err)
+	}
+	return &badgerStorage{db: db, path: d}, nil
 }

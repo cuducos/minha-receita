@@ -1,6 +1,9 @@
 package transform
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type partner struct {
 	IdentificadorDeSocio                 *int    `json:"identificador_de_socio"`
@@ -93,4 +96,16 @@ func newPartner(l *lookups, r []string) (partner, error) {
 	p.faixaEtaria(r[10])
 	p.qualificacaoSocio(l, r[4], r[9])
 	return p, nil
+}
+
+func loadPartnersRow(l *lookups, r []string) ([]byte, error) {
+	p, err := newPartner(l, r)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing taxes line: %w", err)
+	}
+	v, err := json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("error while marshaling base: %w", err)
+	}
+	return v, nil
 }

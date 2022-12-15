@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"os"
 
 	"github.com/dgraph-io/badger/v3"
 )
@@ -16,9 +14,11 @@ func keyForPartners(n string) string { return fmt.Sprintf("partners%s", n) }
 func keyForBase(n string) string     { return fmt.Sprintf("base%s", n) }
 func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }
 
-func partnersOf(b *badgerStorage, n string) ([]partner, error) {
+// fucntions to read data from Badger
+
+func partnersOf(db *badger.DB, n string) ([]partner, error) {
 	p := []partner{}
-	err := b.db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *badger.Txn) error {
 		i, err := txn.Get([]byte(keyForPartners(n)))
 		if errors.Is(err, badger.ErrKeyNotFound) {
 			return nil
@@ -41,9 +41,9 @@ func partnersOf(b *badgerStorage, n string) ([]partner, error) {
 	return p, nil
 }
 
-func baseOf(b *badgerStorage, n string) (baseData, error) {
+func baseOf(db *badger.DB, n string) (baseData, error) {
 	var d baseData
-	err := b.db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *badger.Txn) error {
 		i, err := txn.Get([]byte(keyForBase(n)))
 		if errors.Is(err, badger.ErrKeyNotFound) {
 			return nil
@@ -66,9 +66,9 @@ func baseOf(b *badgerStorage, n string) (baseData, error) {
 	return d, nil
 }
 
-func taxesOf(b *badgerStorage, n string) (taxesData, error) {
+func taxesOf(db *badger.DB, n string) (taxesData, error) {
 	var d taxesData
-	err := b.db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *badger.Txn) error {
 		i, err := txn.Get([]byte(keyForTaxes(n)))
 		if errors.Is(err, badger.ErrKeyNotFound) {
 			return nil
@@ -91,39 +91,51 @@ func taxesOf(b *badgerStorage, n string) (taxesData, error) {
 	return d, nil
 }
 
-type badgerStorage struct {
-	db   *badger.DB
-	path string
+// functions to write data to Badger
+
+func mergePartners(db *badger.DB, k, b []byte) ([]byte, error) {
+	curr := []byte("[]")
+	err := db.View(func(tx *badger.Txn) error {
+		i, err := tx.Get(k)
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("error getting partner key: %w", err)
+		}
+		curr, err = i.ValueCopy(nil)
+		if err != nil {
+			return fmt.Errorf("error reading partner value: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error getting current partners: %w", err)
+	}
+	qsa := []partner{}
+	if curr != nil {
+		if err := json.Unmarshal(curr, &qsa); err != nil {
+			return nil, fmt.Errorf("could not parse partners: %w", err)
+		}
+	}
+	var p partner
+	if err := json.Unmarshal(b, &p); err != nil {
+		return nil, fmt.Errorf("could not parse partner: %w", err)
+	}
+	qsa = append(qsa, p)
+	j, err := json.Marshal(&qsa)
+	if err != nil {
+		return nil, fmt.Errorf("could not convert partner to json: %w", err)
+	}
+	return j, nil
 }
 
-func (b *badgerStorage) close() error {
-	b.db.Close()
-	if err := os.RemoveAll(b.path); err != nil {
-		return fmt.Errorf("error cleaning up badger storage directory: %w", err)
+func saveItem(db *badger.DB, s sourceType, k, v []byte) (err error) {
+	if s == partners {
+		v, err = mergePartners(db, k, v)
+		if err != nil {
+			return fmt.Errorf("error merging partners: %w", err)
+		}
 	}
-	return nil
-}
-
-type badgerLogger struct{}
-
-func (*badgerLogger) Errorf(string, ...interface{})   {}
-func (*badgerLogger) Warningf(string, ...interface{}) {}
-func (*badgerLogger) Infof(string, ...interface{})    {}
-func (*badgerLogger) Debugf(string, ...interface{})   {}
-
-func newBadgerStorage() (*badgerStorage, error) {
-	d, err := os.MkdirTemp("", badgerFilePrefix)
-	if err != nil {
-		return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
-	}
-	if os.Getenv("DEBUG") != "" {
-		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", d))
-	}
-	o := badger.DefaultOptions(d)
-	o.Logger = &badgerLogger{}
-	db, err := badger.Open(o)
-	if err != nil {
-		return nil, fmt.Errorf("error creating badger key-value object: %w", err)
-	}
-	return &badgerStorage{db: db, path: d}, nil
+	return db.Update(func(tx *badger.Txn) error { return tx.Set(k, v) })
 }

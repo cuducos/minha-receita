@@ -1,6 +1,9 @@
 package transform
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type baseData struct {
 	CodigoPorte               *int     `json:"codigo_porte"`
@@ -76,4 +79,16 @@ func newBaseData(l *lookups, r []string) (baseData, error) {
 		return baseData{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
 	}
 	return d, nil
+}
+
+func loadBaseRow(l *lookups, r []string) ([]byte, error) {
+	b, err := newBaseData(l, r)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing base line: %w", err)
+	}
+	v, err := json.Marshal(b)
+	if err != nil {
+		return nil, fmt.Errorf("error while marshaling base: %w", err)
+	}
+	return v, nil
 }

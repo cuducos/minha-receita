@@ -36,7 +36,7 @@ func saveBatch(db database, b []company) (int, error) {
 type venuesTask struct {
 	source            *source
 	lookups           *lookups
-	kv                *badgerStorage
+	kv                kvStorage
 	privacy           bool
 	dir               string
 	db                database
@@ -150,7 +150,7 @@ func (t *venuesTask) run(m int) error {
 	}
 }
 
-func createJSONRecordsTask(dir string, db database, l *lookups, kv *badgerStorage, b int, p bool) (*venuesTask, error) {
+func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b int, p bool) (*venuesTask, error) {
 	v, err := newSource(venues, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for venues from %s: %w", dir, err)
