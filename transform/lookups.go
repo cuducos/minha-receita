@@ -35,7 +35,7 @@ func newLookups(d string) (lookups, error) {
 	var ls []lookup
 	srcs := []sourceType{motives, cities, countries, cnaes, qualifications, natures}
 	for _, src := range srcs {
-		paths, err := PathsForSource(src, d)
+		paths, err := pathsForSource(src, d)
 		if err != nil {
 			return lookups{}, fmt.Errorf("error finding sources for %s: %w", string(src), err)
 		}
