@@ -59,4 +59,4 @@ services:
        - PREST_QUERIES_LOCATION=/prest/data/queries/
        - PREST_CONF=/prest/data/config/prest.toml
     volumes:
-      - ./prest/:/prest/data/
+      - ./api/:/prest/data/
