@@ -1,5 +1,10 @@
-[ssl]
-mode = "disable"
-sslcert = "./PATH"
-sslkey = "./PATH"
-sslrootcert = "./PATH"
+[access]
+restrict = true
+
+[[access.tables]]
+name = "cnpj"
+permissions = ["read"]
+
+[[access.tables]]
+name = "meta"
+permissions = ["write"]
