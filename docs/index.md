@@ -30,3 +30,5 @@ Não tenho interesse em desenvolver um sistema para cobrar por esse serviço.
 ## Muito obrigado
 
 Ao [Turicas](https://twitter.com/turicas) por todo ativismo, mais o trabalho de coleta quando o formato dos arquivos ainda não era em CSV. Muito desse projeto se deve a ele. Ao [Bruno](https://twitter.com/555112299jedi), sem o qual [nunca teríamos acesso a esses dados por menos de R$ 500 mil](https://medium.com/serenata/o-dia-que-a-receita-nos-mandou-pagar-r-500-mil-para-ter-dados-p%C3%BAblicos-8e18438f3076). E ao [Fireman](https://twitter.com/daniellfireman), pela mentoria em Go!
+
+<script data-goatcounter="https://analytics.minhareceita.org" async src="//analytics.minhareceita.org/count.js"></script>
