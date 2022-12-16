@@ -37,7 +37,7 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
   
   prest:
-    image: prest/prest:latest
+    image: ghcr.io/prest/prest@sha256:78bb1a5b043576dcffdc383fd5fdc02a74a33d9a2b9532cabad9e0f907fa81ac
     ports:
       - 8081:8081
     depends_on:
