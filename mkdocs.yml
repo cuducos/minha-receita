@@ -27,6 +27,3 @@ plugins:
       minify_html: true
       htmlmin_opts:
           remove_comments: true
-google_analytics:
-  - UA-156601-35
-  - auto
