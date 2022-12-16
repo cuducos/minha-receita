@@ -93,5 +93,3 @@ Para facilitar a manutenção, algumas variáveis de ambiente podem ser utilizad
 | `PORT` | Porta na qual a API web ficará disponível |
 | `NEW_RELIC_LICENSE_KEY` | Licença no New Relic para monitoramento |
 | `TEST_DATABASE_URL` | URI de acesso ao banco de dados PostgreSQL para ser utilizado nos testes |
-
-<script data-goatcounter="https://analytics.minhareceita.org" async src="//analytics.minhareceita.org/count.js"></script>

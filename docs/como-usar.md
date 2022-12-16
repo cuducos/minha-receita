@@ -199,5 +199,3 @@ Todos esses _endpoints_ apenas aceitam requisições do tipo `GET` e, é esperad
 ---|---|
 | `/updated` | JSON contendo a data de extração dos dados pela Receita Federal. |
 | `/healthz` | Resposta sem conteúdo |
-
-<script data-goatcounter="https://analytics.minhareceita.org" async src="//analytics.minhareceita.org/count.js"></script>

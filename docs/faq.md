@@ -49,5 +49,3 @@ O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado]
 
 * Uma cópia dos públicos baixados da Receita Federal em , organizados por diretórios com a data de extração divulgada pela Receita Federal
 * Executáveis do _Minha Receita_
-
-<script data-goatcounter="https://analytics.minhareceita.org" async src="//analytics.minhareceita.org/count.js"></script>

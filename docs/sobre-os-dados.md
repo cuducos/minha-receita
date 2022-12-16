@@ -13,5 +13,3 @@ Caso queira, [abra uma _issue_ no GithHub](https://github.com/cuducos/minha-rece
 1. como localizou este problema
 
 Isso permite que a gente junte casos para alertar formalmente a Receita Federal do Brasil sobre a questão, para que eles tomem as medidas necessárias para corrigir os dados.
-
-<script data-goatcounter="https://analytics.minhareceita.org" async src="//analytics.minhareceita.org/count.js"></script>

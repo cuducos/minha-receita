@@ -94,5 +94,3 @@ Com Docker:
 ```console
 $ docker-compose up
 ```
-
-<script data-goatcounter="https://analytics.minhareceita.org" async src="//analytics.minhareceita.org/count.js"></script>
