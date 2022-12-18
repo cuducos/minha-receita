@@ -7,7 +7,7 @@ import (
 
 var (
 	taxesCSVRow = []string{
-		"",         // base do CNPJ
+		"BASE DO CNPJ",
 		"S",        // OpcaoPeloSimples
 		"20221217", // DataOpcaoPeloSimples
 		"",         // DataExclusaoDoSimples

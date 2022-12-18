@@ -73,7 +73,7 @@ func (p *partnerData) pais(l *lookups, v string) error {
 	return nil
 }
 
-func newPartner(l *lookups, r []string) (partnerData, error) {
+func newPartnerData(l *lookups, r []string) (partnerData, error) {
 	identificadorDeSocio, err := toInt(r[1])
 	if err != nil {
 		return partnerData{}, fmt.Errorf("error parsing IdentificadorDeSocio %s: %w", r[1], err)
@@ -99,7 +99,7 @@ func newPartner(l *lookups, r []string) (partnerData, error) {
 }
 
 func loadPartnerRow(l *lookups, r []string) ([]byte, error) {
-	p, err := newPartner(l, r)
+	p, err := newPartnerData(l, r)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing taxes line: %w", err)
 	}

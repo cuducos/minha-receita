@@ -177,7 +177,7 @@ func (p *partnerData) qualificacaoSocio(l *lookups, q, r string) error {
 	t := l.qualifications[*j]
 	p.CodigoQualificacaoRepresentanteLegal = j
 	if t != "" {
-		p.QualificacaoRepresentanteLegal = &s
+		p.QualificacaoRepresentanteLegal = &t
 	}
 	return nil
 }
