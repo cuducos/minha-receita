@@ -113,6 +113,30 @@ Explore mais opções com `--help`.
 
 Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u $TEST_DATABASE_URL` é uma boa forma de evitar isso.
 
+## pREST
+
+No ambiente de desenvolvimento com Docker Compose existe o serviço pREST. Ele está em fase de testes, e mais detalhes podem ser encontrados na [_issue_ sobre o assunto](https://github.com/cuducos/minha-receita/issues/167).
+
+### Agora preciso rodar o serviço pREST para a Minha Receita funcionar?
+
+Não, ele ainda é opcional.
+
+### Para quê serve o pREST no Minha Receita?
+
+A ideia é sibstituir o módulo da API web pelo pREST. Isso reduz a base de código para manutenção no projeto, e facilita novas possibilidades como filtragem por UF ou CNAE, incluindo paginação.
+
+### Como eu rodo o pREST sem ser por Docker?
+
+Você pode [baixar o binário executável](https://prestd.com/) e seguir a [documentação do pREST](https://docs.prestd.com/).
+
+### Como eu uso o Minha Receita pelo pREST, não pela API antiga?
+
+Por exemplo, com `http://localhost:8081/minhareceita/public/cnpj?id=33683111000280`, mas essa resposta é diferente da original:
+* Ela é um _array_ e não um objeto
+* Ela tem tanto a coluna `id` quanto a `cnpj` 
+
+Ou seja, dado que a resposta do pREST seja uma variável `resp`, o resultado de `https://minhareceita.org/33683111000280` deve ser igual a `resp[0].json`.
+
 ## Documentação
 
 Utilizamos o [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/):
