@@ -2,22 +2,43 @@ package transform
 
 import "testing"
 
+func newTestBaseCNPJ() baseData {
+	codigoPorte := 5
+	porte := "DEMAIS"
+	codigoNaturezaJuridica := 2011
+	naturezaJuridica := "Empresa Pública"
+	qualificacaoDoResponsavel := 13
+	capitalSocial := float32(4.2)
+	return baseData{
+		&codigoPorte,
+		&porte,
+		"Razão Social",
+		&codigoNaturezaJuridica,
+		&naturezaJuridica,
+		&qualificacaoDoResponsavel,
+		&capitalSocial,
+		"Responsável",
+	}
+}
+
 var (
 	baseCSVRow = []string{
 		"BASE DO CNPJ",
 		"Razão Social",
-		"21",
+		"2011",
 		"13",
 		"4.20",
 		"5",
 		"Responsável",
 	}
-	baseLookups = lookups{natures: make(map[int]string)}
 )
 
 func TestNewBase(t *testing.T) {
-	baseLookups.natures[21] = "Natureza Jurídica"
-	b, err := newBaseData(&baseLookups, baseCSVRow)
+	l, err := newLookups(testdata)
+	if err != nil {
+		t.Fatalf("could not create lookups: %s", err)
+	}
+	b, err := newBaseData(&l, baseCSVRow)
 	if err != nil {
 		t.Errorf("expected no error creating base data, got %s", err)
 	}
@@ -30,11 +51,11 @@ func TestNewBase(t *testing.T) {
 	if b.RazaoSocial != baseCSVRow[1] {
 		t.Errorf("expected RazaoSocial to be %s, got %s", baseCSVRow[1], b.RazaoSocial)
 	}
-	if *b.CodigoNaturezaJuridica != 21 {
-		t.Errorf("expected CodigoNaturezaJuridica to be 21, got %d", *b.CodigoNaturezaJuridica)
+	if *b.CodigoNaturezaJuridica != 2011 {
+		t.Errorf("expected CodigoNaturezaJuridica to be 2011, got %d", *b.CodigoNaturezaJuridica)
 	}
-	if *b.NaturezaJuridica != baseLookups.natures[21] {
-		t.Errorf("expected NaturezaJuridica to be %s, got %s", baseLookups.natures[21], *b.NaturezaJuridica)
+	if *b.NaturezaJuridica != "Empresa Pública" {
+		t.Errorf("expected NaturezaJuridica to be %s, got %s", l.natures[21], *b.NaturezaJuridica)
 	}
 	if *b.QualificacaoDoResponsavel != 13 {
 		t.Errorf("expected QualificacaoDoResponsavel to be 13, got %d", *b.QualificacaoDoResponsavel)
@@ -48,9 +69,12 @@ func TestNewBase(t *testing.T) {
 }
 
 func TestLoadBaseRow(t *testing.T) {
-	expected := `{"codigo_porte":5,"porte":"DEMAIS","razao_social":"Razão Social","codigo_natureza_juridica":21,"natureza_juridica":"Natureza Jurídica","qualificacao_do_responsavel":13,"capital_social":4.2,"ente_federativo_responsavel":"Responsável"}`
-	baseLookups.natures[21] = "Natureza Jurídica"
-	b, err := loadBaseRow(&baseLookups, baseCSVRow)
+	l, err := newLookups(testdata)
+	if err != nil {
+		t.Fatalf("could not create lookups: %s", err)
+	}
+	expected := `{"codigo_porte":5,"porte":"DEMAIS","razao_social":"Razão Social","codigo_natureza_juridica":2011,"natureza_juridica":"Empresa Pública","qualificacao_do_responsavel":13,"capital_social":4.2,"ente_federativo_responsavel":"Responsável"}`
+	b, err := loadBaseRow(&l, baseCSVRow)
 	if err != nil {
 		t.Errorf("expected no error loading base data row, got %s", err)
 	}

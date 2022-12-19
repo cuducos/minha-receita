@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+func newTestTaxes() taxesData {
+	simples := true
+	dtSimples := date(time.Date(2022, time.December, 17, 0, 0, 0, 0, time.UTC))
+	mei := false
+	inMEI := date(time.Date(2022, time.November, 18, 0, 0, 0, 0, time.UTC))
+	outMEI := date(time.Date(2022, time.December, 1, 0, 0, 0, 0, time.UTC))
+	return taxesData{&simples, &dtSimples, nil, &mei, &inMEI, &outMEI}
+}
+
 var (
 	taxesCSVRow = []string{
 		"BASE DO CNPJ",

@@ -77,53 +77,6 @@ var (
 		&testCodigoFaixaEtaria2,
 		&testFaixaEtarua2,
 	}
-
-	testIdentificacaoDoSocioNew                 = 11
-	testCodigoQualificacaoSocioNew              = 12
-	testQualificacaoSocioNew                    = "Doze"
-	testCodigoPaisNew                           = 13
-	testPaisNew                                 = "Treze"
-	testCodigoQualificacaoRepresentanteLegalNew = 14
-	testQualificacaoRepresentanteLegalNew       = "Quatorze"
-	testCodigoFaixaEtariaNew                    = 15
-	testFaixaEtaruaNew                          = "Quinze"
-	testPartnerNew                              = partnerData{
-		&testIdentificacaoDoSocioNew,
-		"Nome da pessoa 3",
-		"345",
-		&testCodigoQualificacaoSocioNew,
-		&testQualificacaoSocioNew,
-		nil,
-		&testCodigoPaisNew,
-		&testPaisNew,
-		"678",
-		"Representante legal 3",
-		&testCodigoQualificacaoRepresentanteLegalNew,
-		&testQualificacaoRepresentanteLegalNew,
-		&testCodigoFaixaEtariaNew,
-		&testFaixaEtaruaNew,
-	}
-
-	testBaseCodigo                    = 1
-	testBasePorte                     = "Porte"
-	testBaseCodigoNaturezaJuridica    = 2
-	testBaseNaturezaJuridica          = "Dois"
-	testBaseQualificacaoDoResponsavel = 3
-	testBaseCapitalSocial             = float32(4.2)
-	testBaseNew                       = baseData{
-		&testBaseCodigo,
-		&testBasePorte,
-		"Razão social",
-		&testBaseCodigoNaturezaJuridica,
-		&testBaseNaturezaJuridica,
-		&testBaseQualificacaoDoResponsavel,
-		&testBaseCapitalSocial,
-		"Ente federativo",
-	}
-
-	testTaxesOpcaoPeloSimples = true
-	testTaxesOpcaoPeloMEI     = false
-	testTaxesNew              = taxesData{&testTaxesOpcaoPeloSimples, nil, nil, &testTaxesOpcaoPeloMEI, nil, nil}
 )
 
 func toBytes(t *testing.T, i interface{}) []byte {
@@ -136,15 +89,16 @@ func toBytes(t *testing.T, i interface{}) []byte {
 
 func TestMergePartners(t *testing.T) {
 	k := []byte(testBaseCNPJ)
-	v := toBytes(t, testPartnerNew)
+	p := newTestPartner()
+	v := toBytes(t, p)
 	for _, inMem := range []bool{true, false} {
 		for _, tc := range []struct {
 			existing []partnerData
 			expected []partnerData
 		}{
-			{nil, []partnerData{testPartnerNew}},
-			{[]partnerData{testPartner1}, []partnerData{testPartner1, testPartnerNew}},
-			{[]partnerData{testPartner1, testPartner2}, []partnerData{testPartner1, testPartner2, testPartnerNew}},
+			{nil, []partnerData{p}},
+			{[]partnerData{testPartner1}, []partnerData{testPartner1, p}},
+			{[]partnerData{testPartner1, testPartner2}, []partnerData{testPartner1, testPartner2, p}},
 		} {
 			n := "in disk"
 			if inMem {
@@ -185,12 +139,13 @@ func TestSaveAndReadItems(t *testing.T) {
 		}
 
 		t.Run(fmt.Sprintf("partners %s", n), func(t *testing.T) {
+			p := newTestPartner()
 			db := newTestBadgerDB(t, inMem)
 			defer db.Close()
 			err := saveItem(
 				db, partners,
 				[]byte(keyForPartners(testBaseCNPJ)),
-				toBytes(t, testPartnerNew),
+				toBytes(t, p),
 			)
 			if err != nil {
 				t.Errorf("expected no error saving partner, got %s", err)
@@ -203,15 +158,16 @@ func TestSaveAndReadItems(t *testing.T) {
 				t.Errorf("expected merged partnes to have 1 partger, got %d", len(got))
 				return
 			}
-			if !reflect.DeepEqual(got[0], testPartnerNew) {
-				t.Errorf("expected merged partner to be %v, got %v", testPartnerNew, got[0])
+			if !reflect.DeepEqual(got[0], p) {
+				t.Errorf("expected merged partner to be %v, got %v", p, got[0])
 			}
 		})
 
 		t.Run(fmt.Sprintf("base %s", n), func(t *testing.T) {
 			db := newTestBadgerDB(t, inMem)
 			defer db.Close()
-			v := toBytes(t, testBaseNew)
+			d := newTestBaseCNPJ()
+			v := toBytes(t, d)
 			err := saveItem(db, base, []byte(keyForBase(testBaseCNPJ)), v)
 			if err != nil {
 				t.Errorf("expected no error saving partner, got %s", err)
@@ -220,15 +176,16 @@ func TestSaveAndReadItems(t *testing.T) {
 			if err != nil {
 				t.Errorf("expexted no error reading base, got %s", err)
 			}
-			if !reflect.DeepEqual(got, testBaseNew) {
-				t.Errorf("expected %v, got %v", testBaseNew, got)
+			if !reflect.DeepEqual(got, d) {
+				t.Errorf("expected %v, got %v", d, got)
 			}
 		})
 
 		t.Run(fmt.Sprintf("taxes %s", n), func(t *testing.T) {
 			db := newTestBadgerDB(t, inMem)
 			defer db.Close()
-			v := toBytes(t, testTaxesNew)
+			d := newTestTaxes()
+			v := toBytes(t, d)
 			err := saveItem(db, taxes, []byte(keyForTaxes(testBaseCNPJ)), v)
 			if err != nil {
 				t.Errorf("expected no error saving partner, got %s", err)
@@ -237,8 +194,8 @@ func TestSaveAndReadItems(t *testing.T) {
 			if err != nil {
 				t.Errorf("expexted no error reading taxes, got %s", err)
 			}
-			if !reflect.DeepEqual(got, testTaxesNew) {
-				t.Errorf("expected %v, got %v", testTaxesNew, got)
+			if !reflect.DeepEqual(got, d) {
+				t.Errorf("expected %v, got %v", d, got)
 			}
 		})
 	}
