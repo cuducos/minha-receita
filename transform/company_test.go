@@ -105,13 +105,20 @@ func TestNewCompany(t *testing.T) {
 		},
 	}
 
-	lookups, err := newLookups(testdata)
-	if err != nil {
-		t.Errorf("expected no errors creating look up tables, got %v", err)
-	}
-
 	t.Run("with privacy", func(t *testing.T) {
-		got, err := newCompany(row, &lookups, true)
+		kv, err := newBadgerStorage(false)
+		if err != nil {
+			t.Errorf("expected no error creating badger, got %s", err)
+		}
+		defer kv.close()
+		lookups, err := newLookups(testdata)
+		if err != nil {
+			t.Errorf("expected no errors creating look up tables, got %v", err)
+		}
+		if err := kv.load(testdata, &lookups); err != nil {
+			t.Errorf("expected no error loading values to badger, got %s", err)
+		}
+		got, err := newCompany(row, &lookups, kv, true)
 		if err != nil {
 			t.Errorf("expected no errors, got %v", err)
 		}
@@ -250,10 +257,22 @@ func TestNewCompany(t *testing.T) {
 		}
 	})
 	t.Run("without privacy", func(t *testing.T) {
+		kv, err := newBadgerStorage(true)
+		if err != nil {
+			t.Errorf("expected no error creating badger, got %s", err)
+		}
+		defer kv.close()
+		lookups, err := newLookups(testdata)
+		if err != nil {
+			t.Errorf("expected no errors creating look up tables, got %v", err)
+		}
+		if err := kv.load(testdata, &lookups); err != nil {
+			t.Errorf("expected no error loading values to badger, got %s", err)
+		}
 		email := "serpro@serpro.gov.br"
 		expected.Email = &email
 		expected.NomeFantasia = "REGIONAL BRASILIA-DF 11122233344"
-		got, err := newCompany(row, &lookups, false)
+		got, err := newCompany(row, &lookups, kv, false)
 		if err != nil {
 			t.Errorf("expected no errors, got %v", err)
 		}

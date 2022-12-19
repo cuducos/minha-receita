@@ -5,8 +5,28 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 )
+
+func pathsForSource(t sourceType, dir string) ([]string, error) {
+	r, err := os.ReadDir(dir)
+	if err != nil {
+		return []string{}, err
+	}
+	var ls []string
+	for _, f := range r {
+		if f.IsDir() || filepath.Ext(f.Name()) == ".md5" {
+			continue
+		}
+		if strings.Contains(strings.ToLower(f.Name()), strings.ToLower(string(t))) {
+			ls = append(ls, filepath.Join(dir, f.Name()))
+		}
+	}
+	return ls, nil
+}
 
 type sourceType string
 
@@ -113,7 +133,7 @@ func (s *source) countLines() error {
 
 func newSource(t sourceType, d string) (*source, error) {
 	log.Output(1, fmt.Sprintf("Loading %s files…", string(t)))
-	ls, err := PathsForSource(t, d)
+	ls, err := pathsForSource(t, d)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
 	}
@@ -123,4 +143,35 @@ func newSource(t sourceType, d string) (*source, error) {
 		return nil, fmt.Errorf("error counting lines for %s in %s: %w", string(t), d, err)
 	}
 	return &s, nil
+}
+
+func newSources(dir string, kinds []sourceType) ([]*source, error) {
+	srcs := []*source{}
+	done := make(chan *source)
+	errs := make(chan error)
+	defer func() {
+		close(done)
+		close(errs)
+	}()
+	for _, s := range kinds {
+		go func(s sourceType) {
+			src, err := newSource(s, dir)
+			if err != nil {
+				errs <- fmt.Errorf("could not load source %s: %w", string(s), err)
+				return
+			}
+			done <- src
+		}(s)
+	}
+	for {
+		select {
+		case err := <-errs:
+			return nil, fmt.Errorf("error loading sources: %w", err)
+		case src := <-done:
+			srcs = append(srcs, src)
+			if len(srcs) == len(kinds) {
+				return srcs, nil
+			}
+		}
+	}
 }

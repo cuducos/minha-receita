@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type partner struct {
+type partnerData struct {
 	IdentificadorDeSocio                 *int    `json:"identificador_de_socio"`
 	NomeSocio                            string  `json:"nome_socio"`
 	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio"`
@@ -22,7 +22,7 @@ type partner struct {
 	FaixaEtaria                          *string `json:"faixa_etaria"`
 }
 
-func (p *partner) faixaEtaria(v string) {
+func (p *partnerData) faixaEtaria(v string) {
 	c, err := toInt(v)
 	if err != nil {
 		return
@@ -57,7 +57,7 @@ func (p *partner) faixaEtaria(v string) {
 	}
 }
 
-func (p *partner) pais(l *lookups, v string) error {
+func (p *partnerData) pais(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
@@ -73,18 +73,18 @@ func (p *partner) pais(l *lookups, v string) error {
 	return nil
 }
 
-func newPartner(l *lookups, r []string) (partner, error) {
+func newPartnerData(l *lookups, r []string) (partnerData, error) {
 	identificadorDeSocio, err := toInt(r[1])
 	if err != nil {
-		return partner{}, fmt.Errorf("error parsing IdentificadorDeSocio %s: %w", r[1], err)
+		return partnerData{}, fmt.Errorf("error parsing IdentificadorDeSocio %s: %w", r[1], err)
 	}
 
 	dataEntradaSociedade, err := toDate(r[5])
 	if err != nil {
-		return partner{}, fmt.Errorf("error parsing DataEntradaSociedade %s: %w", r[5], err)
+		return partnerData{}, fmt.Errorf("error parsing DataEntradaSociedade %s: %w", r[5], err)
 	}
 
-	p := partner{
+	p := partnerData{
 		IdentificadorDeSocio:   identificadorDeSocio,
 		NomeSocio:              r[2],
 		CNPJCPFDoSocio:         r[3],
@@ -98,16 +98,14 @@ func newPartner(l *lookups, r []string) (partner, error) {
 	return p, nil
 }
 
-func addPartners(l *lookups, r []string) ([]string, error) {
-	p, err := newPartner(l, r)
+func loadPartnerRow(l *lookups, r []string) ([]byte, error) {
+	p, err := newPartnerData(l, r)
 	if err != nil {
-		return []string{}, fmt.Errorf("error creating partner for %v: %w", r, err)
+		return nil, fmt.Errorf("error parsing taxes line: %w", err)
 	}
-	a := make([]partner, 1) // db.AddPartner expects an array
-	a[0] = p
-	b, err := json.Marshal(a)
+	v, err := json.Marshal(p)
 	if err != nil {
-		return []string{}, fmt.Errorf("error while mashaling partner: %w", err)
+		return nil, fmt.Errorf("error while marshaling base: %w", err)
 	}
-	return []string{r[0], string(b)}, nil
+	return v, nil
 }

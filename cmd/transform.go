@@ -16,6 +16,7 @@ var (
 	batchSize            int
 	cleanUp              bool
 	noPrivacy            bool
+	highMemory           bool
 )
 
 var transformCmd = &cobra.Command{
@@ -44,7 +45,7 @@ var transformCmd = &cobra.Command{
 				return err
 			}
 		}
-		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy)
+		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy, highMemory)
 	},
 }
 
@@ -61,5 +62,6 @@ func transformCLI() *cobra.Command {
 	transformCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transform.BatchSize, "size of the batch to save to the database")
 	transformCmd.Flags().BoolVarP(&cleanUp, "clean-up", "c", cleanUp, "drop & recreate the database table before starting")
 	transformCmd.Flags().BoolVarP(&noPrivacy, "no-privacy", "p", noPrivacy, "include email addresses, CPF and other PII in the JSON data")
+	transformCmd.Flags().BoolVarP(&highMemory, "high-memory", "x", highMemory, "high memory availability mode, faster but requires a lot of free RAM")
 	return transformCmd
 }

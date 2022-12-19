@@ -73,14 +73,22 @@ func (d *baseData) base(r []string, l *lookups) error {
 	return nil
 }
 
-func addBase(l *lookups, r []string) ([]string, error) {
+func newBaseData(l *lookups, r []string) (baseData, error) {
 	var d baseData
 	if err := d.base(r, l); err != nil {
-		return []string{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
+		return baseData{}, fmt.Errorf("error handling base data for base cnpj %s: %w", r[0], err)
 	}
-	b, err := json.Marshal(&d)
+	return d, nil
+}
+
+func loadBaseRow(l *lookups, r []string) ([]byte, error) {
+	b, err := newBaseData(l, r)
 	if err != nil {
-		return []string{}, fmt.Errorf("error converting base cnpj data to json for %s: %w", r[0], err)
+		return nil, fmt.Errorf("error parsing base line: %w", err)
 	}
-	return []string{r[0], string(b)}, nil
+	v, err := json.Marshal(b)
+	if err != nil {
+		return nil, fmt.Errorf("error while marshaling base: %w", err)
+	}
+	return v, nil
 }

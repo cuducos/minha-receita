@@ -6,7 +6,6 @@ import (
 	"embed"
 	"fmt"
 	"log"
-	"math"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -116,53 +115,6 @@ func (p *PostgreSQL) CreateIndex() error {
 	log.Output(1, "Creating indexes…")
 	if _, err := p.pool.Exec(context.Background(), p.sql["create_index"]); err != nil {
 		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index"], err)
-	}
-	return nil
-}
-
-// Returns the minimum and maximum CNPJ possible given a base CNPJ.
-func rangeFor(base string) (int64, int64, error) {
-	n, err := strconv.ParseInt(base, 10, 64)
-	if err != nil {
-		return 0, 0, fmt.Errorf("error converting base cnpj %s to integer: %w", base, err)
-	}
-	mm := int64(math.Pow(10, 6))
-	min := n * mm // adds 6 zeroes to complete the CNPJ's 14 digits
-	return min, min + (mm - 1), nil
-}
-
-// UpdateCompanies performs a update in the JSON from the database, merging it
-// with `json`. It expects an array of two-items array containing a base CNPJ
-// and the new JSON data.
-func (p *PostgreSQL) UpdateCompanies(data [][]string) error {
-	b := pgx.Batch{}
-	for _, v := range data {
-		min, max, err := rangeFor(v[0])
-		if err != nil {
-			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
-		}
-		b.Queue(p.sql["update"], min, max, v[1])
-	}
-	if err := p.pool.SendBatch(context.Background(), &b).Close(); err != nil {
-		return fmt.Errorf("error updating companies: %w", err)
-	}
-	return nil
-}
-
-// AddPartners appends an array of partners to the existing list of partners in
-// the database. It expects an array of two-items array containing a base CNPJ
-// and the new JSON data.
-func (p *PostgreSQL) AddPartners(data [][]string) error {
-	b := pgx.Batch{}
-	for _, v := range data {
-		min, max, err := rangeFor(v[0])
-		if err != nil {
-			return fmt.Errorf("error calculating the cnpj interval for base %s: %w", v[0], err)
-		}
-		b.Queue(p.sql["add_partner"], min, max, v[1])
-	}
-	if err := p.pool.SendBatch(context.Background(), &b).Close(); err != nil {
-		return fmt.Errorf("error adding partners: %w", err)
 	}
 	return nil
 }
