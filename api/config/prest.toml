@@ -1,0 +1,10 @@
+[access]
+restrict = true
+
+[[access.tables]]
+name = "cnpj"
+permissions = ["read"]
+
+[[access.tables]]
+name = "meta"
+permissions = ["read"]
