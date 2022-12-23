@@ -17,10 +17,16 @@ is extremelly slow, all files are downloaded using multiple HTTP requests with
 small content ranges.`
 
 	urlsHelper = `
-Shows the URLs of the requires ZIP and Excel files.
+Shows the URLs of the required ZIP and Excel files.
 
 The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE.`
+
+	hasUpdateHelper = `
+Checks if there is an update available when it comes to the required ZIP from
+the Federal Revenue.
+
+Exists with exit code 0 if there is an update available and 1 otherwise.`
 )
 
 var (
@@ -62,6 +68,23 @@ var urlsCmd = &cobra.Command{
 	},
 }
 
+var updatedAtCmd = &cobra.Command{
+	Use:   "updated-at",
+	Short: "Shows the latest updated at date of the required ZIP from the Federal Revenue.",
+	RunE: func(_ *cobra.Command, _ []string) error {
+		return download.UpdatedAt()
+	},
+}
+
+var hasUpdateCmd = &cobra.Command{
+	Use:   "has-update",
+	Short: "Checks if there is an update available when it comes to the required ZIP from the Federal Revenue.",
+	Long:  hasUpdateHelper,
+	RunE: func(_ *cobra.Command, _ []string) error {
+		return download.HasUpdate(dir)
+	},
+}
+
 func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
@@ -77,4 +100,13 @@ func urlsCLI() *cobra.Command {
 	urlsCmd.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files, used only with --skip")
 	urlsCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	return urlsCmd
+}
+
+func updatedAtCLI() *cobra.Command {
+	return updatedAtCmd
+}
+
+func hasUpdateCLI() *cobra.Command {
+	hasUpdateCmd = addDataDir(hasUpdateCmd)
+	return hasUpdateCmd
 }

@@ -48,7 +48,16 @@ type federalRevenueResponse struct {
 	Resources []federalRevenueResource `json:"resources"`
 }
 
-func federalRevenueGetURLsBase(url, dir string, updatedAt bool) ([]string, error) {
+func (r *federalRevenueResponse) updatedAt() (t time.Time) {
+	for _, v := range r.Resources {
+		if t.Before(v.MetadataModified.Time) {
+			t = v.MetadataModified.Time
+		}
+	}
+	return t
+}
+
+func newFederalRevenueResponse(url string) (*federalRevenueResponse, error) {
 	r, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("error getting %s: %w", url, err)
@@ -65,18 +74,22 @@ func federalRevenueGetURLsBase(url, dir string, updatedAt bool) ([]string, error
 	if err := json.Unmarshal(b, &data); err != nil {
 		return nil, fmt.Errorf("could not unmarshal %s json response: %w", url, err)
 	}
+	return &data, nil
+}
+
+func federalRevenueGetURLsBase(url, dir string, updatedAt bool) ([]string, error) {
+	data, err := newFederalRevenueResponse(url)
+	if err != nil {
+		return nil, fmt.Errorf("error getting federal revenue data: %w", err)
+	}
 	var u []string
-	var t time.Time
 	for _, v := range data.Resources {
 		if v.Format == federalRevenueFormat {
 			u = append(u, v.URL)
 		}
-		if t.Before(v.MetadataModified.Time) {
-			t = v.MetadataModified.Time
-		}
 	}
 	if updatedAt {
-		if err := saveUpdatedAt(dir, t); err != nil {
+		if err := saveUpdatedAt(dir, data.updatedAt()); err != nil {
 			return nil, fmt.Errorf("could not save the update at date: %w", err)
 		}
 	}
@@ -89,6 +102,34 @@ func federalRevenueGetURLs(url, dir string) ([]string, error) {
 
 func federalRevenueGetURLsNoUpdatedAt(url, dir string) ([]string, error) {
 	return federalRevenueGetURLsBase(url, dir, false)
+}
+
+func fetchUpdatedAt(url string) (string, error) {
+	data, err := newFederalRevenueResponse(url)
+	if err != nil {
+		return "", fmt.Errorf("error getting federal revenue data: %w", err)
+	}
+	return data.updatedAt().Format("2006-01-02"), nil
+}
+
+func hasUpdate(url, dir string) (bool, error) {
+	dt, err := fetchUpdatedAt(url)
+	if err != nil {
+		return false, fmt.Errorf("error getting federal revenue updated at: %w", err)
+	}
+	pth := filepath.Join(dir, FederalRevenueUpdatedAt)
+	f, err := os.Open(pth)
+	if err != nil {
+		return false, fmt.Errorf("error opening %s: %w", pth, err)
+	}
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return false, fmt.Errorf("error reading %s: %w", pth, err)
+	}
+	fmt.Printf("Local files\t%s\n", string(b))
+	fmt.Printf("Remote files\t%s\n", dt)
+	return string(b) != dt, nil
 }
 
 func saveUpdatedAt(dir string, u time.Time) error {

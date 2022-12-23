@@ -91,3 +91,25 @@ func URLs(dir string, skip bool) error {
 	fmt.Println(strings.Join(out, "\n"))
 	return nil
 }
+
+// UpdatedAt shows the updated at of the files to be downloaded.
+func UpdatedAt() error {
+	u, err := fetchUpdatedAt(federalRevenueURL)
+	if err != nil {
+		return fmt.Errorf("error getting updated at: %w", err)
+	}
+	fmt.Println(u)
+	return nil
+}
+
+// HasUpdate checks if there is an update available.
+func HasUpdate(dir string) error {
+	h, err := hasUpdate(federalRevenueURL, dir)
+	if err != nil {
+		return fmt.Errorf("error getting updated at: %w", err)
+	}
+	if !h {
+		os.Exit(1)
+	}
+	return nil
+}
