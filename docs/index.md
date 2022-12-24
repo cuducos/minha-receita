@@ -21,7 +21,7 @@ Para fazer uma consulta usando o protótipo, acrescente o CNPJ a ser consultado 
 
 ### Limites do protótipo
 
-O protótipo não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade é contribuindo via [financiamento coletivo no GitHub](https://github.com/sponsors/cuducos) ou Bitcoin (`13WCAR21g1LGqzzn6WTNV5g7QdN1J35BDk`).
+O protótipo não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade é com [contribuições expontâneas](https://doe.minhareceita.org) ou [contribuições mensais](https://github.com/sponsors/cuducos). Também é possível contribuir com Bitcoin (`13WCAR21g1LGqzzn6WTNV5g7QdN1J35BDk`).
 
 Mais sobre o protótipo nesse [fio no Twitter](https://twitter.com/cuducos/status/1339980776985808901).
 
