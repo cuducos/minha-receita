@@ -30,7 +30,7 @@ Os dados oficiais da Receita Federal já são em CSV e talvez o mais fácil seja
 Caso queira gerar um CSV a partir dos dados consolidados, com ou sem filtragem de dados, o _Minha Receita_ pode ajudar. [Criando o seu banco de dados localmente](servidor.md), é possível utilizar o PostgreSQL para tal, como por exemplo:
 
 ```sql
-WITH nome_da_busca AS (
+COPY (
   SELECT
       id AS cnpj,
       json->>'razao_social' AS razao_social,
@@ -39,7 +39,6 @@ WITH nome_da_busca AS (
   -- WHERE uf = '…' caso queira filtar, por exemplo
   FROM cnpj
 )
-COPY nome_da_busca
 TO 'nome-do-arquivo.csv' DELIMITER ',' CSV HEADER;
 ```
 
