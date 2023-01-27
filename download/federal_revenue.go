@@ -17,7 +17,7 @@ const (
 	// extracted by the Federal Revenue
 	FederalRevenueUpdatedAt = "updated_at.txt"
 
-	federalRevenueURL        = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-juridica-cnpj"
+	federalRevenueURL        = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-jurdica---cnpj"
 	federalRevenueFormat     = "zip+csv"
 	federalRevenueDateFormat = "02/01/2006 15:04:05"
 )
