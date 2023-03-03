@@ -70,6 +70,8 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v := r.URL.Path
+	command := "" // "" = returns all data.
+
 	if v == "/" {
 		http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
 		return
@@ -84,9 +86,45 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
+
+	//check if the url contains "."
+	if strings.Contains(v, ".") {
+		command = strings.Split(v, "/")[2]
+	} else {
+		command = strings.Split(v, "/")[1]
+	}
+
+	//Não existe comando, retorna todos os dados
+	if command != "" {
+		w.Header().Set("Content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		io.WriteString(w, s)
+		return
+	}
+
+	//create a map to store the json
+	var data map[string]interface{}
+	json.Unmarshal([]byte(s), &data)
+
+	//if command contains ".", it means that the user wants to get a specific data
+	if strings.Contains(command, ".") {
+		//split the command to get the path
+		path := strings.Split(command, ".")
+
+		//iterate over the path to get the data
+		for i := 0; i < len(path); i++ {
+			//if the data exists, return it
+			if i == len(path)-1 {
+				data = data[path[i]].(map[string]interface{})
+			} else {
+				messageResponse(w, http.StatusNotFound, fmt.Sprintf("dados %s do CNPJ %s não encontrados.", path[i], cnpj.Mask(v)))
+			}
+		}
+	}
+
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, s)
+	io.WriteString(w, fmt.Sprintf("%v", data))
 }
 
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
