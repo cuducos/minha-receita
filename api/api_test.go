@@ -107,6 +107,19 @@ func TestCompanyHandler(t *testing.T) {
 			http.StatusOK,
 			expected,
 		},
+		//Solicitação de campos específicos
+		{
+			http.MethodGet,
+			"/19.131.243/0001-97?fields=uf,cep",
+			http.StatusOK,
+			`{"cep":"","uf":""}`,
+		},
+		{
+			http.MethodGet,
+			"/19131243000197?fields=xolofompila",
+			http.StatusOK,
+			`{"message":"Dados xolofompila do CNPJ 19.131.243/0001-97 não encontrados."}`,
+		}
 	}
 
 	for _, c := range cases {

@@ -70,6 +70,7 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v := r.URL.Path
+
 	if v == "/" {
 		http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
 		return
@@ -84,9 +85,41 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
+
+	//check if the url contains url param "fields"
+	command := r.URL.Query().Get("fields") // "" = returns all data.
+	if command == "" {
+		w.Header().Set("Content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		io.WriteString(w, s)
+		return
+	}
+
+	//create a map to store the json
+	var data map[string]interface{}
+	json.Unmarshal([]byte(s), &data)
+
+	//if command contains ",", it means that the user wants multiple fields
+	if strings.Contains(command, ",") {
+		//split the command to get the fields
+		fields := strings.Split(command, ",")
+
+		//iterate over fields
+		for _, field := range fields {
+			//if the data exists, add it to the data map
+			if val, ok := data[field]; ok {
+				data[field] = val
+			} else {
+				//if the data does not exist, return an error
+				messageResponse(w, http.StatusNotFound, fmt.Sprintf("Dados %s do CNPJ %s não encontrados.", field, cnpj.Mask(v)))
+				return
+			}
+		}
+	}
+
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, s)
+	io.WriteString(w, fmt.Sprintf("%v", data))
 }
 
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
