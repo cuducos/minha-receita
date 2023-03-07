@@ -117,7 +117,7 @@ func TestCompanyHandler(t *testing.T) {
 		{
 			http.MethodGet,
 			"/19131243000197?fields=xolofompila",
-			http.StatusOK,
+			http.StatusNotFound,
 			`{"message":"Dados xolofompila do CNPJ 19.131.243/0001-97 não encontrados."}`,
 		}
 	}
