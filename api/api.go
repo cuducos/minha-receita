@@ -99,21 +99,18 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	var data map[string]interface{}
 	json.Unmarshal([]byte(s), &data)
 
-	//if command contains ",", it means that the user wants multiple fields
-	if strings.Contains(command, ",") {
-		//split the command to get the fields
-		fields := strings.Split(command, ",")
+	//split the command to get the fields
+	fields := strings.Split(command, ",")
 
-		//iterate over fields
-		for _, field := range fields {
-			//if the data exists, add it to the data map
-			if val, ok := data[field]; ok {
-				data[field] = val
-			} else {
-				//if the data does not exist, return an error
-				messageResponse(w, http.StatusNotFound, fmt.Sprintf("Dados %s do CNPJ %s não encontrados.", field, cnpj.Mask(v)))
-				return
-			}
+	//iterate over fields
+	for _, field := range fields {
+		//if the data exists, add it to the data map
+		if val, ok := data[field]; ok {
+			data[field] = val
+		} else {
+			//if the data does not exist, return an error
+			messageResponse(w, http.StatusNotFound, fmt.Sprintf("Dados %s do CNPJ %s não encontrados.", field, cnpj.Mask(v)))
+			return
 		}
 	}
 
