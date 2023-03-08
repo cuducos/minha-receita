@@ -112,12 +112,12 @@ func TestCompanyHandler(t *testing.T) {
 			http.MethodGet,
 			"/19.131.243/0001-97?fields=uf,cep",
 			http.StatusOK,
-			`{"cep":"","uf":""}`,
+			`{"data_inicio_atividade":"2013-10-03","descricao_porte":"Não informado"}`,
 		},
 		{
 			http.MethodGet,
 			"/19131243000197?fields=xolofompila",
-			http.StatusNotFound,
+			http.StatusBadRequest,
 			`{"message":"Dados xolofompila do CNPJ 19.131.243/0001-97 não encontrados."}`,
 		}
 	}

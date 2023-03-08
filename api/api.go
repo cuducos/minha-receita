@@ -109,7 +109,7 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 			data[field] = val
 		} else {
 			//if the data does not exist, return an error
-			messageResponse(w, http.StatusNotFound, fmt.Sprintf("Dados %s do CNPJ %s não encontrados.", field, cnpj.Mask(v)))
+			messageResponse(w, http.StatusBadRequest, fmt.Sprintf("Dados %s do CNPJ %s não encontrados.", field, cnpj.Mask(v)))
 			return
 		}
 	}
