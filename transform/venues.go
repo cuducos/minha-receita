@@ -23,7 +23,7 @@ func saveBatch(db database, b []company) (int, error) {
 		}
 		n, err := strconv.Atoi(c.CNPJ)
 		if err != nil {
-			return 0, fmt.Errorf("copuld not convert cnpj %s to int: %w", c.CNPJ, err)
+			return 0, fmt.Errorf("could not convert cnpj %s to int: %w", c.CNPJ, err)
 		}
 		s[i] = []any{n, j}
 	}
