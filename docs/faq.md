@@ -3,6 +3,7 @@
 ## Como buscar por CNAE, UF, etc.?
 
 Isso encarece computacionalmente o _Minha Receita_ (consultas mais pesadas ao banco de dados, paginação, etc.), ou seja:
+
 * ou aumentaria os custos para manter a API no ar (e as doações não cobrem nem os custos atuais)
 * ou comprometeria a disponibilidade da API.
 
