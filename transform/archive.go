@@ -42,7 +42,7 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 			return nil, fmt.Errorf("error reading archived file %s in %s: %w", z.Name, p, err)
 		}
 
-		c := csv.NewReader(f)
+		c := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(f))
 		c.Comma = s
 		a = &archivedCSV{p, f, c, []io.Closer{f, r}}
 		break
@@ -51,7 +51,6 @@ func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
 	if a == nil {
 		return nil, fmt.Errorf("could not find file %s in the archive %s", t, p)
 	}
-
 	return a, nil
 }
 
@@ -70,11 +69,7 @@ func (a *archivedCSV) read() ([]string, error) {
 	if err != nil {
 		return []string{}, fmt.Errorf("error reading archived csv line from %s: %w", a.path, err)
 	}
-	for i, l := range ls {
-		ls[i], err = charmap.ISO8859_1.NewDecoder().String(l)
-		if err != nil {
-			return []string{}, fmt.Errorf("encoding error in text %s from %s: %w", l, a.path, err)
-		}
+	for i := range ls {
 		ls[i] = multipleSpaces.ReplaceAllString(strings.Map(removeNulChar, ls[i]), " ")
 	}
 	return ls, nil
