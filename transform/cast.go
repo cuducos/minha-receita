@@ -90,6 +90,10 @@ func (d *date) MarshalJSON() ([]byte, error) {
 // toDate expects a date as string in the format YYYYMMDD (that is the format
 // used by the Federal Revenue in their CSV files).
 func toDate(v string) (*date, error) {
+	if v == "2021221" { // TODO: remove once the Federal Revenue fixes this (eg 49.009.023/0001-56)
+		return nil, nil
+	}
+
 	onlyZeros := func(s string) bool {
 		v, err := strconv.Atoi(s)
 		if err != nil {

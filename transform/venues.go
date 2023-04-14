@@ -41,9 +41,8 @@ type venuesTask struct {
 	dir               string
 	db                database
 	batchSize         int
-	sentToBatches     int
+	sentToBatches     int32
 	rows              chan []string
-	companies         chan struct{}
 	saved             chan int
 	errors            chan error
 	bar               *progressbar.ProgressBar
@@ -69,6 +68,9 @@ func (t *venuesTask) produceRows() {
 					atomic.StoreInt32(&t.shutdown, 1)
 					return
 				}
+				if atomic.LoadInt32(&t.shutdown) == 1 {
+					return
+				}
 				t.rows <- r
 			}
 		}(t, r)
@@ -82,6 +84,9 @@ func (t *venuesTask) consumeRows() {
 		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
 			return
 		}
+		if int(atomic.AddInt32(&t.sentToBatches, 1)) == t.source.totalLines {
+			close(t.rows)
+		}
 		c, err := newCompany(r, t.lookups, t.kv, t.privacy)
 		if err != nil { // initiate graceful shutdown.
 			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
@@ -89,7 +94,6 @@ func (t *venuesTask) consumeRows() {
 			return
 		}
 		b = append(b, c)
-		t.companies <- struct{}{}
 		if len(b) >= t.batchSize {
 			n, err := saveBatch(t.db, b)
 			if err != nil { // initiate graceful shutdown.
@@ -125,10 +129,12 @@ func (t *venuesTask) run(m int) error {
 		go t.consumeRows()
 	}
 	defer func() {
+		if t.source.totalLines != int(t.sentToBatches) {
+			close(t.rows)
+		}
 		if atomic.LoadInt32(&t.shutdown) == 1 {
 			t.shutdownWaitGroup.Wait()
 		}
-		close(t.companies)
 		close(t.saved)
 		close(t.errors)
 	}()
@@ -136,11 +142,6 @@ func (t *venuesTask) run(m int) error {
 		select {
 		case err := <-t.errors:
 			return err
-		case <-t.companies:
-			t.sentToBatches++
-			if t.source.totalLines == t.sentToBatches {
-				close(t.rows)
-			}
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
@@ -165,7 +166,6 @@ func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b 
 		batchSize:     b,
 		sentToBatches: 0,
 		rows:          make(chan []string),
-		companies:     make(chan struct{}),
 		saved:         make(chan int),
 		errors:        make(chan error),
 		bar:           progressbar.Default(int64(v.totalLines)),
