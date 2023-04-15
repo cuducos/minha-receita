@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/cuducos/go-cnpj"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/schollz/progressbar/v3"
 )
 
