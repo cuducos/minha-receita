@@ -6,7 +6,6 @@ theme:
   name: material
   logo: favicon.svg
   favicon: favicon.svg
-  custom_dir: docs/custom/
   palette:
     primary: deep purple
     accent: purple
