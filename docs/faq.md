@@ -47,6 +47,11 @@ COPY (
 )
 TO 'nome-do-arquivo.csv' DELIMITER ',' CSV HEADER;
 ```
+## Com qual periodicidade a API é atualizada?
+
+A atualização é manual e normalmente ocorre alguns dias depois de a Receita Federal liberar uma nova versão dos dados — salvo quando a Receita Federal divulga dados absurdos, como empresas abertas no ano [202](https://twitter.com/cuducos/status/1646684441979281410) ou [4100](https://twitter.com/cuducos/status/1479078346248097793).
+
+Para saber a data de divulgação pela Receita Federal dos dados disponíveis no _Minha Receita_, [consulte a própria API](como-usar.md).
 
 ## Não consigo baixar os dados, pode me passar?
 
