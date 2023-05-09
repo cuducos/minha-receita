@@ -27,6 +27,15 @@ Mais sobre o protótipo nesse [fio no Twitter](https://twitter.com/cuducos/statu
 
 Não tenho interesse em desenvolver um sistema para cobrar por esse serviço.
 
+## Contato
+
+Para conversar sobre o projeto, prefira [abrir uma _issue_ no GitHub](https://github.com/cuducos/minha-receita/issues/new) ou iniciar uma conversa pública no [Twitter](https://twitter.com) ou [Mastodon](https://mastodon.social/@cuducos). **Não responderei** mensagens deixadas como _DM_ ou emails em minhas contas pessoais:
+
+* Esse é um projeto de dados abertos e código aberto, não existe motivo para conversas privadas relacionadas ao projeto
+* Sua dúvida pode ser a de outra pessoa, e ter a nossa conversa em umas dessas três plataformas faz com que outras pessoas (que talvez tenham a mesma dúvida que você, ou dúvidas semelhantes) possam encontrar a nossa conversa
+* Minha resposta pode ser incompleta ou mesmo errada, e ter essas conversas em ambiente aberto possibilitam que outras pessoas te ajudem, me corrijam e complementem o conteúdo
+* Por fim, pode ser que tua dúvida já tenha sido respondida e, caso você não tenha encontrado, eu posso te enviar unm _link_ e você se junta a uma conversa que já está em andamento sobre o mesmo tema
+
 ## Muito obrigado
 
 Ao [Turicas](https://twitter.com/turicas) por todo ativismo, mais o trabalho de coleta quando o formato dos arquivos ainda não era em CSV. Muito desse projeto se deve a ele. Ao [Bruno](https://twitter.com/555112299jedi), sem o qual [nunca teríamos acesso a esses dados por menos de R$ 500 mil](https://medium.com/serenata/o-dia-que-a-receita-nos-mandou-pagar-r-500-mil-para-ter-dados-p%C3%BAblicos-8e18438f3076). E ao [Fireman](https://twitter.com/daniellfireman), pela mentoria em Go!
