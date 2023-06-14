@@ -1,26 +1,27 @@
 name: Tests
+
 on: [push, pull_request]
+
 jobs:
   test:
-    runs-on: ubuntu-latest
-    container: golang:1.19-bullseye
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_PASSWORD: minhareceita
-          POSTGRES_USER: minhareceita
-          POSTGRES_DB: minhareceita
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        go: [1.19.x, 1.20.x]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v3
+
+      - uses: ikalnytskyi/action-setup-postgres@v4
+        id: postgres
+
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.19"
-      - run: "go test --race ./..."
+          go-version: ${{ matrix.go }}
+
+      - run: go test --race ./...
         env:
-          TEST_DATABASE_URL: postgres://minhareceita:minhareceita@postgres:5432/minhareceita?sslmode=disable
+          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
