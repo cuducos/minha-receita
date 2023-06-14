@@ -11,33 +11,33 @@ import (
 
 func checksumTestdata(t *testing.T) string {
 	out := t.TempDir()
-
 	src := filepath.Join("..", "testdata")
 	ls, err := os.ReadDir(src)
 	if err != nil {
 		t.Fatalf("expected no error reading testdata directory, got %s", err)
 	}
-
 	for _, f := range ls {
 		if filepath.Ext(f.Name()) == ".md5" {
 			continue
 		}
+		func() {
+			r, err := os.Open(filepath.Join(src, f.Name()))
+			if err != nil {
+				t.Fatalf("expected no error opening %s in testdata directory, got %s", f.Name(), err)
+			}
+			defer r.Close()
 
-		r, err := os.Open(filepath.Join(src, f.Name()))
-		if err != nil {
-			t.Fatalf("expected no error opening %s in testdata directory, got %s", f.Name(), err)
-		}
+			w, err := os.Create(filepath.Join(out, f.Name()))
+			if err != nil {
+				t.Fatalf("expected no error creating %s in tmp testdata directory, got %s", f.Name(), err)
+			}
+			defer w.Close()
 
-		w, err := os.Create(filepath.Join(out, f.Name()))
-		if err != nil {
-			t.Fatalf("expected no error creating %s in tmp testdata directory, got %s", f.Name(), err)
-		}
-
-		if _, err := io.Copy(w, r); err != nil {
-			t.Fatalf("expected no error writing %s, got %s", f.Name(), err)
-		}
+			if _, err := io.Copy(w, r); err != nil {
+				t.Fatalf("expected no error writing %s, got %s", f.Name(), err)
+			}
+		}()
 	}
-
 	return out
 }
 

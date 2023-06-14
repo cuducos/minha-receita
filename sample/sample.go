@@ -73,6 +73,7 @@ func makeSampleFromZIP(src, outDir string, m int) error {
 	if err != nil {
 		return fmt.Errorf("error opening %s: %w", src, err)
 	}
+	defer r.Close()
 
 	name := filepath.Base(src)
 	base := strings.TrimSuffix(name, filepath.Ext(src))
@@ -141,6 +142,7 @@ func createUpdateAt(src, dir string, dt string) error {
 	if err != nil {
 		return fmt.Errorf("error creating %s: %w", out, err)
 	}
+	defer w.Close()
 	if _, err := io.Copy(w, r); err != nil {
 		return fmt.Errorf("error copying %s to %s: %w", src, out, err)
 	}
