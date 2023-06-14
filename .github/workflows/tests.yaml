@@ -22,6 +22,12 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
+      - run: go test ./...
+        if: matrix.os == 'windows-latest'
+        env:
+          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+
       - run: go test --race ./...
+        if: matrix.os == 'ubuntu-latest'
         env:
           TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
