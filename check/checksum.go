@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/schollz/progressbar/v3"
@@ -144,7 +145,7 @@ func CreateChecksum(src string) error {
 	var wg sync.WaitGroup
 
 	for _, f := range ls {
-		if f.IsDir() || f.Name()[0] == '.' {
+		if f.IsDir() || f.Name()[0] == '.' || strings.HasSuffix(f.Name(), ".md5") {
 			continue
 		}
 
