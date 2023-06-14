@@ -49,7 +49,7 @@ func (p *PostgreSQL) loadTemplates() error {
 		return fmt.Errorf("error looking for templates: %w", err)
 	}
 	for _, f := range ls {
-		t, err := template.ParseFS(sql, filepath.Join("postgres", f.Name()))
+		t, err := template.ParseFS(sql, "postgres/"+f.Name())
 		if err != nil {
 			return fmt.Errorf("error parsing %s template: %w", f, err)
 		}
