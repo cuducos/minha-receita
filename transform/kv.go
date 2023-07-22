@@ -164,8 +164,10 @@ func (kv *badgerStorage) enrichCompany(c *company) error {
 
 func (b *badgerStorage) close() error {
 	b.db.Close()
-	if err := os.RemoveAll(b.path); err != nil {
-		return fmt.Errorf("error cleaning up badger storage directory: %w", err)
+	if b.path != "" {
+		if err := os.RemoveAll(b.path); err != nil {
+			return fmt.Errorf("error cleaning up badger storage directory: %w", err)
+		}
 	}
 	return nil
 }
@@ -179,16 +181,17 @@ func (*badgerLogger) Debugf(string, ...interface{})   {}
 
 func newBadgerStorage(m bool) (*badgerStorage, error) {
 	var dir string
+	var err error
 	var opt badger.Options
 	if !m {
-		d, err := os.MkdirTemp("", badgerFilePrefix)
+		dir, err = os.MkdirTemp("", badgerFilePrefix)
 		if err != nil {
 			return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
 		}
 		if os.Getenv("DEBUG") != "" {
-			log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", d))
+			log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", dir))
 		}
-		opt = badger.DefaultOptions(d)
+		opt = badger.DefaultOptions(dir)
 	} else {
 		opt = badger.DefaultOptions("").WithInMemory(m)
 	}
