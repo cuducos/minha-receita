@@ -89,7 +89,7 @@ func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	downloadCmd.Flags().StringVarP(&timeout, "timeout", "t", download.DefaultTimeout.String(), "timeout for each download")
-	downloadCmd.Flags().UintVarP(&downloadRetries, "retries", "r", download.DefaultMaxRetries, "maximum retries per download, use -1 for unlimited")
+	downloadCmd.Flags().UintVarP(&downloadRetries, "retries", "r", download.DefaultMaxRetries, "maximum retries per download")
 	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.DefaultMaxParallel, "maximum parallel downloads")
 	downloadCmd.Flags().Int64VarP(&chunkSize, "chunk-size", "c", download.DefaultChunkSize, "max length of the bytes range for each HTTP request")
 	downloadCmd.Flags().BoolVarP(&restart, "restart", "e", false, "restart all downloads from the beginning")
