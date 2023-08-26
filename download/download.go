@@ -56,7 +56,7 @@ func downloadNationalTreasure(dir string, skip bool) error {
 }
 
 // Download all the files (might take days).
-func Download(dir string, timeout time.Duration, skip, restart bool, parallel, retries, chunkSize int) error {
+func Download(dir string, timeout time.Duration, skip, restart bool, parallel int, retries uint, chunkSize int64) error {
 	log.Output(1, "Downloading file(s) from the National Treasure…")
 	if err := downloadNationalTreasure(dir, skip); err != nil {
 		return fmt.Errorf("error downloading files from the national treasure: %w", err)

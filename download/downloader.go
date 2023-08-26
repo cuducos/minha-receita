@@ -18,7 +18,7 @@ const (
 	DefaultChunkSize = 1_048_576
 
 	// DefaultMaxRetries sets the maximum download attempt for each chunk
-	DefaultMaxRetries = 32
+	DefaultMaxRetries = uint(32)
 
 	// DefaultMaxParallel sets the maximum parallels downloads per server
 	DefaultMaxParallel = 16
@@ -69,13 +69,13 @@ func (b *bar) update(s chunk.DownloadStatus) {
 	b.main.Set64(b.downloadedBytes())
 }
 
-func download(dir string, urls []string, parallel, retries, chunkSize int, timeout time.Duration, restart bool) error {
+func download(dir string, urls []string, parallel int, retries uint, chunkSize int64, timeout time.Duration, restart bool) error {
 	d := chunk.DefaultDownloader()
 	d.OutputDir = dir
 	d.ConcurrencyPerServer = parallel
 	d.Timeout = timeout
-	d.MaxRetries = uint(retries)
-	d.ChunkSize = int64(chunkSize)
+	d.MaxRetries = retries
+	d.ChunkSize = chunkSize
 	d.RestartDownloads = restart
 	b := bar{urls: make(map[string]int64), totalFiles: len(urls)}
 	for s := range d.Download(urls...) {
