@@ -74,7 +74,7 @@ func download(dir string, urls []string, parallel, retries, chunkSize int, timeo
 	d.OutputDir = dir
 	d.ConcurrencyPerServer = parallel
 	d.Timeout = timeout
-	d.MaxRetries = DefaultMaxRetries
+	d.MaxRetries = uint(retries)
 	d.ChunkSize = int64(chunkSize)
 	d.RestartDownloads = restart
 	b := bar{urls: make(map[string]int64), totalFiles: len(urls)}
