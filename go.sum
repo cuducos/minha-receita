@@ -9,8 +9,8 @@ github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
-github.com/cuducos/chunk v1.0.0 h1:t/T+Ilzz4Vvj8+E2Uxq8T4164u8rfV11xTnf9dPd3LI=
-github.com/cuducos/chunk v1.0.0/go.mod h1:KQ8TL8O6ammHyniLCSMqcn7yv855iPMowvQWlG3ha8g=
+github.com/cuducos/chunk v1.1.1 h1:mE7IjxoHkCSFyeGsMU877VU4/buPbvEmi87QtLQkvD0=
+github.com/cuducos/chunk v1.1.1/go.mod h1:KQ8TL8O6ammHyniLCSMqcn7yv855iPMowvQWlG3ha8g=
 github.com/cuducos/go-cnpj v0.1.1 h1:ahG8SmCa7cBMv2vuR+5GU5Se0RW2RwRwIbfFHXH1/P4=
 github.com/cuducos/go-cnpj v0.1.1/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGtEey/f4Y=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
