@@ -3,7 +3,7 @@ module github.com/cuducos/minha-receita
 go 1.19
 
 require (
-	github.com/cuducos/chunk v1.0.0
+	github.com/cuducos/chunk v1.1.1
 	github.com/cuducos/go-cnpj v0.1.1
 	github.com/dgraph-io/badger/v4 v4.1.0
 	github.com/jackc/pgx/v5 v5.3.1
