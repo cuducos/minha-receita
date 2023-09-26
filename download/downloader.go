@@ -94,10 +94,15 @@ func simpleDownload(url, dir string) error {
 		return fmt.Errorf("could not create %s: %w", pth, err)
 	}
 	defer h.Close()
-	resp, err := http.Get(url)
+	c := http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("error creating request %s: %w", url, err)
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := c.Do(req)
 	if err != nil {
 		return fmt.Errorf("error requesting %s: %w", url, err)
-
 	}
 	defer resp.Body.Close()
 	_, err = io.Copy(h, resp.Body)

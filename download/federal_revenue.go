@@ -20,6 +20,8 @@ const (
 	federalRevenueURL        = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj"
 	federalRevenueFormat     = "zip+csv"
 	federalRevenueDateFormat = "02/01/2006 15:04:05"
+
+	userAgent = "Minha Receita/0.0.1 (minhareceita.org)"
 )
 
 type federalRevenueTime struct{ Time time.Time }
@@ -58,7 +60,13 @@ func (r *federalRevenueResponse) updatedAt() (t time.Time) {
 }
 
 func newFederalRevenueResponse(url string) (*federalRevenueResponse, error) {
-	r, err := http.Get(url)
+	c := http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request %s: %w", url, err)
+	}
+	req.Header.Set("User-Agent", userAgent)
+	r, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error getting %s: %w", url, err)
 	}
