@@ -22,7 +22,7 @@ The HTTP server is prepared to send logs to New Relic. If the
 NEW_RELIC_LICENSE_KEY environment variable is set, the app automatically
 reports to New Relic. Otherwise, the New Relic wrappers are just ignored.
 
-The HTTP server is prepared to do a host header validation agains the value of
+The HTTP server is prepared to do a host header validation against the value of
 ALLOWED_HOST environment variable. If this variable is not set, this validation
 is skipped.`
 )
@@ -73,7 +73,7 @@ func apiCLI() *cobra.Command {
 		"new-relic-key",
 		"n",
 		"",
-		"New Relic license key (deafult NEW_RELIC_LICENSE_KEY environment variable)",
+		"New Relic license key (default NEW_RELIC_LICENSE_KEY environment variable)",
 	)
 	return apiCmd
 }
