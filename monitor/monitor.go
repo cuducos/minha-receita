@@ -1,26 +1,27 @@
-package api
+package monitor
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func newRelicApp(k string) *newrelic.Application {
+func NewRelicApp(k string) (*newrelic.Application, error) {
 	if k == "" {
-		return nil
+		return nil, nil
 	}
 	app, err := newrelic.NewApplication(
 		newrelic.ConfigAppName("Minha Receita"),
 		newrelic.ConfigLicense(k),
 	)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error creating new relic app: %w", err)
 	}
-	return app
+	return app, nil
 }
 
-func newRelicHandle(app *newrelic.Application, pth string, f http.HandlerFunc) (string, http.HandlerFunc) {
+func NewRelicHandle(app *newrelic.Application, pth string, f http.HandlerFunc) (string, http.HandlerFunc) {
 	if app == nil {
 		return pth, f
 	}

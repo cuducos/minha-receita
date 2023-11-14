@@ -13,6 +13,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/newrelic/go-agent/v3/integrations/nrpgx5"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 const (
@@ -31,6 +33,7 @@ var sql embed.FS
 // PostgreSQL database interface.
 type PostgreSQL struct {
 	pool                  *pgxpool.Pool
+	newRelic              *newrelic.Application
 	uri                   string
 	schema                string
 	sql                   map[string]string
@@ -125,7 +128,15 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
 	}
-	rows, err := p.pool.Query(context.Background(), p.sql["get"], n)
+
+	ctx := context.Background()
+	if p.newRelic != nil {
+		txn := p.newRelic.StartTransaction("GetCompany")
+		ctx = newrelic.NewContext(ctx, txn)
+		defer txn.End()
+	}
+
+	rows, err := p.pool.Query(ctx, p.sql["get"], n)
 	if err != nil {
 		return "", fmt.Errorf("error looking for cnpj %d: %w", n, err)
 	}
@@ -179,8 +190,15 @@ func (p *PostgreSQL) MetaRead(k string) (string, error) {
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
-	conn, err := pgxpool.New(context.Background(), uri)
+func NewPostgreSQL(uri, schema string, nr *newrelic.Application) (PostgreSQL, error) {
+	cfg, err := pgxpool.ParseConfig(uri)
+	if err != nil {
+		return PostgreSQL{}, fmt.Errorf("could not create database config: %w", err)
+	}
+	if nr != nil {
+		cfg.ConnConfig.Tracer = nrpgx5.NewTracer()
+	}
+	conn, err := pgxpool.NewWithConfig(context.Background(), cfg)
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to the database: %w", err)
 	}

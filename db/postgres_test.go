@@ -14,7 +14,7 @@ func TestPostgresDB(t *testing.T) {
 		t.Errorf("expected a posgres uri at TEST_DATABASE_URL, found nothing")
 		return
 	}
-	pg, err := NewPostgreSQL(u, "public")
+	pg, err := NewPostgreSQL(u, "public", nil)
 	if err != nil {
 		t.Errorf("expected no error connecting to postgres, got %s", err)
 		return

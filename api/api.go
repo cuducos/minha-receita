@@ -14,6 +14,9 @@ import (
 	"time"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/monitor"
+	"github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 const cacheMaxAge = time.Hour * 24
@@ -30,26 +33,37 @@ type errorMessage struct {
 	Message string `json:"message"`
 }
 
+type api struct {
+	db          database
+	host        string
+	errorLogger logWriter.LogWriter
+}
+
 // messageResponse takes a text message and a HTTP status, wraps the message into a
 // JSON output and writes it together with the proper headers to a response.
-func messageResponse(w http.ResponseWriter, s int, m string) {
-	w.WriteHeader(s)
+func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
 	if m == "" {
+		w.WriteHeader(s)
+		if s == http.StatusInternalServerError {
+			app.errorLogger.Write([]byte("Internal server error without error message"))
+		}
 		return
 	}
 
 	b, err := json.Marshal(errorMessage{m})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not wrap message in JSON: %s", m)
+		w.WriteHeader(http.StatusInternalServerError)
+		app.errorLogger.Write([]byte(fmt.Sprintf("Could not wrap message in JSON: %s", m)))
 		return
 	}
+
+	w.WriteHeader(s)
 	w.Header().Set("Content-type", "application/json")
 	w.Write(b)
-}
 
-type api struct {
-	db   database
-	host string
+	if s == http.StatusInternalServerError {
+		app.errorLogger.Write(b)
+	}
 }
 
 func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +79,7 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
 
@@ -75,13 +89,13 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !cnpj.IsValid(v) {
-		messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v[1:])))
+		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v[1:])))
 		return
 	}
 
 	s, err := app.db.GetCompany(cnpj.Unmask(v))
 	if err != nil {
-		messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
+		app.messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
 		return
 	}
 	w.Header().Set("Content-type", "application/json")
@@ -91,12 +105,12 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
 	s, err := app.db.MetaRead("updated-at")
 	if err != nil {
-		messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.")
+		app.messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.")
 		return
 	}
 	if s == "" {
@@ -104,12 +118,12 @@ func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", cacheControl)
-	messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s))
+	app.messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s))
 }
 
 func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -131,12 +145,15 @@ func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) f
 }
 
 // Serve spins up the HTTP server.
-func Serve(db database, p, n string) {
+func Serve(db database, p string, nr *newrelic.Application) {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
-	nr := newRelicApp(n)
-	app := api{db: db, host: os.Getenv("ALLOWED_HOST")}
+	app := api{
+		db:          db,
+		host:        os.Getenv("ALLOWED_HOST"),
+		errorLogger: logWriter.New(os.Stderr, nr),
+	}
 	for _, r := range []struct {
 		path    string
 		handler func(http.ResponseWriter, *http.Request)
@@ -145,7 +162,7 @@ func Serve(db database, p, n string) {
 		{"/updated", app.updatedHandler},
 		{"/healthz", app.healthHandler},
 	} {
-		http.HandleFunc(newRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
+		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
 	log.Output(1, fmt.Sprintf("Serving at http://0.0.0.0%s", p))
 	log.Fatal(http.ListenAndServe(p, nil))

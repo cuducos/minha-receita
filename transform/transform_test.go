@@ -28,7 +28,7 @@ func newTestDB(t *testing.T) *db.PostgreSQL {
 		t.Errorf("expected a posgres uri at TEST_DATABASE_URL, found nothing")
 		return nil
 	}
-	r, err := db.NewPostgreSQL(u, "public")
+	r, err := db.NewPostgreSQL(u, "public", nil)
 	if err != nil {
 		t.Errorf("expected no error creating a test database, got %s", err)
 		return nil

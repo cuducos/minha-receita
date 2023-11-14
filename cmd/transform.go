@@ -31,7 +31,7 @@ var transformCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 		if err != nil {
 			return err
 		}

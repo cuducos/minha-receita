@@ -6,6 +6,8 @@ import (
 
 	"github.com/cuducos/minha-receita/api"
 	"github.com/cuducos/minha-receita/db"
+	"github.com/cuducos/minha-receita/monitor"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +43,17 @@ var apiCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		if newRelic == "" {
+			newRelic = os.Getenv("NEW_RELIC_LICENSE_KEY")
+		}
+		var nr *newrelic.Application
+		if newRelic != "" {
+			nr, err = monitor.NewRelicApp(newRelic)
+			if err != nil {
+				return err
+			}
+		}
+		pg, err := db.NewPostgreSQL(u, postgresSchema, nr)
 		if err != nil {
 			return err
 		}
@@ -52,10 +64,7 @@ var apiCmd = &cobra.Command{
 		if port == "" {
 			port = defaultPort
 		}
-		if newRelic == "" {
-			newRelic = os.Getenv("NEW_RELIC_LICENSE_KEY")
-		}
-		api.Serve(&pg, port, newRelic)
+		api.Serve(&pg, port, nr)
 		return nil
 	},
 }

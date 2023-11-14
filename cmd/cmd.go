@@ -66,7 +66,7 @@ var createCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ var dropCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema)
+		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 		if err != nil {
 			return err
 		}
