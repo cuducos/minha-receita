@@ -7,7 +7,7 @@ import (
 )
 
 const transformHelper = `
-Convert ths CSV files from the Federal Revenue for venues (ESTABELE group of
+Convert the CSV files from the Federal Revenue for venues (ESTABELE group of
 files) into records in the database, 1 record per CNPJ, joining information
 from all other source CSV files.`
 

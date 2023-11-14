@@ -23,7 +23,7 @@ func TestGetURLs(t *testing.T) {
 		defer ts.Close()
 		got, err := getURLs(ts.URL, tc.handler, t.TempDir(), true)
 		if err != nil {
-			t.Errorf("expected to run withour errors, got: %v:", err)
+			t.Errorf("expected to run without errors, got: %v:", err)
 			return
 		}
 		if len(got) != tc.expected {

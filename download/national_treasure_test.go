@@ -9,7 +9,7 @@ func TestNationalTreasureGetURLs(t *testing.T) {
 	defer ts.Close()
 	got, err := nationalTreasureGetURLs(ts.URL, t.TempDir())
 	if err != nil {
-		t.Errorf("expected to run withour errors, got: %v:", err)
+		t.Errorf("expected to run without errors, got: %v:", err)
 		return
 	}
 	expected := []string{

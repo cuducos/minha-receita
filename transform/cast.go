@@ -1,4 +1,4 @@
-// Package transform incluse these cast functions to allow the project to
+// Package transform includes these cast functions to allow the project to
 // accomplish two things:
 //
 //   - convert strings from the CSV files to other formats (e.g. int, float32,

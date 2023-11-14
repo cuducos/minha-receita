@@ -17,7 +17,7 @@ var (
 func companyFromString(j string) (company, error) {
 	var c company
 	if err := json.Unmarshal([]byte(j), &c); err != nil {
-		return company{}, fmt.Errorf("error unmarshaling: %w", err)
+		return company{}, fmt.Errorf("error unmarshalling: %w", err)
 	}
 	return c, nil
 }
@@ -34,7 +34,7 @@ func newTestDB(t *testing.T) *db.PostgreSQL {
 		return nil
 	}
 	if err := r.DropTable(); err != nil {
-		t.Errorf("expected no error droping the table in the test database, got %s", err)
+		t.Errorf("expected no error dropping the table in the test database, got %s", err)
 		return nil
 	}
 	if err := r.CreateTable(); err != nil {

@@ -14,7 +14,7 @@ func keyForPartners(n string) string { return fmt.Sprintf("partners%s", n) }
 func keyForBase(n string) string     { return fmt.Sprintf("base%s", n) }
 func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }
 
-// fucntions to read data from Badger
+// functions to read data from Badger
 
 func partnersOf(db *badger.DB, n string) ([]partnerData, error) {
 	p := []partnerData{}

@@ -145,7 +145,7 @@ func (p *PostgreSQL) PreLoad() error {
 	return nil
 }
 
-// PostLoad runs after loading data into the database. Currenlty it re-enables
+// PostLoad runs after loading data into the database. Currently it re-enables
 // autovacuum on PostgreSQL.
 func (p *PostgreSQL) PostLoad() error {
 	if _, err := p.pool.Exec(context.Background(), p.sql["post_load"]); err != nil {

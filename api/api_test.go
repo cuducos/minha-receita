@@ -217,7 +217,7 @@ func TestAllowedHostWrap(t *testing.T) {
 	}{
 		{"", http.StatusOK},
 		{"127.0.0.1", http.StatusOK},
-		{"fourty-two", http.StatusTeapot},
+		{"forty-two", http.StatusTeapot},
 	} {
 		t.Run(fmt.Sprintf("test returns %d when allowed host is %s", c.status, c.allowedHost), func(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, "/19131243000197", nil)

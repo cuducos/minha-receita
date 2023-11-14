@@ -14,7 +14,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 	t.Run("returns download urls", func(t *testing.T) {
 		got, err := federalRevenueGetURLs(ts.URL, tmp)
 		if err != nil {
-			t.Errorf("expected to run withour errors, got: %v:", err)
+			t.Errorf("expected to run without errors, got: %v:", err)
 		}
 		expected := []string{
 			"https://dadosabertos.rfb.gov.br/CNPJ/Cnaes.zip",
@@ -61,7 +61,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 	t.Run("saves updated at date", func(t *testing.T) {
 		_, err := federalRevenueGetURLs(ts.URL, tmp)
 		if err != nil {
-			t.Errorf("expected to run withour errors, got: %v:", err)
+			t.Errorf("expected to run without errors, got: %v:", err)
 		}
 		pth := filepath.Join(tmp, FederalRevenueUpdatedAt)
 		got, err := os.ReadFile(pth)

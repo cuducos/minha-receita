@@ -7,7 +7,7 @@ import (
 
 func TestPostgresDB(t *testing.T) {
 	id := 33683111000280
-	json := `{"qsa": [{"name": 42}, {"name": "fourty-two"}], "answer": 42}`
+	json := `{"qsa": [{"name": 42}, {"name": "forty-two"}], "answer": 42}`
 
 	u := os.Getenv("TEST_DATABASE_URL")
 	if u == "" {
@@ -62,14 +62,14 @@ func TestPostgresDB(t *testing.T) {
 	if metadata != "42" {
 		t.Errorf("expected 42 as the answer, got %s", metadata)
 	}
-	if err := pg.MetaSave("answer", "fourty-two"); err != nil {
+	if err := pg.MetaSave("answer", "forty-two"); err != nil {
 		t.Errorf("expected no error re-writing to the metadata table, got %s", err)
 	}
 	metadata2, err := pg.MetaRead("answer")
 	if err != nil {
 		t.Errorf("expected no error getting metadata for the second time, got %s", err)
 	}
-	if metadata2 != "fourty-two" {
+	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
 }

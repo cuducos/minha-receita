@@ -152,7 +152,7 @@ func TestSaveAndReadItems(t *testing.T) {
 			}
 			got, err := partnersOf(db, testBaseCNPJ)
 			if err != nil {
-				t.Errorf("expexted no error reading partners, got %s", err)
+				t.Errorf("expected no error reading partners, got %s", err)
 			}
 			if len(got) != 1 {
 				t.Errorf("expected merged partnes to have 1 partger, got %d", len(got))
@@ -174,7 +174,7 @@ func TestSaveAndReadItems(t *testing.T) {
 			}
 			got, err := baseOf(db, testBaseCNPJ)
 			if err != nil {
-				t.Errorf("expexted no error reading base, got %s", err)
+				t.Errorf("expected no error reading base, got %s", err)
 			}
 			if !reflect.DeepEqual(got, d) {
 				t.Errorf("expected %v, got %v", d, got)
@@ -192,7 +192,7 @@ func TestSaveAndReadItems(t *testing.T) {
 			}
 			got, err := taxesOf(db, testBaseCNPJ)
 			if err != nil {
-				t.Errorf("expexted no error reading taxes, got %s", err)
+				t.Errorf("expected no error reading taxes, got %s", err)
 			}
 			if !reflect.DeepEqual(got, d) {
 				t.Errorf("expected %v, got %v", d, got)

@@ -13,7 +13,7 @@ Downloads the required ZIP and Excel files.
 
 The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra Excel file is downloaded from IBGE. Since the server
-is extremelly slow, all files are downloaded using multiple HTTP requests with
+is extremely slow, all files are downloaded using multiple HTTP requests with
 small content ranges.`
 
 	urlsHelper = `

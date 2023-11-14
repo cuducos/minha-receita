@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	// DefaultChunkSize sets the size of the chunks to be dowloaded using HTTP
+	// DefaultChunkSize sets the size of the chunks to be downloaded using HTTP
 	// requests by bytes range
 	DefaultChunkSize = 1_048_576
 
