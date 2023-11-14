@@ -128,14 +128,12 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
 	}
-
 	ctx := context.Background()
 	if p.newRelic != nil {
 		txn := p.newRelic.StartTransaction("GetCompany")
 		ctx = newrelic.NewContext(ctx, txn)
 		defer txn.End()
 	}
-
 	rows, err := p.pool.Query(ctx, p.sql["get"], n)
 	if err != nil {
 		return "", fmt.Errorf("error looking for cnpj %d: %w", n, err)
@@ -178,7 +176,13 @@ func (p *PostgreSQL) MetaSave(k, v string) error {
 
 // MetaRead reads a key/value pair from the metadata table.
 func (p *PostgreSQL) MetaRead(k string) (string, error) {
-	rows, err := p.pool.Query(context.Background(), p.sql["meta_read"], k)
+	ctx := context.Background()
+	if p.newRelic != nil {
+		txn := p.newRelic.StartTransaction("MetaRead")
+		ctx = newrelic.NewContext(ctx, txn)
+		defer txn.End()
+	}
+	rows, err := p.pool.Query(ctx, p.sql["meta_read"], k)
 	if err != nil {
 		return "", fmt.Errorf("error looking for metadata key %s: %w", k, err)
 	}
