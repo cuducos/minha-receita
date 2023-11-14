@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
