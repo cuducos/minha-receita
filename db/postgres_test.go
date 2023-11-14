@@ -19,6 +19,9 @@ func TestPostgresDB(t *testing.T) {
 		t.Errorf("expected no error connecting to postgres, got %s", err)
 		return
 	}
+	if err := pg.DropTable(); err != nil {
+		t.Errorf("expected no error dropping the table, got %s", err)
+	}
 	defer func() {
 		if err := pg.DropTable(); err != nil {
 			t.Errorf("expected no error dropping the table, got %s", err)
