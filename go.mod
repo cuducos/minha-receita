@@ -53,4 +53,4 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 )
 
-// +heroku goVersion go1.19
+// +heroku goVersion go1.21
