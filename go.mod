@@ -1,6 +1,6 @@
 module github.com/cuducos/minha-receita
 
-go 1.19
+go 1.21
 
 require (
 	github.com/cuducos/chunk v1.1.2
