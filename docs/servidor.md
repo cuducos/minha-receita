@@ -29,6 +29,10 @@ Caso o download falhe, é recomendado variar as configurações explicadas no `-
 
 Em último caso, é possível listar as URLs para download dos arquivos com comando `urls`; e, então, tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.).
 
+### Espelho dos dados
+
+O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org). Você pode fazer o download dos arquivos de lá (ao invés de utilisar o servidor oficial) com a opção `--mirror YYYY-MM-DD` substituindo a data por alguma das disponíveis no espelho.
+
 ### Exemplos de uso
 
 Sem Docker:
@@ -36,6 +40,7 @@ Sem Docker:
 ```console
 $ minha-receita download --urls-only
 $ minha-receita download --timeout 1h42m12s
+$ minha-receita download --mirror 2022-12-17
 ```
 
 Com Docker:
