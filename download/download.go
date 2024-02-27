@@ -75,6 +75,18 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel in
 	return nil
 }
 
+// Download all the files from the project's mirror
+func DownloadFromMirror(mirror string, dir string, timeout time.Duration, skip, restart bool, parallel int, retries uint, chunkSize int64) error {
+	urls, err := getMirrorURLs(mirror)
+	if err != nil {
+		return fmt.Errorf("error getting mirror urls: %w", err)
+	}
+	if err := download(dir, urls, parallel, retries, chunkSize, timeout, restart); err != nil {
+		return fmt.Errorf("error downloading files from the mirror: %w", err)
+	}
+	return nil
+}
+
 // URLs shows the URLs to be downloaded.
 func URLs(dir string, skip bool) error {
 	urls := []string{federalRevenueURL, nationalTreasureBaseURL}
