@@ -193,9 +193,9 @@ $ curl https://minhareceita.org/33683111000280
 
 ## _Endpoints_ auxiliares
 
-Todos esses _endpoints_ apenas aceitam requisições do tipo `GET` e, é esperado, respondem com status `200`:
+Para todos esses _endpoints_ é esperada resposta com status `200`:
 
-| Caminho da URL | Conteúdo esperado na resposta |
----|---|
-| `/updated` | JSON contendo a data de extração dos dados pela Receita Federal. |
-| `/healthz` | Resposta sem conteúdo |
+| Caminho da URL | Tipo de requisição | Conteúdo esperado na resposta |
+|---|---|---|
+| `/updated` | `GET` | JSON contendo a data de extração dos dados pela Receita Federal. |
+| `/healthz` | `GET` ou `HEAD` | Resposta sem conteúdo |
