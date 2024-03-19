@@ -9,7 +9,7 @@ API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jur�
 [Documentação](https://docs.minhareceita.org)<br>
 [Guia de contribuição](CONTRIBUTING.md)<br>
 [Ajude a manter o servidor no ar](https://github.com/sponsors/cuducos)<br>
-[Monitor do status do servidor](https://status.minhareceita.org)<br>
+[Monitor do status do servidor](https://stats.uptimerobot.com/tqpD6AQZqI)<br>
 [Espelho de dados](https://mirror.minhareceita.org)
 
 </div>
