@@ -157,8 +157,8 @@ func TestHealthHandler(t *testing.T) {
 		},
 		{
 			http.MethodHead,
-			http.StatusMethodNotAllowed,
-			`{"message":"Essa URL aceita apenas o método GET."}`,
+			http.StatusOK,
+			"",
 		},
 	}
 
