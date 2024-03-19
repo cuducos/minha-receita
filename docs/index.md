@@ -15,7 +15,7 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 
 ## Como usar
 
-Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, mas existe um protótipo no ar em [`https://minhareceita.org/`](https://minhareceita.org).
+Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, mas existe um protótipo no ar em [`https://minhareceita.org/`](https://minhareceita.org) (confira o [monitor de status](https://status.minhareceita.org)).
 
 Para fazer uma consulta usando o protótipo, acrescente o CNPJ a ser consultado ao final da URL. Por exemplo: `https://minhareceita.org/33.683.111/0002-80`. Para mais detalhes sobre como utilizar a API, confira a seção [Como usar](como-usar.md).
 
