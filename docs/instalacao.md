@@ -6,7 +6,7 @@ Existem três formas de rodar essa aplicação localmente:
 
 * ou com a imagem Docker
 * ou gerando o binário a partir do código fonte
-* ou com Docker Compose
+* ou com Docker Compose — apenas para desenvolvimento (não é recomendado para o banco de dados completo por problemas de lentidão)
 
 As duas últimas alternativas necessitam do código fonte. Você pode usar o Git para baixar o código do projeto:
 
