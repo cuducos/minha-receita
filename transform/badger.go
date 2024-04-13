@@ -10,11 +10,53 @@ import (
 
 const badgerFilePrefix = "minha-receita-badger-"
 
+func removeLeadingZeros(n string) string {
+	var o string
+	isZero := true
+	for _, ch := range n {
+		if ch != '0' || !isZero {
+			o += string(ch)
+			isZero = false
+		}
+	}
+	if o == "" {
+		o = "0"
+	}
+	return o
+}
+
+func keyForMotives(n string) string  { return fmt.Sprintf("motives%s", removeLeadingZeros(n)) }
 func keyForPartners(n string) string { return fmt.Sprintf("partners%s", n) }
 func keyForBase(n string) string     { return fmt.Sprintf("base%s", n) }
 func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }
 
 // functions to read data from Badger
+
+func motivesOf(db *badger.DB, i int) (string, bool, error) {
+	var m string
+	found := false
+	n := fmt.Sprintf("%d", i)
+	err := db.View(func(txn *badger.Txn) error {
+		i, err := txn.Get([]byte(keyForMotives(n)))
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("could not get key %s: %w", keyForMotives(n), err)
+		}
+		v, err := i.ValueCopy(nil)
+		if err != nil {
+			return fmt.Errorf("could not read value for key %s: %w", keyForMotives(n), err)
+		}
+		m = string(v)
+		found = true
+		return nil
+	})
+	if err != nil {
+		return m, false, fmt.Errorf("error getting motive for %s: %w", n, err)
+	}
+	return m, found, nil
+}
 
 func partnersOf(db *badger.DB, n string) ([]partnerData, error) {
 	p := []partnerData{}
