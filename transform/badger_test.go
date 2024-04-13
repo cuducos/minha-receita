@@ -213,7 +213,7 @@ func TestRemoveLeadingZeros(t *testing.T) {
 		{"test", "test"},
 		{"0", "0"},
 	} {
-		got := removeLeadingZeros(tc.value)
+		got := noLeadingZeros(tc.value)
 		if got != tc.expected {
 			t.Errorf("expected %s, got %s", tc.expected, got)
 		}
