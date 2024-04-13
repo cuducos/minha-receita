@@ -20,11 +20,6 @@ type item struct {
 func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
 	var h func(l *lookups, r []string) ([]byte, error)
 	switch s {
-	case motives:
-		i.key = []byte(keyForMotives(r[0]))
-		h = func(_ *lookups, r []string) ([]byte, error) {
-			return []byte(r[1]), nil
-		}
 	case partners:
 		i.key = []byte(keyForPartners(r[0]))
 		h = loadPartnerRow
@@ -51,7 +46,7 @@ type badgerStorage struct {
 }
 
 func (kv *badgerStorage) load(dir string, l *lookups) error {
-	srcs, err := newSources(dir, []sourceType{motives, base, partners, taxes})
+	srcs, err := newSources(dir, []sourceType{base, partners, taxes})
 	if err != nil {
 		return fmt.Errorf("could not load sources: %w", err)
 	}
@@ -115,30 +110,14 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 
 func (kv *badgerStorage) enrichCompany(c *company) error {
 	n := cnpj.Base(c.CNPJ)
-	ms := make(chan string)
 	ps := make(chan []partnerData)
 	bs := make(chan baseData)
 	ts := make(chan taxesData)
 	errs := make(chan error)
 	go func() {
-		if c.MotivoSituacaoCadastral == nil {
-			return
-		}
-		m, ok, err := motivesOf(kv.db, *c.MotivoSituacaoCadastral)
-		if err != nil {
-			errs <- err
-			return
-		}
-		if !ok {
-			return
-		}
-		ms <- m
-	}()
-	go func() {
 		p, err := partnersOf(kv.db, n)
 		if err != nil {
 			errs <- err
-			return
 		}
 		ps <- p
 	}()
@@ -146,7 +125,6 @@ func (kv *badgerStorage) enrichCompany(c *company) error {
 		v, err := baseOf(kv.db, n)
 		if err != nil {
 			errs <- err
-			return
 		}
 		bs <- v
 	}()
@@ -154,14 +132,11 @@ func (kv *badgerStorage) enrichCompany(c *company) error {
 		t, err := taxesOf(kv.db, n)
 		if err != nil {
 			errs <- err
-			return
 		}
 		ts <- t
 	}()
 	for i := 0; i < 3; i++ {
 		select {
-		case m := <-ms:
-			c.DescricaoMotivoSituacaoCadastral = &m
 		case p := <-ps:
 			c.QuadroSocietario = p
 		case v := <-bs:
