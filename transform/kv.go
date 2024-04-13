@@ -17,17 +17,9 @@ type item struct {
 	kind       sourceType
 }
 
-func lookupHandler(_ *lookups, r []string) ([]byte, error) { return []byte(r[1]), nil }
-
 func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
 	var h func(l *lookups, r []string) ([]byte, error)
 	switch s {
-	case motives:
-		i.key = []byte(keyForLookup(motives, r[0]))
-		h = lookupHandler
-	case cities:
-		i.key = []byte(keyForLookup(cities, r[0]))
-		h = lookupHandler
 	case partners:
 		i.key = []byte(keyForPartners(r[0]))
 		h = loadPartnerRow
@@ -49,13 +41,12 @@ func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
 }
 
 type badgerStorage struct {
-	db       *badger.DB
-	path     string
-	gotError bool
+	db   *badger.DB
+	path string
 }
 
 func (kv *badgerStorage) load(dir string, l *lookups) error {
-	srcs, err := newSources(dir, []sourceType{motives, cities, base, partners, taxes})
+	srcs, err := newSources(dir, []sourceType{base, partners, taxes})
 	if err != nil {
 		return fmt.Errorf("could not load sources: %w", err)
 	}
@@ -117,107 +108,35 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	}
 }
 
-type lookupResult struct {
-	value string
-	ok    bool
-}
-
-func (kv *badgerStorage) lookupHandler(ch chan<- lookupResult, errs chan<- error, s sourceType, k *int) {
-	var v string
-	var ok bool
-	if k == nil {
-		ch <- lookupResult{v, ok}
-		return
-	}
-	v, ok, err := lookupOf(kv.db, s, *k)
-	if err != nil {
-		if !kv.gotError {
-			errs <- err
-		}
-		kv.gotError = true
-		return
-	}
-	ch <- lookupResult{v, ok}
-}
-
-type lookupChannels struct {
-	motives chan lookupResult
-	cities  chan lookupResult
-}
-
-func (ls *lookupChannels) close() {
-	close(ls.motives)
-	close(ls.cities)
-}
-
 func (kv *badgerStorage) enrichCompany(c *company) error {
-	errs := make(chan error)
-	defer close(errs)
-
-	ch := lookupChannels{make(chan lookupResult), make(chan lookupResult)}
-	defer ch.close()
-
-	go kv.lookupHandler(ch.motives, errs, motives, c.MotivoSituacaoCadastral)
-	go kv.lookupHandler(ch.cities, errs, cities, c.CodigoMunicipio)
-
+	n := cnpj.Base(c.CNPJ)
 	ps := make(chan []partnerData)
 	bs := make(chan baseData)
 	ts := make(chan taxesData)
-	defer func() {
-		close(ts)
-		close(bs)
-		close(ps)
-	}()
-	n := cnpj.Base(c.CNPJ)
+	errs := make(chan error)
 	go func() {
 		p, err := partnersOf(kv.db, n)
 		if err != nil {
-			if !kv.gotError {
-				errs <- err
-			}
-			kv.gotError = true
-			return
+			errs <- err
 		}
-		if !kv.gotError {
-			ps <- p
-		}
+		ps <- p
 	}()
 	go func() {
 		v, err := baseOf(kv.db, n)
 		if err != nil {
-			if !kv.gotError {
-				errs <- err
-			}
-			kv.gotError = true
-			return
+			errs <- err
 		}
-		if !kv.gotError {
-			bs <- v
-		}
+		bs <- v
 	}()
 	go func() {
 		t, err := taxesOf(kv.db, n)
 		if err != nil {
-			if !kv.gotError {
-				errs <- err
-			}
-			kv.gotError = true
-			return
+			errs <- err
 		}
-		if !kv.gotError {
-			ts <- t
-		}
+		ts <- t
 	}()
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		select {
-		case r := <-ch.motives:
-			if r.ok {
-				c.DescricaoMotivoSituacaoCadastral = &r.value
-			}
-		case r := <-ch.cities:
-			if r.ok {
-				c.Municipio = &r.value
-			}
 		case p := <-ps:
 			c.QuadroSocietario = p
 		case v := <-bs:

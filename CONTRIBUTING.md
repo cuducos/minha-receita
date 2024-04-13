@@ -41,7 +41,7 @@ As configurações padrão desses bancos são:
 
 ### Rodando o projeto todo com Docker
 
-Se for utilizar Docker para rodar o projeto todo,  copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário.
+Se for utilizar Docker para rodar o projeto todo, copie o arquivo `.env.sample` como `.env` — e ajuste, se necessário.
 
 O banco de dados de sua escolha (padrão, que persiste dados; ou de testes, que não persiste dados) tem que ser [iniciado isoladamente](#apenas-para-o-banco-de-dados).
 
@@ -89,16 +89,12 @@ A etapa de transformação dos dados, começa criando armazenamentos de chave e 
 
 A partir daí, cada linha dos `Estabelecimentos*` é lida, enriquecida com esses pares de chave e valor armazenados anteriormente, e então enviada para o banco de dados.
 
-Resumindo:
-
-1. Armazena pares de chave e valor em memória para os dados de: `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE
-1. Armazena pares de chave e valor em disco para os dados de:
-    1. `Empresas*` enriquecidas com pares de chave e valor de `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE
-    1. `Socios*` enriquecidos com pares de chave e valor de `Qualificacoes.zip`
-    1. `Simples.zip` e enriquecer as linhas do banco de dados com essas informações
-1. Lê os arquivos `Estabelecimentos*`
-1. “Enriquece” cada linha deles com os pares de chave e valor
-1. Persiste essa informação no banco de dados
+| Etapa | Descricão | Armazenamento |
+|:-:|---|---
+| 1 | Armazena pares de chave e valor em memória para os dados de: `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE | Em memória |
+| 2 | Armazena pares de chave e valor em disco para os dados de: `Empresas*` (já enriquecidas com dados de `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE), `Socios*` (já enriquecidos com pares de chave e valor de `Qualificacoes.zip`) e `Simples.zip` | [Badger](https://dgraph.io/docs/badger/) |
+| 3 | Lê os arquivos `Estabelecimentos*` e os enriquece com os dados das etapas anteriores | Em memória |
+| 4 | Convert o `struct` para JSON e armazena o resultado no banco de dados | PostgreSQL |
 
 ## Amostra dos arquivos para testes
 

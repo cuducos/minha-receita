@@ -200,22 +200,3 @@ func TestSaveAndReadItems(t *testing.T) {
 		})
 	}
 }
-
-func TestRemoveLeadingZeros(t *testing.T) {
-	for _, tc := range []struct {
-		value    string
-		expected string
-	}{
-		{"42", "42"},
-		{"420", "420"},
-		{"042", "42"},
-		{"0042", "42"},
-		{"test", "test"},
-		{"0", "0"},
-	} {
-		got := noLeadingZeros(tc.value)
-		if got != tc.expected {
-			t.Errorf("expected %s, got %s", tc.expected, got)
-		}
-	}
-}

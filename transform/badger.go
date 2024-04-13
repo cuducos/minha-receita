@@ -10,53 +10,11 @@ import (
 
 const badgerFilePrefix = "minha-receita-badger-"
 
-func noLeadingZeros(n string) string {
-	var o string
-	isZero := true
-	for _, ch := range n {
-		if ch != '0' || !isZero {
-			o += string(ch)
-			isZero = false
-		}
-	}
-	if o == "" {
-		o = "0"
-	}
-	return o
-}
-
-func keyForLookup(s sourceType, n string) string { return fmt.Sprintf("%s%s", s, noLeadingZeros(n)) }
-func keyForPartners(n string) string             { return fmt.Sprintf("partners%s", n) }
-func keyForBase(n string) string                 { return fmt.Sprintf("base%s", n) }
-func keyForTaxes(n string) string                { return fmt.Sprintf("taxes%s", n) }
+func keyForPartners(n string) string { return fmt.Sprintf("partners%s", n) }
+func keyForBase(n string) string     { return fmt.Sprintf("base%s", n) }
+func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }
 
 // functions to read data from Badger
-
-func lookupOf(db *badger.DB, s sourceType, i int) (string, bool, error) {
-	var v string
-	ok := false
-	err := db.View(func(txn *badger.Txn) error {
-		k := keyForLookup(s, fmt.Sprintf("%d", i))
-		r, err := txn.Get([]byte(k))
-		if errors.Is(err, badger.ErrKeyNotFound) {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("could not get key %s: %w", k, err)
-		}
-		b, err := r.ValueCopy(nil)
-		if err != nil {
-			return fmt.Errorf("could not read value for key %s: %w", k, err)
-		}
-		v = string(b)
-		ok = true
-		return nil
-	})
-	if err != nil {
-		return v, false, fmt.Errorf("error getting %s for %d: %w", s, i, err)
-	}
-	return v, ok, nil
-}
 
 func partnersOf(db *badger.DB, n string) ([]partnerData, error) {
 	p := []partnerData{}
