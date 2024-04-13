@@ -22,7 +22,6 @@ func newLookup(p string) (lookup, error) {
 }
 
 type lookups struct {
-	motives        lookup
 	cities         lookup
 	countries      lookup
 	cnaes          lookup
@@ -33,7 +32,7 @@ type lookups struct {
 
 func newLookups(d string) (lookups, error) {
 	var ls []lookup
-	srcs := []sourceType{motives, cities, countries, cnaes, qualifications, natures}
+	srcs := []sourceType{cities, countries, cnaes, qualifications, natures}
 	for _, src := range srcs {
 		paths, err := pathsForSource(src, d)
 		if err != nil {
@@ -54,7 +53,7 @@ func newLookups(d string) (lookups, error) {
 	if err != nil {
 		return lookups{}, fmt.Errorf("error creating ibge lookup: %w", err)
 	}
-	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], ls[5], c}, nil
+	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], c}, nil
 }
 
 func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
@@ -65,11 +64,7 @@ func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
 	if i == nil {
 		return nil
 	}
-	s := l.motives[*i]
 	c.MotivoSituacaoCadastral = i
-	if s != "" {
-		c.DescricaoMotivoSituacaoCadastral = &s
-	}
 	return nil
 }
 
