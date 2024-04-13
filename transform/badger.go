@@ -10,7 +10,7 @@ import (
 
 const badgerFilePrefix = "minha-receita-badger-"
 
-func noLeadingZeros(n string) string {
+func removeLeadingZeros(n string) string {
 	var o string
 	isZero := true
 	for _, ch := range n {
@@ -25,37 +25,37 @@ func noLeadingZeros(n string) string {
 	return o
 }
 
-func keyForLookup(s sourceType, n string) string { return fmt.Sprintf("%s%s", s, noLeadingZeros(n)) }
-func keyForPartners(n string) string             { return fmt.Sprintf("partners%s", n) }
-func keyForBase(n string) string                 { return fmt.Sprintf("base%s", n) }
-func keyForTaxes(n string) string                { return fmt.Sprintf("taxes%s", n) }
+func keyForMotives(n string) string  { return fmt.Sprintf("motives%s", removeLeadingZeros(n)) }
+func keyForPartners(n string) string { return fmt.Sprintf("partners%s", n) }
+func keyForBase(n string) string     { return fmt.Sprintf("base%s", n) }
+func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }
 
 // functions to read data from Badger
 
-func lookupOf(db *badger.DB, s sourceType, i int) (string, bool, error) {
-	var v string
-	ok := false
+func motivesOf(db *badger.DB, i int) (string, bool, error) {
+	var m string
+	found := false
+	n := fmt.Sprintf("%d", i)
 	err := db.View(func(txn *badger.Txn) error {
-		k := keyForLookup(s, fmt.Sprintf("%d", i))
-		r, err := txn.Get([]byte(k))
+		i, err := txn.Get([]byte(keyForMotives(n)))
 		if errors.Is(err, badger.ErrKeyNotFound) {
 			return nil
 		}
 		if err != nil {
-			return fmt.Errorf("could not get key %s: %w", k, err)
+			return fmt.Errorf("could not get key %s: %w", keyForMotives(n), err)
 		}
-		b, err := r.ValueCopy(nil)
+		v, err := i.ValueCopy(nil)
 		if err != nil {
-			return fmt.Errorf("could not read value for key %s: %w", k, err)
+			return fmt.Errorf("could not read value for key %s: %w", keyForMotives(n), err)
 		}
-		v = string(b)
-		ok = true
+		m = string(v)
+		found = true
 		return nil
 	})
 	if err != nil {
-		return v, false, fmt.Errorf("error getting %s for %d: %w", s, i, err)
+		return m, false, fmt.Errorf("error getting motive for %s: %w", n, err)
 	}
-	return v, ok, nil
+	return m, found, nil
 }
 
 func partnersOf(db *badger.DB, n string) ([]partnerData, error) {
