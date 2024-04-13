@@ -160,7 +160,7 @@ func newCompany(row []string, l *lookups, kv kvStorage, privacy bool) (company, 
 	}
 	c.DataSituacaoCadastral = dataSituacaoCadastral
 
-	if err := c.motivoSituacaoCadastral(l, row[7]); err != nil {
+	if err := c.motivoSituacaoCadastral(row[7]); err != nil {
 		return c, fmt.Errorf("error trying to parse MotivoSituacaoCadastral: %w", err)
 	}
 

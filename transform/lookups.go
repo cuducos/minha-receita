@@ -22,7 +22,6 @@ func newLookup(p string) (lookup, error) {
 }
 
 type lookups struct {
-	cities         lookup
 	countries      lookup
 	cnaes          lookup
 	qualifications lookup
@@ -32,7 +31,7 @@ type lookups struct {
 
 func newLookups(d string) (lookups, error) {
 	var ls []lookup
-	srcs := []sourceType{cities, countries, cnaes, qualifications, natures}
+	srcs := []sourceType{countries, cnaes, qualifications, natures}
 	for _, src := range srcs {
 		paths, err := pathsForSource(src, d)
 		if err != nil {
@@ -53,10 +52,10 @@ func newLookups(d string) (lookups, error) {
 	if err != nil {
 		return lookups{}, fmt.Errorf("error creating ibge lookup: %w", err)
 	}
-	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], c}, nil
+	return lookups{ls[0], ls[1], ls[2], ls[3], c}, nil
 }
 
-func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
+func (c *company) motivoSituacaoCadastral(v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse MotivoSituacaoCadastral %s: %w", v, err)
@@ -96,11 +95,6 @@ func (c *company) municipio(l *lookups, v string) error {
 		return nil
 	}
 	c.CodigoMunicipio = i
-	s, ok := l.cities[*i]
-	if !ok {
-		return nil
-	}
-	c.Municipio = &s
 	ibge, ok := l.ibge[*i]
 	if !ok {
 		log.Output(1, fmt.Sprintf("Could not find IBGE city code for %s-%s (%d)", *c.Municipio, c.UF, *i))
