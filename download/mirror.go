@@ -9,7 +9,6 @@ import (
 
 const mirrorURL = "https://mirror.minhareceita.org"
 
-// TODO: do we need to export these structs?
 type MirrorFile struct {
 	URL  string `json:"url"`
 	Size uint   `json:"size"`

@@ -43,9 +43,6 @@ func saveUpdatedAt(db database, dir string) error {
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
 func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy, mem bool) error {
-	if err := saveUpdatedAt(db, dir); err != nil {
-		return fmt.Errorf("error saving the update at date: %w", err)
-	}
 	l, err := newLookups(dir)
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
@@ -62,5 +59,8 @@ func Transform(dir string, db database, maxParallelDBQueries, batchSize int, pri
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}
-	return j.run(maxParallelDBQueries)
+	if err := j.run(maxParallelDBQueries); err != nil {
+		return fmt.Errorf("error writing venues to database: %w", err)
+	}
+	return saveUpdatedAt(db, dir)
 }
