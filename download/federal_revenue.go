@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -17,12 +18,15 @@ const (
 	// extracted by the Federal Revenue
 	FederalRevenueUpdatedAt = "updated_at.txt"
 
-	federalRevenueURL        = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj"
-	federalRevenueFormat     = "zip+csv"
-	federalRevenueDateFormat = "02/01/2006 15:04:05"
+	federalRevenueURL             = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj"
+	federalRevenueFormat          = "zip+csv"
+	federalRevenueDateFormat      = "02/01/2006 15:04:05"
+	federalRevenueDateFormatNotes = "02/01/2006"
 
 	userAgent = "Minha Receita/0.0.1 (minhareceita.org)"
 )
+
+var datePattern = regexp.MustCompile(`Data da última extração:? +(?P<updatedAt>\d{2}/\d{2}/\d{4})`)
 
 type federalRevenueTime struct{ Time time.Time }
 
@@ -48,9 +52,18 @@ type federalRevenueResource struct {
 
 type federalRevenueResponse struct {
 	Resources []federalRevenueResource `json:"resources"`
+	Notes     string                   `json:"notes"`
 }
 
 func (r *federalRevenueResponse) updatedAt() (t time.Time) {
+	m := datePattern.FindStringSubmatch(r.Notes)
+	if len(m) == 2 {
+        t, err := time.Parse(federalRevenueDateFormatNotes, m[1])
+		if err == nil {
+			return t
+		}
+	}
+
 	for _, v := range r.Resources {
 		if t.Before(v.MetadataModified.Time) {
 			t = v.MetadataModified.Time

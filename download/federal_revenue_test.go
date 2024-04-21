@@ -68,7 +68,7 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected no error reading %s, updatedAt %s", pth, err)
 		}
-		expected := "2022-11-24"
+		expected := "2024-04-13"
 		if string(got) != expected {
 			t.Errorf("expected updated at to be %s, got %s", expected, string(got))
 		}
