@@ -18,8 +18,9 @@ const MaxParallelDBQueries = 8
 const BatchSize = 8192
 
 type database interface {
+	PreLoad() error
 	CreateCompanies([][]any) error
-	CreateIndex() error
+	PostLoad() error
 	MetaSave(string, string) error
 }
 

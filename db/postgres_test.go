@@ -32,14 +32,17 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.CreateTable(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
+	if err := pg.PreLoad(); err != nil {
+		t.Errorf("expected no error pre load, got %s", err)
+	}
 	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
 	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
-	if err := pg.CreateIndex(); err != nil {
-		t.Errorf("expected no error creating index, got %s", err)
+	if err := pg.PostLoad(); err != nil {
+		t.Errorf("expected no error post load, got %s", err)
 	}
 	got, err := pg.GetCompany("33683111000280")
 	if err != nil {

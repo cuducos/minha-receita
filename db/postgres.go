@@ -112,16 +112,6 @@ func (p *PostgreSQL) CreateCompanies(batch [][]any) error {
 	return nil
 }
 
-// CreateIndex runs after all the data is creates. It drops duplicates and
-// create a primary key on the ID field.
-func (p *PostgreSQL) CreateIndex() error {
-	log.Output(1, "Creating indexes…")
-	if _, err := p.pool.Exec(context.Background(), p.sql["create_index"]); err != nil {
-		return fmt.Errorf("error creating index with: %s\n%w", p.sql["create_index"], err)
-	}
-	return nil
-}
-
 // GetCompany returns the JSON of a company based on a CNPJ number.
 func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	n, err := strconv.ParseInt(id, 10, 0)
@@ -151,7 +141,7 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 // disables autovacuum on PostgreSQL.
 func (p *PostgreSQL) PreLoad() error {
 	if _, err := p.pool.Exec(context.Background(), p.sql["pre_load"]); err != nil {
-		return fmt.Errorf("error disabling autovacuum with: %s\n%w", p.sql["autovacuum"], err)
+		return fmt.Errorf("error during pre load: %s\n%w", p.sql["pre_load"], err)
 	}
 	return nil
 }
@@ -160,7 +150,7 @@ func (p *PostgreSQL) PreLoad() error {
 // autovacuum on PostgreSQL.
 func (p *PostgreSQL) PostLoad() error {
 	if _, err := p.pool.Exec(context.Background(), p.sql["post_load"]); err != nil {
-		return fmt.Errorf("error re-renabling autovacuum with: %s\n%w", p.sql["autovacuum"], err)
+		return fmt.Errorf("error during post load: %s\n%w", p.sql["autovacuum"], err)
 	}
 	return nil
 }

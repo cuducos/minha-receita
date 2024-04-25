@@ -1,4 +1,5 @@
-CREATE UNLOGGED TABLE IF NOT EXISTS {{ .CompanyTableFullName }} (
+CREATE TABLE IF NOT EXISTS {{ .CompanyTableFullName }} (
+    tmp_pk SERIAL PRIMARY KEY,
     {{ .IDFieldName }}   bigint NOT NULL,
     {{ .JSONFieldName }} jsonb NOT NULL
 );

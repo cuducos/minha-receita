@@ -123,6 +123,9 @@ func (t *venuesTask) run(m int) error {
 	if err := t.bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
+	if err := t.db.PreLoad(); err != nil {
+		return fmt.Errorf("error preparing the database: %w", err)
+	}
 	t.produceRows()
 	for i := 0; i < m; i++ {
 		t.shutdownWaitGroup.Add(1)
@@ -145,7 +148,7 @@ func (t *venuesTask) run(m int) error {
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
-				return t.db.CreateIndex()
+				return t.db.PostLoad()
 			}
 		}
 	}
