@@ -58,7 +58,7 @@ type federalRevenueResponse struct {
 func (r *federalRevenueResponse) updatedAt() (t time.Time) {
 	m := datePattern.FindStringSubmatch(r.Notes)
 	if len(m) == 2 {
-        t, err := time.Parse(federalRevenueDateFormatNotes, m[1])
+		t, err := time.Parse(federalRevenueDateFormatNotes, m[1])
 		if err == nil {
 			return t
 		}
