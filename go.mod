@@ -3,6 +3,7 @@ module github.com/cuducos/minha-receita
 go 1.21
 
 require (
+	github.com/aws/aws-sdk-go v1.49.7
 	github.com/cuducos/chunk v1.1.2
 	github.com/cuducos/go-cnpj v0.1.1
 	github.com/dgraph-io/badger/v4 v4.2.0
@@ -34,6 +35,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/pgx/v4 v4.18.1 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrwriter v1.0.0 // indirect

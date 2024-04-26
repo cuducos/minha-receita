@@ -36,7 +36,7 @@ var (
 	chunkSize         int64
 	skipExistingFiles bool
 	restart           bool
-	mirror            string
+	useMirror         string
 )
 
 var downloadCmd = &cobra.Command{
@@ -51,8 +51,8 @@ var downloadCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if mirror != "" {
-			return download.DownloadFromMirror(mirror, dir, dur, skipExistingFiles, restart, parallelDownloads, downloadRetries, chunkSize)
+		if useMirror != "" {
+			return download.DownloadFromMirror(useMirror, dir, dur, skipExistingFiles, restart, parallelDownloads, downloadRetries, chunkSize)
 		}
 		return download.Download(dir, dur, skipExistingFiles, restart, parallelDownloads, downloadRetries, chunkSize)
 	},
@@ -97,7 +97,7 @@ func downloadCLI() *cobra.Command {
 	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.DefaultMaxParallel, "maximum parallel downloads")
 	downloadCmd.Flags().Int64VarP(&chunkSize, "chunk-size", "c", download.DefaultChunkSize, "max length of the bytes range for each HTTP request")
 	downloadCmd.Flags().BoolVarP(&restart, "restart", "e", false, "restart all downloads from the beginning")
-	downloadCmd.Flags().StringVarP(&mirror, "mirror", "m", "", "download from the mirror, not from the original source (YYYY-MM-DD)")
+	downloadCmd.Flags().StringVarP(&useMirror, "mirror", "m", "", "download from the mirror, not from the original source (YYYY-MM-DD)")
 	return downloadCmd
 }
 

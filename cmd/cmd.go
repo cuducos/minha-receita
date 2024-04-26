@@ -119,6 +119,7 @@ func CLI() *cobra.Command {
 		dropCmd,
 		transformCLI(),
 		sampleCLI(),
+		mirrorCLI(),
 	} {
 		rootCmd.AddCommand(c)
 	}

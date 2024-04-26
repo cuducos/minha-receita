@@ -129,7 +129,7 @@ Você pode [baixar o binário executável](https://prestd.com/) e seguir a [docu
 
 Por exemplo, com `http://localhost:8081/minhareceita/public/cnpj?id=33683111000280`, mas essa resposta é diferente da original:
 * Ela é um _array_ e não um objeto
-* Ela tem tanto a coluna `id` quanto a `cnpj` 
+* Ela tem tanto a coluna `id` quanto a `cnpj`
 
 Ou seja, dado que a resposta do pREST seja uma variável `resp`, o resultado de `https://minhareceita.org/33683111000280` deve ser igual a `resp[0].json`.
 

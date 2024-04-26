@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.js"></script>
+        <title>Espelho de dados — Minha Receita</title>
+    </head>
+    <body>
+        <div class="ui container">
+            <h1 class="ui center aligned header">
+                <img alt="Minha Receita" src="https://docs.minhareceita.org/minha-receita.svg" style="width: auto; height: 7rem; margin: 2rem 0"><br>
+                Espelho de Dados
+            </h1>
+            <div class="ui accordion">
+                {{ range . }}
+                <div class="title">
+                    <i class="dropdown icon"></i>
+                    {{ .Name }}
+                </div>
+                <div class="content">
+                    <table class="ui single line table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Files }}
+                            <tr>
+                                <td><a href="{{ .URL }}">{{ .ShortName }}</a></td>
+                                <td>{{ .HumanReadableSize }}</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+                {{ end }}
+            </div>
+            <div class="ui divider"></div>
+            <div>
+                <p class="right aligned">
+                    <i class="github icon"></i>
+                    Código-fonte:
+                    <a href="https://github.com/cuducos/minha-receita">Minha Receita</a>
+                </p>
+            </div>
+        </div>
+        <script>
+        $(document).ready(function(){
+            $('.ui.accordion').accordion();
+        });
+        </script>
+    </body>
+</html>
