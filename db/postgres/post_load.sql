@@ -16,5 +16,7 @@ WHERE ctid IN (
 );
 
 DROP INDEX idx_remove_duplicates;
-
-ALTER TABLE cnpj ADD PRIMARY KEY (id);
+ALTER TABLE {{ .CompanyTableFullName }} DROP COLUMN tmp_pk CASCADE;
+CREATE UNIQUE INDEX {{ .CompanyTableName }}_pk ON {{ .CompanyTableFullName }} ({{ .IDFieldName }});
+ALTER TABLE cnpj ADD PRIMARY KEY USING INDEX {{ .CompanyTableName }}_pk;
+ALTER TABLE {{ .CompanyTableFullName }} SET LOGGED;
