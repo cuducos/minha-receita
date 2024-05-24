@@ -1,1 +1,1 @@
-web: bin/minha-receita api
+web: bin/minha-receita ${WEB_COMMAND:-api}
