@@ -53,7 +53,7 @@ $ go build -o /usr/local/bin/minha-receita main.go
 Gere as imagens dos containers com:
 
 ```console
-$ docker-compose build
+$ docker compose build
 ```
 
 ## Execução e configurações
@@ -79,8 +79,8 @@ $ minha-receita api --help
 #### Docker Compose
 
 ```console
-$ docker-compose run --rm minha-receita --help
-$ docker-compose run --rm minha-receita api --help
+$ docker compose run --rm minha-receita --help
+$ docker compose run --rm minha-receita api --help
 ```
 
 ### Variáveis de ambiente

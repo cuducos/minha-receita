@@ -5,7 +5,7 @@ Escreva testes e rode os testes, use autoformatação e _linter_:
 ```console
 $ gofmt ./
 $ staticcheck ./...
-$ go test ./...
+$ go test --race ./...
 ```
 
 Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_DATABASE_URL` como no exemplo em `.env`.
@@ -17,19 +17,19 @@ Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_D
 Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
 
 ```console
-$ docker-compose up -d postgres
+$ docker compose up -d postgres
 ```
 
 Existe também um banco de dados para teste, que não persiste dados e que loga todas as queries:
 
 ```console
-$ docker-compose up -d postgres_test
+$ docker compose up -d postgres_test
 ```
 
 Para visualizar as queries efetuadas:
 
 ```console
-$ docker-compose logs postgres_test
+$ docker compose logs postgres_test
 ```
 
 As configurações padrão desses bancos são:

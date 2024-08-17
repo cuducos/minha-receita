@@ -7,7 +7,7 @@ O projeto requer um banco de dados PostgreSQL e os comandos que requerem banco d
 Caso deseje usar o Docker Compose do projeto para subir uma instância do banco de dados:
 
 ```console
-$ docker-compose up -d postgres
+$ docker compose up -d postgres
 ```
 
 A URI de acesso será `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable`.
@@ -46,7 +46,7 @@ $ minha-receita download --mirror 2022-12-17
 Com Docker:
 
 ```console
-$ docker-compose run --rm minha-receita download --directory /mnt/data/
+$ docker compose run --rm minha-receita download --directory /mnt/data/
 ```
 
 ## Verificação dos downloads
@@ -72,9 +72,9 @@ $ minha-receita transform
 Com Docker:
 
 ```console
-$ docker-compose run --rm minha-receita drop  # caso necessário
-$ docker-compose run --rm minha-receita create
-$ docker-compose run --rm minha-receita transform -d /mnt/data/
+$ docker compose run --rm minha-receita drop  # caso necessário
+$ docker compose run --rm minha-receita create
+$ docker compose run --rm minha-receita transform -d /mnt/data/
 ```
 
 ### Questões de privacidade
@@ -97,5 +97,5 @@ $ minha-receita api
 Com Docker:
 
 ```console
-$ docker-compose up
+$ docker compose up
 ```
