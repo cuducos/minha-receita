@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-type getURLsHandler func(url, dir string) ([]string, error)
+type getURLsHandler func(url string) ([]string, error)
 
 func getURLs(url string, handler getURLsHandler, dir string, skip bool) ([]string, error) {
-	urls, err := handler(url, dir)
+	urls, err := handler(url)
 	if err != nil {
 		return nil, fmt.Errorf("error getting urls: %w", err)
 	}
@@ -72,6 +72,9 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel in
 	if err := download(dir, urls, parallel, retries, chunkSize, timeout, restart); err != nil {
 		return fmt.Errorf("error downloading files from the federal revenue: %w", err)
 	}
+	if err := federalRevenueGetMetadata(federalRevenueMetadataURL, dir); err != nil {
+		return fmt.Errorf("error getting metadata: %w", err)
+	}
 	return nil
 }
 
@@ -90,7 +93,7 @@ func DownloadFromMirror(mirror string, dir string, timeout time.Duration, skip, 
 // URLs shows the URLs to be downloaded.
 func URLs(dir string, skip bool) error {
 	urls := []string{federalRevenueURL, nationalTreasureBaseURL}
-	handlers := []getURLsHandler{federalRevenueGetURLsNoUpdatedAt, nationalTreasureGetURLs}
+	handlers := []getURLsHandler{federalRevenueGetURLs, nationalTreasureGetURLs}
 	var out []string
 	for idx := range urls {
 		u, err := getURLs(urls[idx], handlers[idx], dir, skip)
@@ -106,7 +109,7 @@ func URLs(dir string, skip bool) error {
 
 // UpdatedAt shows the updated at of the files to be downloaded.
 func UpdatedAt() error {
-	u, err := fetchUpdatedAt(federalRevenueURL)
+	u, err := fetchUpdatedAt(federalRevenueMetadataURL)
 	if err != nil {
 		return fmt.Errorf("error getting updated at: %w", err)
 	}
@@ -116,7 +119,7 @@ func UpdatedAt() error {
 
 // HasUpdate checks if there is an update available.
 func HasUpdate(dir string) error {
-	h, err := hasUpdate(federalRevenueURL, dir)
+	h, err := hasUpdate(federalRevenueMetadataURL, dir)
 	if err != nil {
 		return fmt.Errorf("error getting updated at: %w", err)
 	}

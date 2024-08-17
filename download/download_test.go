@@ -12,12 +12,12 @@ import (
 func TestGetURLs(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
-		fixture  string
+		fixture  []string
 		handler  getURLsHandler
 		expected int
 	}{
-		{"federal revenue", "cadastro-nacional-de-pessoa-juridica-cnpj.json", federalRevenueGetURLs, 37},
-		{"national treasure", "national-treasure.json", nationalTreasureGetURLs, 1},
+		{"federal revenue", []string{"dados_abertos_cnpj.html", "2024-08.html"}, federalRevenueGetURLs, 37},
+		{"national treasure", []string{"national-treasure.json"}, nationalTreasureGetURLs, 1},
 	} {
 		ts := httpTestServer(t, tc.fixture)
 		defer ts.Close()
@@ -47,16 +47,22 @@ func loadFixture(t *testing.T, n string) (*os.File, int64) {
 	return f, i.Size()
 }
 
-func httpTestServer(t *testing.T, n string) *httptest.Server {
+func httpTestServer(t *testing.T, cs []string) *httptest.Server {
+	if len(cs) == 0 {
+		panic("no content provided to the test server")
+	}
+	var c int
 	return httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			idx := c % len(cs)
+			c += 1
 			if r.Method == http.MethodHead {
-				f, s := loadFixture(t, n)
+				f, s := loadFixture(t, cs[idx])
 				defer f.Close()
 				w.Header().Add("Content-Length", fmt.Sprint(s))
 				return
 			}
-			http.ServeFile(w, r, path.Join("..", "testdata", n))
+			http.ServeFile(w, r, path.Join("..", "testdata", cs[idx]))
 		}))
 }
 

@@ -9,24 +9,84 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
 
 const (
+	userAgent = "Minha Receita/0.0.1 (minhareceita.org)"
+
 	// FederalRevenueUpdatedAt is a file that contains the date the data was
 	// extracted by the Federal Revenue
 	FederalRevenueUpdatedAt = "updated_at.txt"
 
-	federalRevenueURL             = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj"
-	federalRevenueFormat          = "zip+csv"
+	// Metadata source
+	federalRevenueMetadataURL     = "https://dados.gov.br/api/publico/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj"
 	federalRevenueDateFormat      = "02/01/2006 15:04:05"
 	federalRevenueDateFormatNotes = "02/01/2006"
 
-	userAgent = "Minha Receita/0.0.1 (minhareceita.org)"
+	// Zipped CSV source
+	federalRevenueURL = "https://dadosabertos.rfb.gov.br/CNPJ/dados_abertos_cnpj"
 )
 
 var datePattern = regexp.MustCompile(`Data da última extração:? +(?P<updatedAt>\d{2}/\d{2}/\d{4})`)
+var yearMonthPattern = regexp.MustCompile(`href="(\d{4}-\d{2}/)"`)
+var filePattern = regexp.MustCompile(`href="(\w+\d?\.zip)"`)
+
+func httpGet(url string) (string, error) {
+	c := http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("error creating request %s: %w", url, err)
+	}
+	req.Header.Set("User-Agent", userAgent)
+	r, err := c.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error getting %s: %w", url, err)
+	}
+	defer r.Body.Close()
+	if r.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("%s responded with %s", url, r.Status)
+	}
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", fmt.Errorf("could not read %s response body: %w", url, err)
+	}
+	return string(b), nil
+}
+
+func federalRevenueGetMostRecentURL(url string) (string, error) {
+	b, err := httpGet(url)
+	if err != nil {
+		return "", fmt.Errorf("error getting %s: %w", url, err)
+	}
+	var bs []string
+	for _, m := range yearMonthPattern.FindAllStringSubmatch(b, -1) {
+		bs = append(bs, m[1])
+	}
+	slices.Sort(bs)
+	if len(bs) == 0 {
+		return "", fmt.Errorf("no batches found in %s", url)
+	}
+	return url + "/" + bs[len(bs)-1], nil
+}
+
+func federalRevenueGetURLs(url string) ([]string, error) {
+	u, err := federalRevenueGetMostRecentURL(url)
+	if err != nil {
+		return nil, fmt.Errorf("could not read %s response body: %w", url, err)
+	}
+	b, err := httpGet(u)
+	if err != nil {
+		return nil, fmt.Errorf("error getting %s: %w", url, err)
+	}
+	var urls []string
+	for _, m := range filePattern.FindAllStringSubmatch(b, -1) {
+		urls = append(urls, u+m[1])
+	}
+	return urls, nil
+}
 
 type federalRevenueTime struct{ Time time.Time }
 
@@ -44,18 +104,18 @@ func (t *federalRevenueTime) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type federalRevenueResource struct {
+type federalRevenueMetadataResource struct {
 	Format           string             `json:"format"`
 	URL              string             `json:"url"`
 	MetadataModified federalRevenueTime `json:"metadata_modified"`
 }
 
-type federalRevenueResponse struct {
-	Resources []federalRevenueResource `json:"resources"`
-	Notes     string                   `json:"notes"`
+type federalRevenueMetadata struct {
+	Resources []federalRevenueMetadataResource `json:"resources"`
+	Notes     string                           `json:"notes"`
 }
 
-func (r *federalRevenueResponse) updatedAt() (t time.Time) {
+func (r *federalRevenueMetadata) updatedAt() (t time.Time) {
 	m := datePattern.FindStringSubmatch(r.Notes)
 	if len(m) == 2 {
 		t, err := time.Parse(federalRevenueDateFormatNotes, m[1])
@@ -72,7 +132,7 @@ func (r *federalRevenueResponse) updatedAt() (t time.Time) {
 	return t
 }
 
-func newFederalRevenueResponse(url string) (*federalRevenueResponse, error) {
+func newFederalRevenueMetadata(url string) (*federalRevenueMetadata, error) {
 	c := http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -91,42 +151,27 @@ func newFederalRevenueResponse(url string) (*federalRevenueResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not read %s response body: %w", url, err)
 	}
-	var data federalRevenueResponse
+	var data federalRevenueMetadata
 	if err := json.Unmarshal(b, &data); err != nil {
 		return nil, fmt.Errorf("could not unmarshal %s json response: %w", url, err)
 	}
 	return &data, nil
 }
 
-func federalRevenueGetURLsBase(url, dir string, updatedAt bool) ([]string, error) {
-	data, err := newFederalRevenueResponse(url)
+func federalRevenueGetMetadata(url, dir string) error {
+	data, err := newFederalRevenueMetadata(url)
 	if err != nil {
-		return nil, fmt.Errorf("error getting federal revenue data: %w", err)
+		return fmt.Errorf("error getting federal revenue data: %w", err)
 	}
-	var u []string
-	for _, v := range data.Resources {
-		if v.Format == federalRevenueFormat {
-			u = append(u, v.URL)
-		}
-	}
-	if updatedAt {
-		if err := saveUpdatedAt(dir, data.updatedAt()); err != nil {
-			return nil, fmt.Errorf("could not save the update at date: %w", err)
-		}
-	}
-	return u, nil
-}
+	if err := saveUpdatedAt(dir, data.updatedAt()); err != nil {
+		return fmt.Errorf("could not save the update at date: %w", err)
 
-func federalRevenueGetURLs(url, dir string) ([]string, error) {
-	return federalRevenueGetURLsBase(url, dir, true)
-}
-
-func federalRevenueGetURLsNoUpdatedAt(url, dir string) ([]string, error) {
-	return federalRevenueGetURLsBase(url, dir, false)
+	}
+	return nil
 }
 
 func fetchUpdatedAt(url string) (string, error) {
-	data, err := newFederalRevenueResponse(url)
+	data, err := newFederalRevenueMetadata(url)
 	if err != nil {
 		return "", fmt.Errorf("error getting federal revenue data: %w", err)
 	}

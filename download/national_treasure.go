@@ -55,6 +55,6 @@ func ckanGetURLS(baseURL, pkgID string) ([]string, error) {
 	return urls, nil
 }
 
-func nationalTreasureGetURLs(baseURL, dir string) ([]string, error) {
+func nationalTreasureGetURLs(baseURL string) ([]string, error) {
 	return ckanGetURLS(baseURL, nationalTreasurePkgID)
 }
