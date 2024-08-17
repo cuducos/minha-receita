@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
+	"sync/atomic"
 	"testing"
 )
 
@@ -51,11 +52,11 @@ func httpTestServer(t *testing.T, cs []string) *httptest.Server {
 	if len(cs) == 0 {
 		panic("no content provided to the test server")
 	}
-	var c int
+	var c uint32
 	return httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			idx := c % len(cs)
-			c += 1
+			idx := int(atomic.LoadUint32(&c)) % len(cs)
+			atomic.AddUint32(&c, 1)
 			if r.Method == http.MethodHead {
 				f, s := loadFixture(t, cs[idx])
 				defer f.Close()
