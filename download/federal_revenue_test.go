@@ -6,60 +6,80 @@ import (
 	"testing"
 )
 
-func TestFederalRevenueGetURLs(t *testing.T) {
-	tmp := t.TempDir()
-	ts := httpTestServer(t, "cadastro-nacional-de-pessoa-juridica-cnpj.json")
+func TestFederalRevenueGetMostRecentURL(t *testing.T) {
+	ts := httpTestServer(t, []string{"dados_abertos_cnpj.html"})
 	defer ts.Close()
 
 	t.Run("returns download urls", func(t *testing.T) {
-		got, err := federalRevenueGetURLs(ts.URL, tmp)
+		got, err := federalRevenueGetMostRecentURL(ts.URL)
+		if err != nil {
+			t.Errorf("expected to run without errors, got: %v:", err)
+		}
+		expected := ts.URL + "/2024-08/"
+		if got != expected {
+			t.Errorf("expected %s, got %s", expected, got)
+		}
+	})
+}
+
+func TestFederalRevenueGetURLs(t *testing.T) {
+	ts := httpTestServer(t, []string{"dados_abertos_cnpj.html", "2024-08.html"})
+	defer ts.Close()
+
+	t.Run("returns download urls", func(t *testing.T) {
+		got, err := federalRevenueGetURLs(ts.URL)
 		if err != nil {
 			t.Errorf("expected to run without errors, got: %v:", err)
 		}
 		expected := []string{
-			"https://dadosabertos.rfb.gov.br/CNPJ/Cnaes.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas0.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas1.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas2.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas3.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas4.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas5.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas6.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas7.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas8.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Empresas9.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos0.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos1.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos2.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos3.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos4.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos5.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos6.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos7.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos8.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Estabelecimentos9.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Motivos.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Municipios.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Naturezas.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Paises.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Qualificacoes.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Simples.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios0.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios1.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios2.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios3.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios4.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios5.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios6.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios7.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios8.zip",
-			"https://dadosabertos.rfb.gov.br/CNPJ/Socios9.zip",
+			ts.URL + "/2024-08/Cnaes.zip",
+			ts.URL + "/2024-08/Empresas0.zip",
+			ts.URL + "/2024-08/Empresas1.zip",
+			ts.URL + "/2024-08/Empresas2.zip",
+			ts.URL + "/2024-08/Empresas3.zip",
+			ts.URL + "/2024-08/Empresas4.zip",
+			ts.URL + "/2024-08/Empresas5.zip",
+			ts.URL + "/2024-08/Empresas6.zip",
+			ts.URL + "/2024-08/Empresas7.zip",
+			ts.URL + "/2024-08/Empresas8.zip",
+			ts.URL + "/2024-08/Empresas9.zip",
+			ts.URL + "/2024-08/Estabelecimentos0.zip",
+			ts.URL + "/2024-08/Estabelecimentos1.zip",
+			ts.URL + "/2024-08/Estabelecimentos2.zip",
+			ts.URL + "/2024-08/Estabelecimentos3.zip",
+			ts.URL + "/2024-08/Estabelecimentos4.zip",
+			ts.URL + "/2024-08/Estabelecimentos5.zip",
+			ts.URL + "/2024-08/Estabelecimentos6.zip",
+			ts.URL + "/2024-08/Estabelecimentos7.zip",
+			ts.URL + "/2024-08/Estabelecimentos8.zip",
+			ts.URL + "/2024-08/Estabelecimentos9.zip",
+			ts.URL + "/2024-08/Motivos.zip",
+			ts.URL + "/2024-08/Municipios.zip",
+			ts.URL + "/2024-08/Naturezas.zip",
+			ts.URL + "/2024-08/Paises.zip",
+			ts.URL + "/2024-08/Qualificacoes.zip",
+			ts.URL + "/2024-08/Simples.zip",
+			ts.URL + "/2024-08/Socios0.zip",
+			ts.URL + "/2024-08/Socios1.zip",
+			ts.URL + "/2024-08/Socios2.zip",
+			ts.URL + "/2024-08/Socios3.zip",
+			ts.URL + "/2024-08/Socios4.zip",
+			ts.URL + "/2024-08/Socios5.zip",
+			ts.URL + "/2024-08/Socios6.zip",
+			ts.URL + "/2024-08/Socios7.zip",
+			ts.URL + "/2024-08/Socios8.zip",
+			ts.URL + "/2024-08/Socios9.zip",
 		}
 		assertArraysHaveSameItems(t, got, expected)
 	})
+}
 
+func TestFederalRevenueGetMetadata(t *testing.T) {
+	ts := httpTestServer(t, []string{"cadastro-nacional-de-pessoa-juridica-cnpj.json"})
+	defer ts.Close()
 	t.Run("saves updated at date", func(t *testing.T) {
-		_, err := federalRevenueGetURLs(ts.URL, tmp)
+		tmp := t.TempDir()
+		err := federalRevenueGetMetadata(ts.URL, tmp)
 		if err != nil {
 			t.Errorf("expected to run without errors, got: %v:", err)
 		}

@@ -1,4 +1,4 @@
-FROM golang:1.21-bookworm AS build
+FROM golang:1.22-bookworm AS build
 WORKDIR /minha-receita
 COPY go.mod .
 COPY go.sum .
