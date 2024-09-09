@@ -7,7 +7,7 @@ require (
 	github.com/cuducos/chunk v1.1.2
 	github.com/cuducos/go-cnpj v0.1.1
 	github.com/dgraph-io/badger/v4 v4.3.0
-	github.com/jackc/pgx/v5 v5.6.0
+	github.com/jackc/pgx/v5 v5.7.0
 	github.com/newrelic/go-agent/v3 v3.34.0
 	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.1
 	github.com/newrelic/go-agent/v3/integrations/nrpgx5 v1.3.0
@@ -29,7 +29,7 @@ require (
 	github.com/jackc/pgmock v0.0.0-20210724152146-4ad1a8207f65 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v4 v4.18.1 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
