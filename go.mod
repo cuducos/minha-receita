@@ -13,7 +13,7 @@ require (
 	github.com/newrelic/go-agent/v3/integrations/nrpgx5 v1.3.0
 	github.com/schollz/progressbar/v3 v3.14.6
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/text v0.17.0
+	golang.org/x/text v0.18.0
 )
 
 require (
