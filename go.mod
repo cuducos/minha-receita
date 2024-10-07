@@ -11,7 +11,7 @@ require (
 	github.com/newrelic/go-agent/v3 v3.34.0
 	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.1
 	github.com/newrelic/go-agent/v3/integrations/nrpgx5 v1.3.0
-	github.com/schollz/progressbar/v3 v3.15.0
+	github.com/schollz/progressbar/v3 v3.16.1
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/text v0.19.0
 )
