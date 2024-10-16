@@ -2,9 +2,7 @@
 .github/
 Dockerfile
 LICENSE
-Procfile
 README.md
-app.json
 data/
 docker-compose.yml
 docs/
