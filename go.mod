@@ -3,8 +3,9 @@ module github.com/cuducos/minha-receita
 go 1.22
 
 require (
+	github.com/avast/retry-go/v4 v4.6.0
 	github.com/aws/aws-sdk-go v1.55.5
-	github.com/cuducos/chunk v1.1.2
+	github.com/cuducos/chunk v1.1.3
 	github.com/cuducos/go-cnpj v0.1.1
 	github.com/dgraph-io/badger/v4 v4.3.1
 	github.com/jackc/pgx/v5 v5.7.1
@@ -17,7 +18,6 @@ require (
 )
 
 require (
-	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgraph-io/ristretto v1.0.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
