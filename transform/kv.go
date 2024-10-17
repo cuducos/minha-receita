@@ -186,7 +186,7 @@ func newBadgerStorage(m bool) (*badgerStorage, error) {
 	if m {
 		opt = badger.DefaultOptions("").WithInMemory(m)
 	} else {
-		dir, err = os.MkdirTemp("", badgerFilePrefix)
+		dir, err = os.MkdirTemp("", fmt.Sprintf("%s-%s",badgerFilePrefix, time.Now().Format("20060102150405")))
 		if err != nil {
 			return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
 		}
