@@ -8,8 +8,6 @@ import (
 	"github.com/dgraph-io/badger/v4"
 )
 
-const badgerFilePrefix = "minha-receita-badger-"
-
 func keyForPartners(n string) string { return fmt.Sprintf("partners%s", n) }
 func keyForBase(n string) string     { return fmt.Sprintf("base%s", n) }
 func keyForTaxes(n string) string    { return fmt.Sprintf("taxes%s", n) }

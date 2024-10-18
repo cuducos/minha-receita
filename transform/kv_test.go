@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -9,7 +10,12 @@ import (
 )
 
 func TestBadgerStorageClose(t *testing.T) {
-	kv, err := newBadgerStorage(false)
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	if err != nil {
+		t.Fatal("error creating temporary key-value storage: %w", err)
+	}
+	defer os.RemoveAll(tmp)
+	kv, err := newBadgerStorage(tmp)
 	if err != nil {
 		t.Errorf("expected no error creating badger storage, got %s", err)
 	}
@@ -59,7 +65,12 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create lookups: %s", err)
 	}
-	kv, err := newBadgerStorage(true)
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	if err != nil {
+		t.Fatal("error creating temporary key-value storage: %w", err)
+	}
+	defer os.RemoveAll(tmp)
+	kv, err := newBadgerStorage(tmp)
 	if err != nil {
 		t.Fatalf("could not create badger storage: %s", err)
 	}
@@ -83,7 +94,12 @@ func TestEnrichCompany(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create lookups: %s", err)
 	}
-	kv, err := newBadgerStorage(true)
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	if err != nil {
+		t.Fatal("error creating temporary key-value storage: %w", err)
+	}
+	defer os.RemoveAll(tmp)
+	kv, err := newBadgerStorage(tmp)
 	if err != nil {
 		t.Fatalf("could not create badger storage: %s", err)
 	}

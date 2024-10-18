@@ -1,12 +1,20 @@
 package transform
 
 import (
+	"fmt"
+	"os"
 	"testing"
+	"time"
 )
 
 func TestTaskRun(t *testing.T) {
 	db := newTestDB(t)
-	kv, err := newBadgerStorage(false)
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	if err != nil {
+		t.Fatal("error creating temporary key-value storage: %w", err)
+	}
+	defer os.RemoveAll(tmp)
+	kv, err := newBadgerStorage(tmp)
 	if err != nil {
 		t.Errorf("expected no error creating badger, got %s", err)
 	}

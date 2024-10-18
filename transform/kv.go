@@ -179,22 +179,13 @@ func (*badgerLogger) Warningf(string, ...interface{}) {}
 func (*badgerLogger) Infof(string, ...interface{})    {}
 func (*badgerLogger) Debugf(string, ...interface{})   {}
 
-func newBadgerStorage(m bool) (*badgerStorage, error) {
-	var dir string
+func newBadgerStorage(dir string) (*badgerStorage, error) {
 	var err error
 	var opt badger.Options
-	if m {
-		opt = badger.DefaultOptions("").WithInMemory(m)
-	} else {
-		dir, err = os.MkdirTemp("", fmt.Sprintf("%s-%s",badgerFilePrefix, time.Now().Format("20060102150405")))
-		if err != nil {
-			return nil, fmt.Errorf("error creating temporary key-value storage: %w", err)
-		}
-		if os.Getenv("DEBUG") != "" {
-			log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", dir))
-		}
-		opt = badger.DefaultOptions(dir)
+	if os.Getenv("DEBUG") != "" {
+		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", dir))
 	}
+	opt = badger.DefaultOptions(dir)
 	db, err := badger.Open(opt.WithLogger(&badgerLogger{}))
 	if err != nil {
 		return nil, fmt.Errorf("error creating badger key-value object: %w", err)
