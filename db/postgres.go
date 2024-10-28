@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -99,12 +98,16 @@ func (p *PostgreSQL) DropTable() error {
 // CreateCompanies performs a copy to create a batch of companies in the
 // database. It expects an array and each item should be another array with only
 // two items: the ID and the JSON field values.
-func (p *PostgreSQL) CreateCompanies(batch [][]any) error {
+func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
+	b := make([][]any, len(batch))
+	for i, r := range batch {
+		b[i] = []any{r[0], r[1]}
+	}
 	_, err := p.pool.CopyFrom(
 		context.Background(),
 		pgx.Identifier{p.CompanyTableName},
 		[]string{idFieldName, jsonFieldName},
-		pgx.CopyFromRows(batch),
+		pgx.CopyFromRows(b),
 	)
 	if err != nil {
 		return fmt.Errorf("error while importing data to postgres: %w", err)
@@ -114,11 +117,6 @@ func (p *PostgreSQL) CreateCompanies(batch [][]any) error {
 
 // GetCompany returns the JSON of a company based on a CNPJ number.
 func (p *PostgreSQL) GetCompany(id string) (string, error) {
-	n, err := strconv.ParseInt(id, 10, 0)
-	if err != nil {
-		return "", fmt.Errorf("error converting cnpj %s to integer: %w", id, err)
-	}
-
 	ctx := context.Background()
 	if p.newRelic != nil {
 		txn := p.newRelic.StartTransaction("GetCompany")
@@ -126,13 +124,13 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 		defer txn.End()
 	}
 
-	rows, err := p.pool.Query(ctx, p.sql["get"], n)
+	rows, err := p.pool.Query(ctx, p.sql["get"], id)
 	if err != nil {
-		return "", fmt.Errorf("error looking for cnpj %d: %w", n, err)
+		return "", fmt.Errorf("error looking for cnpj %s: %w", id, err)
 	}
 	j, err := pgx.CollectOneRow(rows, pgx.RowTo[string])
 	if err != nil {
-		return "", fmt.Errorf("error reading cnpj %d: %w", n, err)
+		return "", fmt.Errorf("error reading cnpj %s: %w", id, err)
 	}
 	return j, nil
 }

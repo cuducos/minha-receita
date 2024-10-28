@@ -25,7 +25,7 @@ const (
 
 type database interface {
 	PreLoad() error
-	CreateCompanies([][]any) error
+	CreateCompanies([][]string) error
 	PostLoad() error
 	MetaSave(string, string) error
 }

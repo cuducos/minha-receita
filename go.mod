@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/cuducos/chunk v1.1.3
-	github.com/cuducos/go-cnpj v0.1.1
+	github.com/cuducos/go-cnpj v0.1.2
 	github.com/dgraph-io/badger/v4 v4.3.1
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/newrelic/go-agent/v3 v3.35.0

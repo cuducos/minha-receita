@@ -6,7 +6,7 @@ import (
 )
 
 func TestPostgresDB(t *testing.T) {
-	id := 33683111000280
+	id := "33683111000280"
 	json := `{"qsa": [{"name": 42}, {"name": "forty-two"}], "answer": 42}`
 
 	u := os.Getenv("TEST_DATABASE_URL")
@@ -35,10 +35,10 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.PreLoad(); err != nil {
 		t.Errorf("expected no error pre load, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]any{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	if err := pg.PostLoad(); err != nil {
