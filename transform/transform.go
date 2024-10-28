@@ -33,7 +33,7 @@ type database interface {
 type kvStorage interface {
 	load(string, *lookups) error
 	enrichCompany(*company) error
-	close() error
+	close(bool) error
 }
 
 type mode int

@@ -19,7 +19,7 @@ func TestBadgerStorageClose(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error creating badger storage, got %s", err)
 	}
-	if err := kv.close(); err != nil {
+	if err := kv.close(false); err != nil {
 		t.Errorf("expected no error closing badger storage, got %s", err)
 	}
 	if _, err := os.Stat(kv.path); err == nil || !os.IsNotExist(err) {
@@ -74,7 +74,7 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create badger storage: %s", err)
 	}
-	defer kv.close()
+	defer kv.close(false)
 	if err := kv.load(testdata, &l); err != nil {
 		t.Errorf("expected no error loading data, got %s", err)
 	}
@@ -103,7 +103,7 @@ func TestEnrichCompany(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create badger storage: %s", err)
 	}
-	defer kv.close()
+	defer kv.close(false)
 	if err := kv.load(testdata, &l); err != nil {
 		t.Errorf("expected no error loading data, got %s", err)
 	}

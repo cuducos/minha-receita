@@ -117,7 +117,7 @@ func TestNewCompany(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected no error creating badger, got %s", err)
 		}
-		defer kv.close()
+		defer kv.close(false)
 		lookups, err := newLookups(testdata)
 		if err != nil {
 			t.Errorf("expected no errors creating look up tables, got %v", err)
@@ -273,7 +273,7 @@ func TestNewCompany(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected no error creating badger, got %s", err)
 		}
-		defer kv.close()
+		defer kv.close(false)
 		lookups, err := newLookups(testdata)
 		if err != nil {
 			t.Errorf("expected no errors creating look up tables, got %v", err)

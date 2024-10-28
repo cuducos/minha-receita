@@ -164,7 +164,7 @@ func (kv *badgerStorage) enrichCompany(c *company) error {
 
 func (b *badgerStorage) close(k bool) error {
 	b.db.Close()
-	if !k && b.path != ""  {
+	if !k {
 		if err := os.RemoveAll(b.path); err != nil {
 			return fmt.Errorf("error cleaning up badger storage directory: %w", err)
 		}
