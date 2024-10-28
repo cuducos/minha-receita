@@ -9,7 +9,7 @@ require (
 	github.com/cuducos/go-cnpj v0.1.1
 	github.com/dgraph-io/badger/v4 v4.3.1
 	github.com/jackc/pgx/v5 v5.7.1
-	github.com/newrelic/go-agent/v3 v3.35.0
+	github.com/newrelic/go-agent/v3 v3.35.1
 	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.1
 	github.com/newrelic/go-agent/v3/integrations/nrpgx5 v1.3.0
 	github.com/schollz/progressbar/v3 v3.17.0
