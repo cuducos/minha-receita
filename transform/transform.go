@@ -84,6 +84,7 @@ func runStepOne(dir string, l lookups, isolated bool) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not create badger storage: %w", err)
 	}
+	defer kv.close(isolated)
 	if err := kv.load(dir, &l); err != nil {
 		return "", fmt.Errorf("error loading data to badger: %w", err)
 	}
@@ -98,9 +99,7 @@ func runStepTwo(dir string, tmp string, db database, l lookups, maxParallelDBQue
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
-	if !isolated {
-		defer kv.close()
-	}
+	defer kv.close(isolated)
 	j, err := createJSONRecordsTask(dir, db, &l, kv, batchSize, privacy)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
