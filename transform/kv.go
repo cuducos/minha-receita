@@ -162,31 +162,25 @@ func (kv *badgerStorage) enrichCompany(c *company) error {
 	return nil
 }
 
-func (b *badgerStorage) close(k bool) error {
-	b.db.Close()
-	if !k {
-		if err := os.RemoveAll(b.path); err != nil {
-			return fmt.Errorf("error cleaning up badger storage directory: %w", err)
-		}
-	}
-	return nil
+func (b *badgerStorage) close() error {
+	return b.db.Close()
 }
 
-type badgerLogger struct{}
+type noLogger struct{}
 
-func (*badgerLogger) Errorf(string, ...interface{})   {}
-func (*badgerLogger) Warningf(string, ...interface{}) {}
-func (*badgerLogger) Infof(string, ...interface{})    {}
-func (*badgerLogger) Debugf(string, ...interface{})   {}
+func (*noLogger) Errorf(string, ...interface{})   {}
+func (*noLogger) Warningf(string, ...interface{}) {}
+func (*noLogger) Infof(string, ...interface{})    {}
+func (*noLogger) Debugf(string, ...interface{})   {}
 
 func newBadgerStorage(dir string) (*badgerStorage, error) {
-	var err error
-	var opt badger.Options
+	opt := badger.DefaultOptions(dir)
 	if os.Getenv("DEBUG") != "" {
 		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", dir))
+	} else {
+		opt = opt.WithLogger(&noLogger{})
 	}
-	opt = badger.DefaultOptions(dir)
-	db, err := badger.Open(opt.WithLogger(&badgerLogger{}))
+	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, fmt.Errorf("error creating badger key-value object: %w", err)
 	}

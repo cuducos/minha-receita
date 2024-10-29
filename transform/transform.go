@@ -19,8 +19,6 @@ const (
 	// BatchSize determines the size of the batches used to create the initial JSON
 	// data in the database.
 	BatchSize = 8192
-
-	badgerFilePrefix = "minha-receita-badger-"
 )
 
 type database interface {
@@ -33,7 +31,7 @@ type database interface {
 type kvStorage interface {
 	load(string, *lookups) error
 	enrichCompany(*company) error
-	close(bool) error
+	close() error
 }
 
 type mode int
@@ -75,31 +73,24 @@ func saveUpdatedAt(db database, dir string) error {
 	return db.MetaSave("updated-at", string(v))
 }
 
-func runStepOne(dir string, l lookups, isolated bool) (string, error) {
-	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
-	if err != nil {
-		return "", fmt.Errorf("error creating temporary key-value storage: %w", err)
-	}
-	kv, err := newBadgerStorage(tmp)
-	if err != nil {
-		return "", fmt.Errorf("could not create badger storage: %w", err)
-	}
-	defer kv.close(isolated)
-	if err := kv.load(dir, &l); err != nil {
-		return "", fmt.Errorf("error loading data to badger: %w", err)
-	}
-	if isolated {
-		fmt.Println(kv.path)
-	}
-	return kv.path, nil
-}
-
-func runStepTwo(dir string, tmp string, db database, l lookups, maxParallelDBQueries, batchSize int, privacy, isolated bool) error {
-	kv, err := newBadgerStorage(tmp)
+func runStepOne(dir string, pth string, l lookups) error {
+	kv, err := newBadgerStorage(pth)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
-	defer kv.close(isolated)
+	defer kv.close()
+	if err := kv.load(dir, &l); err != nil {
+		return fmt.Errorf("error loading data to badger: %w", err)
+	}
+	return nil
+}
+
+func runStepTwo(dir string, pth string, db database, l lookups, maxParallelDBQueries, batchSize int, privacy bool) error {
+	kv, err := newBadgerStorage(pth)
+	if err != nil {
+		return fmt.Errorf("could not create badger storage: %w", err)
+	}
+	defer kv.close()
 	j, err := createJSONRecordsTask(dir, db, &l, kv, batchSize, privacy)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
@@ -112,27 +103,38 @@ func runStepTwo(dir string, tmp string, db database, l lookups, maxParallelDBQue
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
-func Transform(dir string, db database, maxParallelDBQueries, batchSize int, privacy, s1 bool, s2 string) error {
+func Transform(dir string, db database, max, s int, p, s1 bool, s2 string) error {
 	m, err := transformMode(s1, s2)
 	if err != nil {
 		return fmt.Errorf("error determining transform mode: %w", err)
 	}
-	var tmp string
+	var pth string
+	if m == stepTwo {
+		pth = s2
+	} else {
+		pth, err = os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+	}
+	if err != nil {
+		return fmt.Errorf("error creating temporary key-value storage: %w", err)
+	}
+	defer os.RemoveAll(pth)
 	l, err := newLookups(dir)
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
 	}
-	if m != stepTwo {
-		tmp, err = runStepOne(dir, l, m == stepOne)
-		if err != nil {
-			return fmt.Errorf("error creating key-value storage: %w", err)
+	switch m {
+	case stepOne:
+		if err := runStepOne(dir, pth, l); err != nil {
+			return err
 		}
-	}
-	if m != stepOne {
-		if s2 != "" {
-			tmp = s2
+		fmt.Println(pth)
+	case stepTwo:
+		return runStepTwo(dir, pth, db, l, max, s, p)
+	case both:
+		if err := runStepOne(dir, pth, l); err != nil {
+			return err
 		}
-		return runStepTwo(dir, tmp, db, l, maxParallelDBQueries, batchSize, privacy, m == stepTwo)
+		return runStepTwo(dir, pth, db, l, max, s, p)
 	}
 	return nil
 }
