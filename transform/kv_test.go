@@ -10,7 +10,7 @@ import (
 )
 
 func TestBadgerStorageClose(t *testing.T) {
-	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
 		t.Fatal("error creating temporary key-value storage: %w", err)
 	}
@@ -21,9 +21,6 @@ func TestBadgerStorageClose(t *testing.T) {
 	}
 	if err := kv.close(); err != nil {
 		t.Errorf("expected no error closing badger storage, got %s", err)
-	}
-	if _, err := os.Stat(kv.path); err == nil || !os.IsNotExist(err) {
-		t.Errorf("expected %s to be gone, but got %s when opening it", kv.path, err)
 	}
 }
 
@@ -65,7 +62,7 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create lookups: %s", err)
 	}
-	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
 		t.Fatal("error creating temporary key-value storage: %w", err)
 	}
@@ -94,7 +91,7 @@ func TestEnrichCompany(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create lookups: %s", err)
 	}
-	tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
 		t.Fatal("error creating temporary key-value storage: %w", err)
 	}

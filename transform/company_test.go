@@ -108,7 +108,7 @@ func TestNewCompany(t *testing.T) {
 	}
 
 	t.Run("with privacy", func(t *testing.T) {
-		tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+		tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 		if err != nil {
 			t.Fatal("error creating temporary key-value storage: %w", err)
 		}
@@ -264,7 +264,7 @@ func TestNewCompany(t *testing.T) {
 		}
 	})
 	t.Run("without privacy", func(t *testing.T) {
-		tmp, err := os.MkdirTemp("", fmt.Sprintf("%s-%s", badgerFilePrefix, time.Now().Format("20060102150405")))
+		tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 		if err != nil {
 			t.Fatal("error creating temporary key-value storage: %w", err)
 		}
