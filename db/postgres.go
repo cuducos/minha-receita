@@ -185,6 +185,7 @@ func NewPostgreSQL(uri, schema string, nr *newrelic.Application) (PostgreSQL, er
 		return PostgreSQL{}, fmt.Errorf("could not create database config: %w", err)
 	}
 	cfg.MaxConns = 128
+	cfg.MinConns = 1
 	cfg.MaxConnIdleTime = 5 * time.Minute
 	cfg.MaxConnLifetime = 30 * time.Minute
 	if nr != nil {
