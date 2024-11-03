@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -183,6 +184,9 @@ func NewPostgreSQL(uri, schema string, nr *newrelic.Application) (PostgreSQL, er
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not create database config: %w", err)
 	}
+	cfg.MaxConns = 128
+	cfg.MaxConnIdleTime = 5 * time.Minute
+	cfg.MaxConnLifetime = 30 * time.Minute
 	if nr != nil {
 		cfg.ConnConfig.Tracer = nrpgx5.NewTracer()
 	}
