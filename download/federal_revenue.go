@@ -27,7 +27,7 @@ const (
 	federalRevenueDateFormatNotes = "02/01/2006"
 
 	// Zipped CSV source
-	federalRevenueURL = "https://dadosabertos.rfb.gov.br/CNPJ/dados_abertos_cnpj"
+	federalRevenueURL = "https://arquivos.receitafederal.gov.br/cnpj/dados_abertos_cnpj"
 )
 
 var datePattern = regexp.MustCompile(`Data da última extração:? +(?P<updatedAt>\d{2}/\d{2}/\d{4})`)
