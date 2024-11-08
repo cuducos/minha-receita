@@ -13,7 +13,7 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 1. Consolidar todas as informações em um banco de dados único
 1. Fornecendo uma API web para a consulta de dados de um CNPJ
 
-## Como usar
+## Acessando a API pública
 
 Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, e também existe uma API web no ar em [`https://minhareceita.org/`](https://minhareceita.org) (confira o [monitor de status](https://stats.uptimerobot.com/tqpD6AQZqI)).
 
@@ -32,6 +32,6 @@ Para conversar sobre o projeto, prefira [abrir uma _issue_ no GitHub](https://gi
 * Minha resposta pode ser incompleta ou mesmo errada, e ter essas conversas em ambiente aberto possibilitam que outras pessoas te ajudem, me corrijam e complementem o conteúdo
 * Por fim, pode ser que tua dúvida já tenha sido respondida e, caso você não tenha encontrado, eu posso te enviar um _link_ e você se junta a uma conversa que já está em andamento sobre o mesmo tema
 
-## Muito obrigado
+## Muito obrigada
 
 Ao [Turicas](https://twitter.com/turicas) por todo ativismo, mais o trabalho de coleta quando o formato dos arquivos ainda não era em CSV. Muito desse projeto se deve a ele. Ao [Bruno](https://twitter.com/555112299jedi), sem o qual [nunca teríamos acesso a esses dados por menos de R$ 500 mil](https://medium.com/serenata/o-dia-que-a-receita-nos-mandou-pagar-r-500-mil-para-ter-dados-p%C3%BAblicos-8e18438f3076). E ao [Fireman](https://twitter.com/daniellfireman), pela mentoria em Go!
