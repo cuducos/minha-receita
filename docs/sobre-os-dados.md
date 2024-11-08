@@ -6,7 +6,7 @@ Devido à experiência utilizando dados públicos, é bom lembrar que esses dado
 
 Em caso de problemas na base de dados, faça uma manifestação oficial via protocolo no [Fala.BR](https://falabr.cgu.gov.br/publico/Manifestacao/SelecionarTipoManifestacao.aspx) solicitando a correção.
 
-Caso queira, [abra uma _issue_ no GithHub](https://github.com/cuducos/minha-receita/issues) quando localizar algum problema nos dados, indicando:
+Caso queira, [abra uma _issue_ no GitHub](https://github.com/cuducos/minha-receita/issues) quando localizar algum problema nos dados, indicando:
 
 1. qual o problema localizado
 1. quando localizou
