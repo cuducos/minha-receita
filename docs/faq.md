@@ -57,6 +57,6 @@ Para saber a data de divulgação pela Receita Federal dos dados disponíveis no
 
 O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org). Nele está disponível:
 
-* Uma cópia dos públicos baixados da Receita Federal em , organizados por diretórios com a data de extração divulgada pela Receita Federal
+* Uma cópia dos dados públicos baixados da Receita Federal, organizados por diretórios com a data de extração divulgada pela Receita Federal
 * Executáveis do _Minha Receita_
 * Uma versão dos links em JSON enviando o cabeçalho `Accept: application/json` ao servidor

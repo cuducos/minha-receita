@@ -15,7 +15,7 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 
 ## Como usar
 
-Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, e também eixte uma API web no ar em [`https://minhareceita.org/`](https://minhareceita.org) (confira o [monitor de status](https://stats.uptimerobot.com/tqpD6AQZqI)).
+Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, e também existe uma API web no ar em [`https://minhareceita.org/`](https://minhareceita.org) (confira o [monitor de status](https://stats.uptimerobot.com/tqpD6AQZqI)).
 
 Para fazer uma consulta usando a API web, acrescente o CNPJ a ser consultado ao final da URL. Por exemplo: `https://minhareceita.org/33.683.111/0002-80`. Para mais detalhes sobre como utilizar a API, confira a seção [Como usar](como-usar.md).
 
@@ -30,7 +30,7 @@ Para conversar sobre o projeto, prefira [abrir uma _issue_ no GitHub](https://gi
 * Esse é um projeto de dados abertos e código aberto, não existe motivo para conversas privadas relacionadas ao projeto
 * Sua dúvida pode ser a de outra pessoa, e ter a nossa conversa em umas dessas três plataformas faz com que outras pessoas (que talvez tenham a mesma dúvida que você, ou dúvidas semelhantes) possam encontrar a nossa conversa
 * Minha resposta pode ser incompleta ou mesmo errada, e ter essas conversas em ambiente aberto possibilitam que outras pessoas te ajudem, me corrijam e complementem o conteúdo
-* Por fim, pode ser que tua dúvida já tenha sido respondida e, caso você não tenha encontrado, eu posso te enviar unm _link_ e você se junta a uma conversa que já está em andamento sobre o mesmo tema
+* Por fim, pode ser que tua dúvida já tenha sido respondida e, caso você não tenha encontrado, eu posso te enviar um _link_ e você se junta a uma conversa que já está em andamento sobre o mesmo tema
 
 ## Muito obrigado
 
