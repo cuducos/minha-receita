@@ -15,7 +15,7 @@ O código desse repositório faz esses dados ainda mais acessíveis:
 
 ## Como usar
 
-Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, e também eixte uma API web no ar em [`https://minhareceita.org/`](https://minhareceita.org) (confira o [monitor de status](https://stats.uptimerobot.com/tqpD6AQZqI)).
+Disponibilizo essa aplicação para que cada um rode na sua própria infraestrutura, e também existe uma API web no ar em [`https://minhareceita.org/`](https://minhareceita.org) (confira o [monitor de status](https://stats.uptimerobot.com/tqpD6AQZqI)).
 
 Para fazer uma consulta usando a API web, acrescente o CNPJ a ser consultado ao final da URL. Por exemplo: `https://minhareceita.org/33.683.111/0002-80`. Para mais detalhes sobre como utilizar a API, confira a seção [Como usar](como-usar.md).
 
