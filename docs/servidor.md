@@ -31,7 +31,7 @@ Em último caso, é possível listar as URLs para download dos arquivos com coma
 
 ### Espelho dos dados
 
-O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org). Você pode fazer o download dos arquivos de lá (ao invés de utilisar o servidor oficial) com a opção `--mirror YYYY-MM-DD` substituindo a data por alguma das disponíveis no espelho.
+O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org). Você pode fazer o download dos arquivos de lá (ao invés de utilizar o servidor oficial) com a opção `--mirror YYYY-MM-DD` substituindo a data por alguma das disponíveis no espelho.
 
 ### Exemplos de uso
 
