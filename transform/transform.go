@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
