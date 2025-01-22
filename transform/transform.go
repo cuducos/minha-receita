@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -23,6 +24,7 @@ const (
 type database interface {
 	PreLoad() error
 	CreateCompanies([][]string) error
+	CreateCompaniesMongo([][]string) error
 	PostLoad() error
 	MetaSave(string, string) error
 }
@@ -31,6 +33,34 @@ type kvStorage interface {
 	load(string, *lookups) error
 	enrichCompany(*company) error
 	close() error
+}
+
+type mode int
+
+const (
+	// runs the two steps and cleans up temporary key-value directory
+	// from step one
+	both mode = iota
+
+	// loads relational data to a key-value store and does not delete it from
+	// the temporary directory
+	stepOne
+
+	// expects a path to the directory created in StepOne and use it to persist
+	// data to PostgreSQL
+	stepTwo
+)
+
+func transformMode(s1 bool, s2 string) (mode, error) {
+	switch {
+	case s1 && s2 != "":
+		return both, errors.New("cannot use both --step-one and --step-two")
+	case s1 && s2 == "":
+		return stepOne, nil
+	case !s1 && s2 != "":
+		return stepTwo, nil
+	}
+	return both, nil
 }
 
 func saveUpdatedAt(db database, dir string) error {
@@ -44,7 +74,7 @@ func saveUpdatedAt(db database, dir string) error {
 	return db.MetaSave("updated-at", string(v))
 }
 
-func createKeyValueStorage(dir string, pth string, l lookups) error {
+func runStepOne(dir string, pth string, l lookups) error {
 	kv, err := newBadgerStorage(pth)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
@@ -56,7 +86,7 @@ func createKeyValueStorage(dir string, pth string, l lookups) error {
 	return nil
 }
 
-func createJSONs(dir string, pth string, db database, l lookups, maxParallelDBQueries, batchSize int, privacy bool) error {
+func runStepTwo(dir string, pth string, db database, l lookups, maxParallelDBQueries, batchSize int, privacy bool) error {
 	kv, err := newBadgerStorage(pth)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
@@ -74,8 +104,17 @@ func createJSONs(dir string, pth string, db database, l lookups, maxParallelDBQu
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
-func Transform(dir string, db database, max, s int, p bool) error {
-	pth, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+func Transform(dir string, db database, max, s int, p, s1 bool, s2 string) error {
+	m, err := transformMode(s1, s2)
+	if err != nil {
+		return fmt.Errorf("error determining transform mode: %w", err)
+	}
+	var pth string
+	if m == stepTwo {
+		pth = s2
+	} else {
+		pth, err = os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+	}
 	if err != nil {
 		return fmt.Errorf("error creating temporary key-value storage: %w", err)
 	}
@@ -84,8 +123,19 @@ func Transform(dir string, db database, max, s int, p bool) error {
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
 	}
-	if err := createKeyValueStorage(dir, pth, l); err != nil {
-		return err
+	switch m {
+	case stepOne:
+		if err := runStepOne(dir, pth, l); err != nil {
+			return err
+		}
+		fmt.Println(pth)
+	case stepTwo:
+		return runStepTwo(dir, pth, db, l, max, s, p)
+	case both:
+		if err := runStepOne(dir, pth, l); err != nil {
+			return err
+		}
+		return runStepTwo(dir, pth, db, l, max, s, p)
 	}
-	return createJSONs(dir, pth, db, l, max, s, p)
+	return nil
 }

@@ -45,10 +45,19 @@ func loadDatabaseURI() (string, error) {
 	if databaseURI != "" {
 		return databaseURI, nil
 	}
-	u := os.Getenv("DATABASE_URL")
-	if u == "" {
-		return "", fmt.Errorf("could not find a database URI, set the DATABASE_URL environment variable with the credentials for a PostgreSQL database")
+	db_type := os.Getenv("DATABASE_TYPE")
+	var u string
+
+	if db_type == "mongo" {
+		u = os.Getenv("MONGO_URL")
+	} else {
+		u = os.Getenv("POSTGRES_URL")
 	}
+
+	if u == "" {
+		return "", fmt.Errorf("could not find a database URI, set the settings environment variables with the credentials for a PostgreSQL or Mongo database")
+	}
+
 	return u, nil
 }
 
@@ -60,18 +69,41 @@ var rootCmd = &cobra.Command{
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Creates the required tables in PostgreSQL",
+	Short: "Creates the required tables in PostgreSQL or MongoDB",
 	RunE: func(_ *cobra.Command, _ []string) error {
+		db_type := os.Getenv("DATABASE_TYPE")
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-		if err != nil {
+
+		if db_type == "mongo" {
+			mdb, err := db.NewMongoDB()
+			if err != nil {
+				return err
+			}
+
+			err = mdb.CreateCollection(os.Getenv("COLLECTION"))
+			if err != nil {
+				return err
+			}
+
+			err = mdb.CreateIndexes(os.Getenv("COLLECTION"))
+			if err != nil {
+				return err
+			}
+			defer mdb.Close()
 			return err
+		} else {
+
+			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
+			if err != nil {
+				return err
+			}
+			defer pg.Close()
+			return pg.CreateTable()
 		}
-		defer pg.Close()
-		return pg.CreateTable()
+
 	},
 }
 
@@ -79,16 +111,33 @@ var dropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops the tables in PostgreSQL",
 	RunE: func(_ *cobra.Command, _ []string) error {
+		db_type := os.Getenv("DATABASE_TYPE")
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-		if err != nil {
+
+		if db_type == "mongo" {
+			mdb, err := db.NewMongoDB()
+			if err != nil {
+				return err
+			}
+
+			err = mdb.DropCollection(os.Getenv("COLLECTION"))
+			if err != nil {
+				return err
+			}
+
 			return err
+
+		} else {
+			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
+			if err != nil {
+				return err
+			}
+			defer pg.Close()
+			return pg.DropTable()
 		}
-		defer pg.Close()
-		return pg.DropTable()
 	},
 }
 
@@ -98,8 +147,15 @@ func addDataDir(c *cobra.Command) *cobra.Command {
 }
 
 func addDatabase(c *cobra.Command) *cobra.Command {
-	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default DATABASE_URL environment variable)")
-	c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
+	db_type := os.Getenv("DATABASE_TYPE")
+
+	if db_type == "mongo" {
+		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Mongo URI (default MONGO_URL environment variable)")
+	} else {
+		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URL environment variable)")
+		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
+	}
+
 	return c
 }
 

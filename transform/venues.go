@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -22,9 +23,18 @@ func saveBatch(db database, b []company) (int, error) {
 		}
 		s[i] = []string{c.CNPJ, j}
 	}
-	if err := db.CreateCompanies(s); err != nil {
-		return 0, fmt.Errorf("error saving companies: %w", err)
+	db_type := os.Getenv("DATABASE_TYPE")
+
+	if db_type == "mongo" {
+		if err := db.CreateCompaniesMongo(s); err != nil {
+			return 0, fmt.Errorf("error saving companies: %w", err)
+		}
+	} else {
+		if err := db.CreateCompanies(s); err != nil {
+			return 0, fmt.Errorf("error saving companies: %w", err)
+		}
 	}
+
 	return len(s), nil
 }
 
@@ -118,8 +128,10 @@ func (t *venuesTask) run(m int) error {
 	if err := t.bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
-	if err := t.db.PreLoad(); err != nil {
-		return fmt.Errorf("error preparing the database: %w", err)
+	if os.Getenv("DATABASE_TYPE") != "mongo" {
+		if err := t.db.PreLoad(); err != nil {
+			return fmt.Errorf("error preparing the database: %w", err)
+		}
 	}
 	t.produceRows()
 	for i := 0; i < m; i++ {
@@ -143,7 +155,9 @@ func (t *venuesTask) run(m int) error {
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
-				return t.db.PostLoad()
+				if os.Getenv("DATABASE_TYPE") != "mongo" {
+					return t.db.PostLoad()
+				}
 			}
 		}
 	}
