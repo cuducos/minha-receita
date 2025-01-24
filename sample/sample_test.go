@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cuducos/minha-receita/download"
+	"github.com/mbnunes/minha-receita/download"
 )
 
 var testdata = filepath.Join("..", "testdata")

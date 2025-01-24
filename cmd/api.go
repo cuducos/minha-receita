@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cuducos/minha-receita/api"
-	"github.com/cuducos/minha-receita/db"
-	"github.com/cuducos/minha-receita/monitor"
+	"github.com/mbnunes/minha-receita/api"
+	"github.com/mbnunes/minha-receita/db"
+	"github.com/mbnunes/minha-receita/monitor"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/spf13/cobra"
 )

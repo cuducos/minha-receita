@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cuducos/minha-receita/download"
+	"github.com/mbnunes/minha-receita/download"
 )
 
 const (
@@ -24,9 +24,13 @@ const (
 type database interface {
 	PreLoad() error
 	CreateCompanies([][]string) error
-	CreateCompaniesMongo([][]string) error
 	PostLoad() error
 	MetaSave(string, string) error
+}
+
+type databaseMongo interface {
+	CreateCompaniesMongo([][]string) error
+	MetaSaveMongo(string, string) error
 }
 
 type kvStorage interface {
@@ -74,6 +78,17 @@ func saveUpdatedAt(db database, dir string) error {
 	return db.MetaSave("updated-at", string(v))
 }
 
+func saveUpdatedAtMongo(db databaseMongo, dir string) error {
+	log.Output(1, "Saving the updated at date to the database…")
+	p := filepath.Join(dir, download.FederalRevenueUpdatedAt)
+	v, err := os.ReadFile(p)
+	if err != nil {
+		return fmt.Errorf("error reading %s: %w", p, err)
+
+	}
+	return db.MetaSaveMongo("updated-at", string(v))
+}
+
 func runStepOne(dir string, pth string, l lookups) error {
 	kv, err := newBadgerStorage(pth)
 	if err != nil {
@@ -100,6 +115,22 @@ func runStepTwo(dir string, pth string, db database, l lookups, maxParallelDBQue
 		return fmt.Errorf("error writing venues to database: %w", err)
 	}
 	return saveUpdatedAt(db, dir)
+}
+
+func runStepTwoMongo(dir string, pth string, db databaseMongo, l lookups, maxParallelDBQueries, batchSize int, privacy bool) error {
+	kv, err := newBadgerStorage(pth)
+	if err != nil {
+		return fmt.Errorf("could not create badger storage: %w", err)
+	}
+	defer kv.close()
+	j, err := createJSONRecordsTaskMongo(dir, db, &l, kv, batchSize, privacy)
+	if err != nil {
+		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
+	}
+	if err := j.run(maxParallelDBQueries); err != nil {
+		return fmt.Errorf("error writing venues to database: %w", err)
+	}
+	return saveUpdatedAtMongo(db, dir)
 }
 
 // Transform the downloaded files for company venues creating a database record
@@ -136,6 +167,42 @@ func Transform(dir string, db database, max, s int, p, s1 bool, s2 string) error
 			return err
 		}
 		return runStepTwo(dir, pth, db, l, max, s, p)
+	}
+	return nil
+}
+
+func TransformMongo(dir string, db databaseMongo, max, s int, p, s1 bool, s2 string) error {
+	m, err := transformMode(s1, s2)
+	if err != nil {
+		return fmt.Errorf("error determining transform mode: %w", err)
+	}
+	var pth string
+	if m == stepTwo {
+		pth = s2
+	} else {
+		pth, err = os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+	}
+	if err != nil {
+		return fmt.Errorf("error creating temporary key-value storage: %w", err)
+	}
+	defer os.RemoveAll(pth)
+	l, err := newLookups(dir)
+	if err != nil {
+		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
+	}
+	switch m {
+	case stepOne:
+		if err := runStepOne(dir, pth, l); err != nil {
+			return err
+		}
+		fmt.Println(pth)
+	case stepTwo:
+		return runStepTwoMongo(dir, pth, db, l, max, s, p)
+	case both:
+		if err := runStepOne(dir, pth, l); err != nil {
+			return err
+		}
+		return runStepTwoMongo(dir, pth, db, l, max, s, p)
 	}
 	return nil
 }

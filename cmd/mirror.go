@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cuducos/minha-receita/mirror"
+	"github.com/mbnunes/minha-receita/mirror"
 	"github.com/spf13/cobra"
 )
 

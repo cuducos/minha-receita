@@ -25,12 +25,12 @@ services:
       timeout: 5s
       retries: 5
 
-  postgres_test:
-    image: postgres:16.1-bookworm
-    ports:
-      - 5555:5432
-    environment: *credentials
-    command: ["postgres", "-c", "log_statement=all"]
+  # postgres_test:
+  #   image: postgres:16.1-bookworm
+  #   ports:
+  #     - 5555:5432
+  #   environment: *credentials
+  #   command: ["postgres", "-c", "log_statement=all"]
 
   prest:
     image: ghcr.io/prest/prest@sha256:78bb1a5b043576dcffdc383fd5fdc02a74a33d9a2b9532cabad9e0f907fa81ac

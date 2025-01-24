@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mbnunes/minha-receita/db"
 	"github.com/spf13/cobra"
-
-	"github.com/cuducos/minha-receita/db"
 )
 
 const (
@@ -83,12 +82,12 @@ var createCmd = &cobra.Command{
 				return err
 			}
 
-			err = mdb.CreateCollection(os.Getenv("COLLECTION"))
+			err = mdb.CreateCollection()
 			if err != nil {
 				return err
 			}
 
-			err = mdb.CreateIndexes(os.Getenv("COLLECTION"))
+			err = mdb.CreateIndexes()
 			if err != nil {
 				return err
 			}
@@ -123,7 +122,7 @@ var dropCmd = &cobra.Command{
 				return err
 			}
 
-			err = mdb.DropCollection(os.Getenv("COLLECTION"))
+			err = mdb.DropCollection()
 			if err != nil {
 				return err
 			}

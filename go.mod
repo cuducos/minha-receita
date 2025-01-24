@@ -4,18 +4,22 @@ go 1.22
 
 require (
 	github.com/avast/retry-go/v4 v4.6.0
-	github.com/aws/aws-sdk-go v1.55.5
-	github.com/mbnunes/chunk v1.1.3
-	github.com/mbnunes/go-cnpj v0.1.2
+	github.com/aws/aws-sdk-go v1.55.6
+	github.com/cuducos/chunk v1.1.3
+	github.com/cuducos/go-cnpj v0.1.2
+	github.com/cuducos/minha-receita v0.0.0-20250120150429-edc9892453b6
 	github.com/dgraph-io/badger/v4 v4.5.0
 	github.com/jackc/pgx/v5 v5.7.2
-	github.com/newrelic/go-agent/v3 v3.35.1
+	github.com/newrelic/go-agent/v3 v3.36.0
 	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.1
 	github.com/newrelic/go-agent/v3/integrations/nrpgx5 v1.3.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/spf13/cobra v1.8.1
+	go.mongodb.org/mongo-driver v1.17.2
 	golang.org/x/text v0.21.0
 )
+
+replace github.com/cuducos/minha-receita => github.com/mbnunes/minha-receita v0.0.0-20250122195949-f4e7b0093bfa
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -43,7 +47,6 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	go.mongodb.org/mongo-driver v1.17.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/net v0.31.0 // indirect

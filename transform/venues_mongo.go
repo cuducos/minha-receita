@@ -10,7 +10,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func saveBatch(db database, b []company) (int, error) {
+func saveBatchMongo(db databaseMongo, b []company) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
@@ -23,20 +23,20 @@ func saveBatch(db database, b []company) (int, error) {
 		s[i] = []string{c.CNPJ, j}
 	}
 
-	if err := db.CreateCompanies(s); err != nil {
+	if err := db.CreateCompaniesMongo(s); err != nil {
 		return 0, fmt.Errorf("error saving companies: %w", err)
 	}
 
 	return len(s), nil
 }
 
-type venuesTask struct {
+type venuesTaskMongo struct {
 	source            *source
 	lookups           *lookups
 	kv                kvStorage
 	privacy           bool
 	dir               string
-	db                database
+	db                databaseMongo
 	batchSize         int
 	sentToBatches     int32
 	rows              chan []string
@@ -47,10 +47,10 @@ type venuesTask struct {
 	shutdownWaitGroup sync.WaitGroup
 }
 
-func (t *venuesTask) produceRows() {
+func (t *venuesTaskMongo) produceRows() {
 	for _, r := range t.source.readers {
 		t.shutdownWaitGroup.Add(1)
-		go func(t *venuesTask, a *archivedCSV) {
+		go func(t *venuesTaskMongo, a *archivedCSV) {
 			defer t.shutdownWaitGroup.Done()
 			for {
 				if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
@@ -74,7 +74,7 @@ func (t *venuesTask) produceRows() {
 	}
 }
 
-func (t *venuesTask) consumeRows() {
+func (t *venuesTaskMongo) consumeRows() {
 	defer t.shutdownWaitGroup.Done()
 	var b []company
 	for r := range t.rows {
@@ -92,7 +92,7 @@ func (t *venuesTask) consumeRows() {
 		}
 		b = append(b, c)
 		if len(b) >= t.batchSize {
-			n, err := saveBatch(t.db, b)
+			n, err := saveBatchMongo(t.db, b)
 			if err != nil { // initiate graceful shutdown.
 				t.errors <- fmt.Errorf("error saving companies: %w", err)
 				atomic.StoreInt32(&t.shutdown, 1)
@@ -106,7 +106,7 @@ func (t *venuesTask) consumeRows() {
 		return
 	}
 	// send the remaining items in the batch
-	n, err := saveBatch(t.db, b)
+	n, err := saveBatchMongo(t.db, b)
 	if err != nil { // initiate graceful shutdown.
 		t.errors <- fmt.Errorf("error saving companies: %w", err)
 		atomic.StoreInt32(&t.shutdown, 1)
@@ -115,13 +115,10 @@ func (t *venuesTask) consumeRows() {
 	t.saved <- n
 }
 
-func (t *venuesTask) run(m int) error {
+func (t *venuesTaskMongo) run(m int) error {
 	defer t.source.close()
 	if err := t.bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
-	}
-	if err := t.db.PreLoad(); err != nil {
-		return fmt.Errorf("error preparing the database: %w", err)
 	}
 	t.produceRows()
 	for i := 0; i < m; i++ {
@@ -145,18 +142,20 @@ func (t *venuesTask) run(m int) error {
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
-				return t.db.PostLoad()
+				//fmt.Println("PostLoad")
+				return nil
 			}
 		}
 	}
 }
 
-func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b int, p bool) (*venuesTask, error) {
+func createJSONRecordsTaskMongo(dir string, db databaseMongo, l *lookups, kv kvStorage, b int, p bool) (*venuesTaskMongo, error) {
 	v, err := newSource(venues, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for venues from %s: %w", dir, err)
 	}
-	t := venuesTask{
+
+	t := venuesTaskMongo{
 		source:        v,
 		lookups:       l,
 		kv:            kv,

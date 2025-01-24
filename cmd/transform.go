@@ -57,23 +57,23 @@ var transformCmd = &cobra.Command{
 
 			if cleanUp {
 
-				err = mdb.DropCollection(os.Getenv("COLLECTION"))
+				err = mdb.DropCollection()
 				if err != nil {
 					return err
 				}
 
-				err = mdb.CreateCollection(os.Getenv("COLLECTION"))
+				err = mdb.CreateCollection()
 				if err != nil {
 					return err
 				}
 
-				err = mdb.CreateIndexes(os.Getenv("COLLECTION"))
+				err = mdb.CreateIndexes()
 				if err != nil {
 					return err
 				}
 			}
-			return err
-			// return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy, stepOne, stepTwo)
+
+			return transform.TransformMongo(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy, stepOne, stepTwo)
 		} else {
 
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
