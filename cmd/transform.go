@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mbnunes/minha-receita/db"
 	"github.com/mbnunes/minha-receita/transform"
@@ -47,10 +49,8 @@ var transformCmd = &cobra.Command{
 			return err
 		}
 
-		db_type := os.Getenv("DATABASE_TYPE")
-
-		if db_type == "mongo" {
-			mdb, err := db.NewMongoDB()
+		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
+			mdb, err := db.NewMongoDB(mongoDatabase)
 			if err != nil {
 				return err
 			}
@@ -73,8 +73,8 @@ var transformCmd = &cobra.Command{
 				}
 			}
 
-			return transform.TransformMongo(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy, stepOne, stepTwo)
-		} else {
+			return transform.Transform(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy, stepOne, stepTwo)
+		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
 
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 
@@ -92,6 +92,9 @@ var transformCmd = &cobra.Command{
 				}
 			}
 			return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy, stepOne, stepTwo)
+		} else {
+			fmt.Println("A URL não contém 'mongodb' nem 'postgres'")
+			return nil
 		}
 
 	},

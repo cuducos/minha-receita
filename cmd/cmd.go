@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mbnunes/minha-receita/db"
 	"github.com/spf13/cobra"
@@ -24,6 +25,7 @@ var (
 	dir            string
 	databaseURI    string
 	postgresSchema string
+	mongoDatabase  string
 )
 
 func assertDirExists() error {
@@ -44,14 +46,9 @@ func loadDatabaseURI() (string, error) {
 	if databaseURI != "" {
 		return databaseURI, nil
 	}
-	db_type := os.Getenv("DATABASE_TYPE")
 	var u string
 
-	if db_type == "mongo" {
-		u = os.Getenv("MONGO_URL")
-	} else {
-		u = os.Getenv("POSTGRES_URL")
-	}
+	u = os.Getenv("DATABASE_URL")
 
 	if u == "" {
 		return "", fmt.Errorf("could not find a database URI, set the settings environment variables with the credentials for a PostgreSQL or Mongo database")
@@ -70,14 +67,14 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Creates the required tables in PostgreSQL or MongoDB",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		db_type := os.Getenv("DATABASE_TYPE")
+
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
 
-		if db_type == "mongo" {
-			mdb, err := db.NewMongoDB()
+		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
+			mdb, err := db.NewMongoDB(mongoDatabase)
 			if err != nil {
 				return err
 			}
@@ -93,7 +90,7 @@ var createCmd = &cobra.Command{
 			}
 			defer mdb.Close()
 			return err
-		} else {
+		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
 
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 			if err != nil {
@@ -101,6 +98,9 @@ var createCmd = &cobra.Command{
 			}
 			defer pg.Close()
 			return pg.CreateTable()
+		} else {
+			fmt.Println("A URL não contém 'mongodb' nem 'postgres'")
+			return nil
 		}
 
 	},
@@ -110,14 +110,14 @@ var dropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops the tables in PostgreSQL",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		db_type := os.Getenv("DATABASE_TYPE")
+
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
 
-		if db_type == "mongo" {
-			mdb, err := db.NewMongoDB()
+		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
+			mdb, err := db.NewMongoDB(mongoDatabase)
 			if err != nil {
 				return err
 			}
@@ -129,13 +129,16 @@ var dropCmd = &cobra.Command{
 
 			return err
 
-		} else {
+		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 			if err != nil {
 				return err
 			}
 			defer pg.Close()
 			return pg.DropTable()
+		} else {
+			fmt.Println("A URL não contém 'mongodb' nem 'postgres'")
+			return nil
 		}
 	},
 }
@@ -146,13 +149,16 @@ func addDataDir(c *cobra.Command) *cobra.Command {
 }
 
 func addDatabase(c *cobra.Command) *cobra.Command {
-	db_type := os.Getenv("DATABASE_TYPE")
 
-	if db_type == "mongo" {
+	if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Mongo URI (default MONGO_URL environment variable)")
-	} else {
+		c.Flags().StringVarP(&mongoDatabase, "collection-name", "s", "minhareceita", "PostgreSQL schema")
+	} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URL environment variable)")
 		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
+	} else {
+		fmt.Println("A URL não contém 'mongodb' nem 'postgres'")
+		return nil
 	}
 
 	return c
