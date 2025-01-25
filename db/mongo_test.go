@@ -33,10 +33,10 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
 
-	if err := mdb.CreateCompaniesMongo([][]string{{id, json}}); err != nil {
+	if err := mdb.CreateCompanies([][]string{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := mdb.CreateCompaniesMongo([][]string{{id, json}}); err != nil {
+	if err := mdb.CreateCompanies([][]string{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 

@@ -37,6 +37,11 @@ type CNAESecundario struct {
 }
 
 type Empresa struct {
+	Cnpj string   `json:"cnpj"`
+	Json Detalhes `json:"json"`
+}
+
+type Detalhes struct {
 	CNPJ                             string           `json:"cnpj"`
 	IdentificadorMatrizFilial        *int             `json:"identificador_matriz_filial"`
 	DescricaoMatrizFilial            *string          `json:"descricao_identificador_matriz_filial"`
@@ -94,9 +99,8 @@ type MongoDB struct {
 }
 
 // NewMongoDB inicializa uma nova conexão MongoDB encapsulada em uma estrutura.
-func NewMongoDB() (MongoDB, error) {
-	uri := os.Getenv("MONGO_URL")
-	dbName := os.Getenv("DATABASE")
+func NewMongoDB(dbName string) (MongoDB, error) {
+	uri := os.Getenv("DATABASE_URL")
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
@@ -152,27 +156,29 @@ func (m *MongoDB) CreateIndexes() error {
 	collection := m.Database.Collection(companyTableName)
 
 	indexes := []mongo.IndexModel{
-		{Keys: bson.D{{Key: "cnpj", Value: 1}}, Options: options.Index().SetUnique(true)},
-		{Keys: bson.D{{Key: "qsa.cpf", Value: 1}}},
-		{Keys: bson.D{{Key: "razao_social", Value: 1}}},
-		{Keys: bson.D{{Key: "nome_fantasia", Value: 1}}},
-		{Keys: bson.D{{Key: "capital_social", Value: 1}}},
-		{Keys: bson.D{{Key: "ddd_telefone_1", Value: 1}}},
-		{Keys: bson.D{{Key: "ddd_telefone_2", Value: 1}}},
-		{Keys: bson.D{{Key: "natureza_juridica", Value: 1}}},
-		{Keys: bson.D{{Key: "qsa.cnpj_cpf_do_socio", Value: 1}}},
-		{Keys: bson.D{{Key: "qsa.qualificacao_socio", Value: 1}}},
-		{Keys: bson.D{{Key: "qsa.qualificacao_representante_legal", Value: 1}}},
-		{Keys: bson.D{{Key: "qsa.nome_socio", Value: 1}}},
-		{Keys: bson.D{{Key: "bairro", Value: 1}}},
-		{Keys: bson.D{{Key: "cep", Value: 1}}},
-		{Keys: bson.D{{Key: "cnae_fiscal", Value: 1}}},
-		{Keys: bson.D{{Key: "cnaes_secundarios", Value: 1}}},
-		{Keys: bson.D{{Key: "data_inicio_atividade", Value: 1}}},
-		{Keys: bson.D{{Key: "email", Value: 1}}},
-		{Keys: bson.D{{Key: "codigo_municipio", Value: 1}}},
-		{Keys: bson.D{{Key: "descricao_situacao_cadastral", Value: 1}}},
-		{Keys: bson.D{{Key: "uf", Value: 1}}},
+		// {Keys: bson.D{{Key: "cnpj", Value: 1}}, Options: options.Index().SetUnique(true)},
+		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
+		{Keys: bson.D{{Key: "json.cnpj", Value: 1}}},
+		{Keys: bson.D{{Key: "json.qsa.cpf", Value: 1}}},
+		{Keys: bson.D{{Key: "json.razao_social", Value: 1}}},
+		{Keys: bson.D{{Key: "json.nome_fantasia", Value: 1}}},
+		{Keys: bson.D{{Key: "json.capital_social", Value: 1}}},
+		{Keys: bson.D{{Key: "json.ddd_telefone_1", Value: 1}}},
+		{Keys: bson.D{{Key: "json.ddd_telefone_2", Value: 1}}},
+		{Keys: bson.D{{Key: "json.natureza_juridica", Value: 1}}},
+		{Keys: bson.D{{Key: "json.qsa.cnpj_cpf_do_socio", Value: 1}}},
+		{Keys: bson.D{{Key: "json.qsa.qualificacao_socio", Value: 1}}},
+		{Keys: bson.D{{Key: "json.qsa.qualificacao_representante_legal", Value: 1}}},
+		{Keys: bson.D{{Key: "json.qsa.nome_socio", Value: 1}}},
+		{Keys: bson.D{{Key: "json.bairro", Value: 1}}},
+		{Keys: bson.D{{Key: "json.cep", Value: 1}}},
+		{Keys: bson.D{{Key: "json.cnae_fiscal", Value: 1}}},
+		{Keys: bson.D{{Key: "json.cnaes_secundarios", Value: 1}}},
+		{Keys: bson.D{{Key: "json.data_inicio_atividade", Value: 1}}},
+		{Keys: bson.D{{Key: "json.email", Value: 1}}},
+		{Keys: bson.D{{Key: "json.codigo_municipio", Value: 1}}},
+		{Keys: bson.D{{Key: "json.descricao_situacao_cadastral", Value: 1}}},
+		{Keys: bson.D{{Key: "json.uf", Value: 1}}},
 	}
 	_, err := collection.Indexes().CreateMany(m.Context, indexes)
 	if err != nil {
@@ -203,7 +209,7 @@ func (m *MongoDB) DropCollection() error {
 }
 
 // CreateCompanies insere uma matriz de dados no MongoDB.
-func (m *MongoDB) CreateCompaniesMongo(batch [][]string) error {
+func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	// Recupera o nome da coleção do ambiente
 	collectionName := companyTableName
 	if collectionName == "" {
@@ -218,7 +224,7 @@ func (m *MongoDB) CreateCompaniesMongo(batch [][]string) error {
 	collection := m.Database.Collection(collectionName)
 
 	// Cria uma lista para armazenar os documentos a serem inseridos
-	var empresas []interface{}
+	// var empresas []interface{}
 
 	// Itera sobre o batch para processar os dados
 	for _, row := range batch {
@@ -230,38 +236,52 @@ func (m *MongoDB) CreateCompaniesMongo(batch [][]string) error {
 		}
 
 		// O segundo elemento do batch é o JSON que será convertido para a estrutura Empresa
-		empresaJSON := row[1]
 		var empresa Empresa
+		empresa.Cnpj = row[0]
 
+		empresaJSON := row[1]
 		// Deserializa o JSON para a estrutura Empresa
-		err := json.Unmarshal([]byte(empresaJSON), &empresa)
+		err := json.Unmarshal([]byte(empresaJSON), &empresa.Json)
 		if err != nil {
 			fmt.Printf("Erro ao desserializar JSON: %s, erro: %v\n", empresaJSON, err)
 			continue
 		}
 
-		// Adiciona a empresa convertida à lista
-		empresas = append(empresas, empresa)
-	}
+		// Insere as empresas no MongoDB
+		if row[0] != "" && row[1] != "" {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 
-	// Insere as empresas no MongoDB
-	if len(empresas) > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		_, err := collection.InsertMany(ctx, empresas)
-		if err != nil {
-			return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
+			_, err := collection.InsertOne(ctx, empresa)
+			if err != nil {
+				return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
+			}
+			fmt.Println("Empresas inseridas com sucesso no MongoDB!")
+		} else {
+			fmt.Println("Nenhuma empresa válida para inserir.")
 		}
-		fmt.Println("Empresas inseridas com sucesso no MongoDB!")
-	} else {
-		fmt.Println("Nenhuma empresa válida para inserir.")
+		// Adiciona a empresa convertida à lista
+		// empresas = append(empresas, empresa)
 	}
+
+	// // Insere as empresas no MongoDB
+	// if len(empresas) > 0 {
+	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer cancel()
+
+	// 	_, err := collection.InsertMany(ctx, empresas)
+	// 	if err != nil {
+	// 		return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
+	// 	}
+	// 	fmt.Println("Empresas inseridas com sucesso no MongoDB!")
+	// } else {
+	// 	fmt.Println("Nenhuma empresa válida para inserir.")
+	// }
 
 	return nil
 }
 
-func (m *MongoDB) MetaSaveMongo(k, v string) error {
+func (m *MongoDB) MetaSave(k, v string) error {
 	// Verifica se a conexão com o MongoDB está inicializada
 	if m == nil {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
@@ -299,6 +319,30 @@ func (m *MongoDB) MetaSaveMongo(k, v string) error {
 	return nil
 }
 
+// MetaRead reads a key/value pair from the metadata collection.
+func (m *MongoDB) MetaRead(k string) (string, error) {
+	// Criação do contexto
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Busca o documento na coleção metadata onde a chave (key) é igual a `k`
+	var result struct {
+		Value string `bson:"value"` // Campo que você quer retornar
+	}
+
+	collection := m.Database.Collection(companyTableName)
+
+	err := collection.FindOne(ctx, bson.M{"key": k}).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", fmt.Errorf("metadata key %s not found", k)
+		}
+		return "", fmt.Errorf("error looking for metadata key %s: %w", k, err)
+	}
+
+	return result.Value, nil
+}
+
 // Close encerra a conexão com o MongoDB.
 func (m *MongoDB) Close() error {
 	if err := m.Client.Disconnect(m.Context); err != nil {
@@ -306,4 +350,112 @@ func (m *MongoDB) Close() error {
 	}
 	fmt.Println("Conexão com o MongoDB encerrada com sucesso.")
 	return nil
+}
+
+// PreLoad runs before starting to load data into the database. Currently it
+// disables autovacuum on PostgreSQL.
+func (m *MongoDB) PreLoad() error {
+
+	return nil
+}
+
+// PostLoad runs after loading data into the database. Currently it re-enables
+// autovacuum on PostgreSQL.
+func (m *MongoDB) PostLoad() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := m.Database.Collection(companyTableName)
+
+	// Passo 1: Criar um índice temporário para evitar duplicatas
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: idFieldName, Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("idx_remove_duplicates"),
+	}
+
+	_, err := collection.Indexes().CreateOne(ctx, indexModel)
+	if err != nil {
+		return fmt.Errorf("error creating temporary index: %w", err)
+	}
+
+	// Passo 2: Remover duplicatas com base no idFieldName
+	pipeline := mongo.Pipeline{
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: fmt.Sprintf("$%s", idFieldName)},
+			{Key: "ctids", Value: bson.D{{Key: "$push", Value: "$_id"}}},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}}},
+		{{Key: "$match", Value: bson.D{{Key: "count", Value: bson.D{{Key: "$gt", Value: 1}}}}}},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return fmt.Errorf("error finding duplicates: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var duplicates []struct {
+		Ctids []interface{} `bson:"ctids"`
+	}
+	if err = cursor.All(ctx, &duplicates); err != nil {
+		return fmt.Errorf("error reading duplicates: %w", err)
+	}
+
+	// Para cada grupo de duplicatas, manter o mais recente e remover os outros
+	for _, group := range duplicates {
+		if len(group.Ctids) > 1 {
+			// Manter o primeiro documento e remover os demais
+			toRemove := group.Ctids[1:] // Ignorar o primeiro documento
+			_, err := collection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
+			if err != nil {
+				return fmt.Errorf("error removing duplicates: %w", err)
+			}
+		}
+	}
+
+	// Passo 3: Remover o índice temporário
+	_, err = collection.Indexes().DropOne(ctx, "idx_remove_duplicates")
+	if err != nil {
+		return fmt.Errorf("error dropping temporary index: %w", err)
+	}
+
+	// Passo 4: Criar índice único e definir como chave primária
+	indexModel = mongo.IndexModel{
+		Keys:    bson.D{{Key: idFieldName, Value: 1}},
+		Options: options.Index().SetUnique(true).SetName(fmt.Sprintf("%s_pk", companyTableName)),
+	}
+
+	_, err = collection.Indexes().CreateOne(ctx, indexModel)
+	if err != nil {
+		return fmt.Errorf("error creating unique index: %w", err)
+	}
+
+	// Passo 5: Não há necessidade de definir explicitamente "LOGGED" no MongoDB, pois isso é específico do PostgreSQL
+
+	return nil
+}
+
+func (m *MongoDB) GetCompany(cnpj string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	collection := m.Database.Collection(companyTableName)
+
+	// Filtro para encontrar o documento pelo CNPJ
+	filter := bson.M{"cnpj": cnpj}
+
+	// Estrutura para armazenar o resultado
+	var result struct {
+		Json string `bson:"json"`
+	}
+
+	err := collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", fmt.Errorf("no document found for CNPJ %s", cnpj)
+		}
+		return "", fmt.Errorf("error querying CNPJ %s: %w", cnpj, err)
+	}
+
+	return result.Json, nil
 }

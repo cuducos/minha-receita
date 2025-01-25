@@ -9,21 +9,21 @@ services:
   #   volumes:
   #     - ./data:/mnt/data
 
-  postgres:
-    image: postgres:16.1-bookworm
-    ports:
-      - 5432:5432
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-    environment: &credentials
-      POSTGRES_PASSWORD: minhareceita
-      POSTGRES_USER: minhareceita
-      POSTGRES_DB: minhareceita
-    healthcheck:
-      test: ["CMD-SHELL", "sh -c 'pg_isready -U $${POSTGRES_USER}'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # postgres:
+  #   image: postgres:16.1-bookworm
+  #   ports:
+  #     - 5432:5432
+  #   volumes:
+  #     - ./data/postgres:/var/lib/postgresql/data
+  #   environment: &credentials
+  #     POSTGRES_PASSWORD: minhareceita
+  #     POSTGRES_USER: minhareceita
+  #     POSTGRES_DB: minhareceita
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "sh -c 'pg_isready -U $${POSTGRES_USER}'"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
   # postgres_test:
   #   image: postgres:16.1-bookworm
@@ -32,44 +32,48 @@ services:
   #   environment: *credentials
   #   command: ["postgres", "-c", "log_statement=all"]
 
-  prest:
-    image: ghcr.io/prest/prest@sha256:78bb1a5b043576dcffdc383fd5fdc02a74a33d9a2b9532cabad9e0f907fa81ac
-    ports:
-      - 8081:8081
-    depends_on:
-      postgres:
-        condition: service_healthy
+  # prest:
+  #   image: ghcr.io/prest/prest@sha256:78bb1a5b043576dcffdc383fd5fdc02a74a33d9a2b9532cabad9e0f907fa81ac
+  #   ports:
+  #     - 8081:8081
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
 
-    environment:
-       - PREST_DEBUG=true
-       - PREST_AUTH_ENABLED=false
-       - PREST_PG_HOST=postgres
-       - PREST_PG_USER=minhareceita
-       - PREST_PG_PASS=minhareceita
-       - PREST_PG_DATABASE=minhareceita
-       - PREST_PG_PORT=5432
-       - PREST_SSL_MODE=disable
-       - PREST_CACHE_ENABLED=false
-       - PREST_CACHE=false
-       - PREST_HTTP_PORT=8081
-       - PREST_QUERIES_LOCATION=/prest/data/queries/
-       - PREST_CONF=/prest/data/config/prest.toml
-    volumes:
-      - ./api/:/prest/data/
-
-  # mongo:
-  #   image: mongo
-  #   restart: always
   #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: minhareceita
+  #      - PREST_DEBUG=true
+  #      - PREST_AUTH_ENABLED=false
+  #      - PREST_PG_HOST=postgres
+  #      - PREST_PG_USER=minhareceita
+  #      - PREST_PG_PASS=minhareceita
+  #      - PREST_PG_DATABASE=minhareceita
+  #      - PREST_PG_PORT=5432
+  #      - PREST_SSL_MODE=disable
+  #      - PREST_CACHE_ENABLED=false
+  #      - PREST_CACHE=false
+  #      - PREST_HTTP_PORT=8081
+  #      - PREST_QUERIES_LOCATION=/prest/data/queries/
+  #      - PREST_CONF=/prest/data/config/prest.toml
+  #   volumes:
+  #     - ./api/:/prest/data/
 
-  pgadmin4:
-    image: elestio/pgadmin:latest
+  mongo:
+    image: mongo:latest
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: mutila@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: mbn123
-      PGADMIN_LISTEN_PORT: 8080
+      MONGO_INITDB_ROOT_USERNAME: minhareceita
+      MONGO_INITDB_ROOT_PASSWORD: minhareceita
+    volumes:
+      - ./data/mongodb:/data/db
     ports:
-    - "8080:8080"
+      - "27017:27017"
+
+  # pgadmin4:
+  #   image: elestio/pgadmin:latest
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: mutila@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD: mbn123
+  #     PGADMIN_LISTEN_PORT: 8080
+  #   ports:
+  #   - "8080:8080"
