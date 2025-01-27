@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mbnunes/minha-receita/download"
-	"github.com/mbnunes/minha-receita/transform"
+	"github.com/cuducos/minha-receita/download"
+	"github.com/cuducos/minha-receita/transform"
 	"github.com/schollz/progressbar/v3"
 )
 

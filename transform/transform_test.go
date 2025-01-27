@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mbnunes/minha-receita/db"
+	"github.com/cuducos/minha-receita/db"
 )
 
 var (

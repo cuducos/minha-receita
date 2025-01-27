@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mbnunes/minha-receita/db"
+	"github.com/cuducos/minha-receita/db"
 	"github.com/spf13/cobra"
 )
 

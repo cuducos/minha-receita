@@ -124,16 +124,6 @@ func NewMongoDB(dbName string) (MongoDB, error) {
 
 // CreateCollection cria a coleção especificada, se ainda não existir.
 func (m *MongoDB) CreateCollection() error {
-	// collections, err := m.Database.ListCollectionNames(m.Context, bson.D{{Key: "name", Value: companyTableName}, {Key: "name", Value: metaTableName}})
-	// if err != nil {
-	// 	return fmt.Errorf("erro ao listar coleções: %w", err)
-	// }
-
-	// for _, name := range collections {
-	// 	if name == collectionName {
-	// 		fmt.Println("Coleção já existe:", collectionName)
-	// 		return nil
-	// 	}
 
 	if err := m.Database.CreateCollection(m.Context, companyTableName); err != nil {
 		return fmt.Errorf("erro ao criar a coleção: %w", err)
@@ -147,8 +137,6 @@ func (m *MongoDB) CreateCollection() error {
 
 	fmt.Println("Coleção criada com sucesso:", metaTableName)
 
-	// }
-
 	return nil
 }
 
@@ -157,7 +145,6 @@ func (m *MongoDB) CreateIndexes() error {
 	collection := m.Database.Collection(companyTableName)
 
 	indexes := []mongo.IndexModel{
-		// {Keys: bson.D{{Key: "cnpj", Value: 1}}, Options: options.Index().SetUnique(true)},
 		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
 		{Keys: bson.D{{Key: "json.cnpj", Value: 1}}},
 		{Keys: bson.D{{Key: "json.qsa.cpf", Value: 1}}},
@@ -211,48 +198,39 @@ func (m *MongoDB) DropCollection() error {
 
 // CreateCompanies insere uma matriz de dados no MongoDB.
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
-	// Recupera o nome da coleção do ambiente
 	collectionName := companyTableName
 	if collectionName == "" {
 		return fmt.Errorf("nome da coleção não definido na variável de ambiente COLLECTION")
 	}
 
-	// Verifica se a conexão está configurada corretamente
 	if m == nil {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
 	}
 
 	collection := m.Database.Collection(collectionName)
 
-	// Cria uma lista para armazenar os documentos a serem inseridos
 	var empresas []interface{}
 
-	// Itera sobre o batch para processar os dados
 	for _, row := range batch {
 
 		if len(row) < 2 {
-			// Ignora linhas que não tenham pelo menos dois elementos
 			fmt.Println("Linha ignorada devido ao tamanho insuficiente:", row)
 			continue
 		}
 
-		// O segundo elemento do batch é o JSON que será convertido para a estrutura Empresa
 		var empresa Empresa
 		empresa.Cnpj = row[0]
 
 		empresaJSON := row[1]
-		// Deserializa o JSON para a estrutura Empresa
 		err := json.Unmarshal([]byte(empresaJSON), &empresa.Json)
 		if err != nil {
 			fmt.Printf("Erro ao desserializar JSON: %s, erro: %v\n", empresaJSON, err)
 			continue
 		}
 
-		// Adiciona a empresa convertida à lista
 		empresas = append(empresas, empresa)
 	}
 
-	// Insere as empresas no MongoDB
 	if len(empresas) > 0 {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -270,26 +248,21 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 }
 
 func (m *MongoDB) MetaSave(k, v string) error {
-	// Verifica se a conexão com o MongoDB está inicializada
 	if m == nil {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
 	}
 
-	// Obtém a coleção
 	collection := m.Database.Collection(metaTableName)
 
-	// Valida o tamanho da chave
 	if len(k) > 16 {
 		return fmt.Errorf("a chave pode ter no máximo 16 caracteres")
 	}
 
-	// Cria o documento a ser inserido
 	doc := bson.M{
 		"key":   k,
 		"value": v,
 	}
 
-	// Insere o documento na coleção
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -303,13 +276,11 @@ func (m *MongoDB) MetaSave(k, v string) error {
 
 // MetaRead reads a key/value pair from the metadata collection.
 func (m *MongoDB) MetaRead(k string) (string, error) {
-	// Criação do contexto
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Busca o documento na coleção metadata onde a chave (key) é igual a `k`
 	var result struct {
-		Value string `bson:"value"` // Campo que você quer retornar
+		Value string `bson:"value"`
 	}
 
 	collection := m.Database.Collection(metaTableName)

@@ -1,4 +1,4 @@
-module github.com/mbnunes/minha-receita
+module github.com/cuducos/minha-receita
 
 go 1.22
 
@@ -18,8 +18,6 @@ require (
 	go.mongodb.org/mongo-driver v1.17.2
 	golang.org/x/text v0.21.0
 )
-
-replace github.com/cuducos/minha-receita => github.com/mbnunes/minha-receita v0.0.0-20250122195949-f4e7b0093bfa
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

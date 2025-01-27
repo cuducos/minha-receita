@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mbnunes/minha-receita/db"
-	"github.com/mbnunes/minha-receita/transform"
+	"github.com/cuducos/minha-receita/db"
+	"github.com/cuducos/minha-receita/transform"
 	"github.com/spf13/cobra"
 )
 

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mbnunes/minha-receita/download"
+	"github.com/cuducos/minha-receita/download"
 )
 
 const (

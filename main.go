@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mbnunes/minha-receita/cmd"
+	"github.com/cuducos/minha-receita/cmd"
 )
 
 func main() {
