@@ -198,16 +198,12 @@ func (m *MongoDB) DropCollection() error {
 
 // CreateCompanies insere uma matriz de dados no MongoDB.
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
-	collectionName := companyTableName
-	if collectionName == "" {
-		return fmt.Errorf("nome da coleção não definido na variável de ambiente COLLECTION")
-	}
 
 	if m == nil {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
 	}
 
-	collection := m.Database.Collection(collectionName)
+	collection := m.Database.Collection(companyTableName)
 
 	var empresas []interface{}
 
@@ -232,8 +228,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	}
 
 	if len(empresas) > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
 		_, err := collection.InsertMany(ctx, empresas)
 		if err != nil {
@@ -276,8 +271,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 
 // MetaRead reads a key/value pair from the metadata collection.
 func (m *MongoDB) MetaRead(k string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
 	var result struct {
 		Value string `bson:"value"`
@@ -364,8 +358,7 @@ func (m *MongoDB) PostLoad() error {
 }
 
 func (m *MongoDB) GetCompany(cnpj string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 
 	collection := m.Database.Collection(companyTableName)
 
