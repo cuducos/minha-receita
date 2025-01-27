@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -224,7 +225,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	collection := m.Database.Collection(collectionName)
 
 	// Cria uma lista para armazenar os documentos a serem inseridos
-	// var empresas []interface{}
+	var empresas []interface{}
 
 	// Itera sobre o batch para processar os dados
 	for _, row := range batch {
@@ -247,36 +248,23 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 			continue
 		}
 
-		// Insere as empresas no MongoDB
-		if row[0] != "" && row[1] != "" {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
-			_, err := collection.InsertOne(ctx, empresa)
-			if err != nil {
-				return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
-			}
-			fmt.Println("Empresas inseridas com sucesso no MongoDB!")
-		} else {
-			fmt.Println("Nenhuma empresa válida para inserir.")
-		}
 		// Adiciona a empresa convertida à lista
-		// empresas = append(empresas, empresa)
+		empresas = append(empresas, empresa)
 	}
 
-	// // Insere as empresas no MongoDB
-	// if len(empresas) > 0 {
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// 	defer cancel()
+	// Insere as empresas no MongoDB
+	if len(empresas) > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	// 	_, err := collection.InsertMany(ctx, empresas)
-	// 	if err != nil {
-	// 		return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
-	// 	}
-	// 	fmt.Println("Empresas inseridas com sucesso no MongoDB!")
-	// } else {
-	// 	fmt.Println("Nenhuma empresa válida para inserir.")
-	// }
+		_, err := collection.InsertMany(ctx, empresas)
+		if err != nil {
+			return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
+		}
+
+	} else {
+		fmt.Println("Nenhuma empresa válida para inserir.")
+	}
 
 	return nil
 }
@@ -287,14 +275,8 @@ func (m *MongoDB) MetaSave(k, v string) error {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
 	}
 
-	// Recupera o nome da coleção `meta` do ambiente
-	collectionName := "meta"
-	if collectionName == "" {
-		return fmt.Errorf("nome da coleção não definido na variável de ambiente META_COLLECTION")
-	}
-
 	// Obtém a coleção
-	collection := m.Database.Collection(collectionName)
+	collection := m.Database.Collection(metaTableName)
 
 	// Valida o tamanho da chave
 	if len(k) > 16 {
@@ -330,7 +312,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 		Value string `bson:"value"` // Campo que você quer retornar
 	}
 
-	collection := m.Database.Collection(companyTableName)
+	collection := m.Database.Collection(metaTableName)
 
 	err := collection.FindOne(ctx, bson.M{"key": k}).Decode(&result)
 	if err != nil {
@@ -367,70 +349,45 @@ func (m *MongoDB) PostLoad() error {
 
 	collection := m.Database.Collection(companyTableName)
 
-	// Passo 1: Criar um índice temporário para evitar duplicatas
-	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: idFieldName, Value: 1}},
-		Options: options.Index().SetUnique(true).SetName("idx_remove_duplicates"),
-	}
-
-	_, err := collection.Indexes().CreateOne(ctx, indexModel)
-	if err != nil {
-		return fmt.Errorf("error creating temporary index: %w", err)
-	}
-
-	// Passo 2: Remover duplicatas com base no idFieldName
 	pipeline := mongo.Pipeline{
-		{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: fmt.Sprintf("$%s", idFieldName)},
-			{Key: "ctids", Value: bson.D{{Key: "$push", Value: "$_id"}}},
-			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		{{"$group", bson.D{
+			{"_id", "$cnpj"},
+			{"docs", bson.D{{"$push", "$_id"}}},
+			{"count", bson.D{{"$sum", 1}}},
 		}}},
-		{{Key: "$match", Value: bson.D{{Key: "count", Value: bson.D{{Key: "$gt", Value: 1}}}}}},
+		{{"$match", bson.D{{"count", bson.D{{"$gt", 1}}}}}},
 	}
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return fmt.Errorf("error finding duplicates: %w", err)
+		return fmt.Errorf("erro ao executar agregação: %w", err)
 	}
 	defer cursor.Close(ctx)
 
-	var duplicates []struct {
-		Ctids []interface{} `bson:"ctids"`
-	}
-	if err = cursor.All(ctx, &duplicates); err != nil {
-		return fmt.Errorf("error reading duplicates: %w", err)
-	}
+	// Itera pelos resultados e remove duplicados
+	for cursor.Next(ctx) {
+		var result struct {
+			ID   string               `bson:"_id"`
+			Docs []primitive.ObjectID `bson:"docs"`
+		}
 
-	// Para cada grupo de duplicatas, manter o mais recente e remover os outros
-	for _, group := range duplicates {
-		if len(group.Ctids) > 1 {
-			// Manter o primeiro documento e remover os demais
-			toRemove := group.Ctids[1:] // Ignorar o primeiro documento
+		if err := cursor.Decode(&result); err != nil {
+			return fmt.Errorf("erro ao decodificar resultado: %w", err)
+		}
+
+		// Mantém o primeiro documento e remove os demais
+		if len(result.Docs) > 1 {
+			toRemove := result.Docs[1:] // Exclui o primeiro documento
 			_, err := collection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
 			if err != nil {
-				return fmt.Errorf("error removing duplicates: %w", err)
+				return fmt.Errorf("erro ao remover duplicados: %w", err)
 			}
 		}
 	}
 
-	// Passo 3: Remover o índice temporário
-	_, err = collection.Indexes().DropOne(ctx, "idx_remove_duplicates")
-	if err != nil {
-		return fmt.Errorf("error dropping temporary index: %w", err)
+	if err := cursor.Err(); err != nil {
+		return fmt.Errorf("erro ao iterar pelos resultados: %w", err)
 	}
-
-	// Passo 4: Criar índice único e definir como chave primária
-	indexModel = mongo.IndexModel{
-		Keys:    bson.D{{Key: idFieldName, Value: 1}},
-		Options: options.Index().SetUnique(true).SetName(fmt.Sprintf("%s_pk", companyTableName)),
-	}
-
-	_, err = collection.Indexes().CreateOne(ctx, indexModel)
-	if err != nil {
-		return fmt.Errorf("error creating unique index: %w", err)
-	}
-
-	// Passo 5: Não há necessidade de definir explicitamente "LOGGED" no MongoDB, pois isso é específico do PostgreSQL
 
 	return nil
 }
@@ -441,15 +398,11 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 
 	collection := m.Database.Collection(companyTableName)
 
-	// Filtro para encontrar o documento pelo CNPJ
 	filter := bson.M{"cnpj": cnpj}
 
-	// Estrutura para armazenar o resultado
-	var result struct {
-		Json string `bson:"json"`
-	}
+	var empresa Empresa
 
-	err := collection.FindOne(ctx, filter).Decode(&result)
+	err := collection.FindOne(ctx, filter).Decode(&empresa)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", fmt.Errorf("no document found for CNPJ %s", cnpj)
@@ -457,5 +410,10 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 		return "", fmt.Errorf("error querying CNPJ %s: %w", cnpj, err)
 	}
 
-	return result.Json, nil
+	jsonBytes, err := json.Marshal(empresa.Json)
+	if err != nil {
+		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", cnpj, err)
+	}
+
+	return string(jsonBytes), nil
 }

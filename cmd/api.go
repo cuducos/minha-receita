@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mbnunes/minha-receita/api"
 	"github.com/mbnunes/minha-receita/db"
@@ -53,18 +54,38 @@ var apiCmd = &cobra.Command{
 				return err
 			}
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema, nr)
-		if err != nil {
-			return err
+		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
+			mdb, err := db.NewMongoDB(mongoDatabase)
+			if err != nil {
+				return err
+			}
+
+			defer mdb.Close()
+			if port == "" {
+				port = os.Getenv("PORT")
+			}
+			if port == "" {
+				port = defaultPort
+			}
+
+			api.Serve(&mdb, port, nr)
+
+		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
+			pg, err := db.NewPostgreSQL(u, postgresSchema, nr)
+			if err != nil {
+				return err
+			}
+			defer pg.Close()
+			if port == "" {
+				port = os.Getenv("PORT")
+			}
+			if port == "" {
+				port = defaultPort
+			}
+			api.Serve(&pg, port, nr)
+		} else {
 		}
-		defer pg.Close()
-		if port == "" {
-			port = os.Getenv("PORT")
-		}
-		if port == "" {
-			port = defaultPort
-		}
-		api.Serve(&pg, port, nr)
+
 		return nil
 	},
 }
