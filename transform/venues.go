@@ -10,6 +10,12 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+func handlePanic() {
+	if r := recover(); r != nil {
+		fmt.Printf("Recuperado de um panic: %v\n", r)
+	}
+}
+
 func saveBatch(db database, b []company) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
@@ -51,6 +57,7 @@ func (t *venuesTask) produceRows() {
 	for _, r := range t.source.readers {
 		t.shutdownWaitGroup.Add(1)
 		go func(t *venuesTask, a *archivedCSV) {
+			defer handlePanic()
 			defer t.shutdownWaitGroup.Done()
 			for {
 				if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
