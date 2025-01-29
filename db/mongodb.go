@@ -99,19 +99,11 @@ type MongoDB struct {
 	Context  context.Context
 }
 
-func handlePanic(debug string) {
-	if r := recover(); r != nil {
-		fmt.Printf("%s - Recuperado de um panic: %v\n", debug, r)
-	}
-}
-
 // NewMongoDB inicializa uma nova conexão MongoDB encapsulada em uma estrutura.
 func NewMongoDB(dbName string) (MongoDB, error) {
-	defer handlePanic("Debug - NewMongoDB")
 	uri := os.Getenv("DATABASE_URL")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, _ := context.WithCancel(context.Background())
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
@@ -132,7 +124,6 @@ func NewMongoDB(dbName string) (MongoDB, error) {
 
 // CreateCollection cria a coleção especificada, se ainda não existir.
 func (m *MongoDB) CreateCollection() error {
-	defer handlePanic("Debug - CreateCollection")
 
 	if err := m.Database.CreateCollection(m.Context, companyTableName); err != nil {
 		return fmt.Errorf("erro ao criar a coleção: %w", err)
@@ -151,7 +142,6 @@ func (m *MongoDB) CreateCollection() error {
 
 // CreateIndexes cria os índices na coleção especificada.
 func (m *MongoDB) CreateIndexes() error {
-	defer handlePanic("Debug - CreateIndexes")
 
 	collection := m.Database.Collection(companyTableName)
 
@@ -190,7 +180,6 @@ func (m *MongoDB) CreateIndexes() error {
 
 // DropCollection exclui completamente uma coleção específica.
 func (m *MongoDB) DropCollection() error {
-	defer handlePanic("Debug - DropCollection")
 
 	collections := []string{companyTableName, metaTableName}
 
@@ -210,7 +199,6 @@ func (m *MongoDB) DropCollection() error {
 
 // CreateCompanies insere uma matriz de dados no MongoDB.
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
-	defer handlePanic("Debug - CreateCompanies")
 
 	if m == nil {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
@@ -241,7 +229,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	}
 
 	if len(empresas) > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
 		_, err := collection.InsertMany(ctx, empresas)
@@ -257,7 +245,6 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 }
 
 func (m *MongoDB) MetaSave(k, v string) error {
-	defer handlePanic("Debug - MetaSave")
 
 	if m == nil {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
@@ -274,7 +261,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 		"value": v,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	_, err := collection.InsertOne(ctx, doc)
@@ -287,9 +274,8 @@ func (m *MongoDB) MetaSave(k, v string) error {
 
 // MetaRead reads a key/value pair from the metadata collection.
 func (m *MongoDB) MetaRead(k string) (string, error) {
-	defer handlePanic("Debug - MetaRead")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var result struct {
@@ -311,7 +297,6 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 
 // Close encerra a conexão com o MongoDB.
 func (m *MongoDB) Close() error {
-	defer handlePanic("Debug - Close")
 
 	if err := m.Client.Disconnect(m.Context); err != nil {
 		return fmt.Errorf("erro ao desconectar do MongoDB: %w", err)
@@ -323,7 +308,6 @@ func (m *MongoDB) Close() error {
 // PreLoad runs before starting to load data into the database. Currently it
 // disables autovacuum on PostgreSQL.
 func (m *MongoDB) PreLoad() error {
-	defer handlePanic("Debug - PreLoad")
 
 	return nil
 }
@@ -331,9 +315,8 @@ func (m *MongoDB) PreLoad() error {
 // PostLoad runs after loading data into the database. Currently it re-enables
 // autovacuum on PostgreSQL.
 func (m *MongoDB) PostLoad() error {
-	defer handlePanic("Debug - PostLoad")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	collection := m.Database.Collection(companyTableName)
@@ -382,9 +365,8 @@ func (m *MongoDB) PostLoad() error {
 }
 
 func (m *MongoDB) GetCompany(cnpj string) (string, error) {
-	defer handlePanic("Debug - GetCompany")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	collection := m.Database.Collection(companyTableName)

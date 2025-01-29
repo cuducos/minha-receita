@@ -152,7 +152,7 @@ func addDatabase(c *cobra.Command) *cobra.Command {
 
 	if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Mongo URI (default MONGO_URL environment variable)")
-		c.Flags().StringVarP(&mongoDatabase, "collection-name", "s", "minhareceita", "PostgreSQL schema")
+		c.Flags().StringVarP(&mongoDatabase, "collection-name", "s", "minhareceita", "MongoDB Database")
 	} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
 		c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URL environment variable)")
 		c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
