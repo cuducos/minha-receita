@@ -46,14 +46,10 @@ func loadDatabaseURI() (string, error) {
 	if databaseURI != "" {
 		return databaseURI, nil
 	}
-	var u string
-
-	u = os.Getenv("DATABASE_URL")
-
+	u := os.Getenv("DATABASE_URL")
 	if u == "" {
 		return "", fmt.Errorf("could not find a database URI, set the settings environment variables with the credentials for a PostgreSQL or Mongo database")
 	}
-
 	return u, nil
 }
 
@@ -65,7 +61,7 @@ var rootCmd = &cobra.Command{
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Creates the required tables in PostgreSQL or MongoDB",
+	Short: "Creates the required tables in the database",
 	RunE: func(_ *cobra.Command, _ []string) error {
 
 		u, err := loadDatabaseURI()
@@ -78,7 +74,7 @@ var createCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-
+			// TODO: create method in database interface
 			err = mdb.CreateCollection()
 			if err != nil {
 				return err
@@ -137,8 +133,7 @@ var dropCmd = &cobra.Command{
 			defer pg.Close()
 			return pg.DropTable()
 		} else {
-			fmt.Println("A URL não contém 'mongodb' nem 'postgres'")
-			return nil
+			return fmt.Errorf("A URL não contém 'mongodb' nem 'postgres'")
 		}
 	},
 }

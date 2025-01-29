@@ -22,11 +22,9 @@ func saveBatch(db database, b []company) (int, error) {
 		}
 		s[i] = []string{c.CNPJ, j}
 	}
-
 	if err := db.CreateCompanies(s); err != nil {
 		return 0, fmt.Errorf("error saving companies: %w", err)
 	}
-
 	return len(s), nil
 }
 

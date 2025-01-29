@@ -67,13 +67,3 @@ services:
       - ./data/mongodb:/data/db
     ports:
       - "27017:27017"
-
-  # pgadmin4:
-  #   image: elestio/pgadmin:latest
-  #   restart: always
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: mutila@gmail.com
-  #     PGADMIN_DEFAULT_PASSWORD: mbn123
-  #     PGADMIN_LISTEN_PORT: 8080
-  #   ports:
-  #   - "8080:8080"
