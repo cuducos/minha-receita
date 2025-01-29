@@ -48,7 +48,7 @@ func loadDatabaseURI() (string, error) {
 	}
 	u := os.Getenv("DATABASE_URL")
 	if u == "" {
-		return "", fmt.Errorf("could not find a database URI, set the settings environment variables with the credentials for a PostgreSQL or Mongo database")
+		return "", fmt.Errorf("could not find a database URI, set the DATABASE_URL environment variable with the credentials for a PostgreSQL or MongoDB database")
 	}
 	return u, nil
 }
