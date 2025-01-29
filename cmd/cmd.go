@@ -69,7 +69,8 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
+		uri := os.Getenv("DATABASE_URL")
+		if strings.HasPrefix(uri, "mongodb://") {
 			mdb, err := db.NewMongoDB(mongoDatabase)
 			if err != nil {
 				return err
@@ -86,7 +87,7 @@ var createCmd = &cobra.Command{
 			}
 			defer mdb.Close()
 			return err
-		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
+		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
 
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 			if err != nil {
@@ -106,26 +107,23 @@ var dropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops the tables in PostgreSQL",
 	RunE: func(_ *cobra.Command, _ []string) error {
-
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
-
-		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
+		uri := os.Getenv("DATABASE_URL")
+		if strings.HasPrefix(uri, "mongodb://") {
 			mdb, err := db.NewMongoDB(mongoDatabase)
 			if err != nil {
 				return err
 			}
-
 			err = mdb.DropCollection()
 			if err != nil {
 				return err
 			}
 
 			return err
-
-		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
+		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 			if err != nil {
 				return err
