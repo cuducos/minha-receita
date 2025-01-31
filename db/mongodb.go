@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
+	"log"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -100,19 +101,30 @@ type MongoDB struct {
 }
 
 // NewMongoDB inicializa uma nova conexão MongoDB encapsulada em uma estrutura.
-func NewMongoDB(dbName string) (MongoDB, error) {
-	uri := os.Getenv("DATABASE_URL")
+func NewMongoDB(uri string) (MongoDB, error) {
+
+	clientOptions := options.Client().ApplyURI(uri)
 
 	ctx, _ := context.WithCancel(context.Background())
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		return MongoDB{}, fmt.Errorf("erro ao conectar ao MongoDB: %w", err)
+		return MongoDB{}, fmt.Errorf("Failed to connect to MongoDB: %w", err)
 	}
 
-	// Verifica a conexão
+	// Verify the connection
 	if err := client.Ping(ctx, nil); err != nil {
-		return MongoDB{}, fmt.Errorf("erro ao pingar no MongoDB: %w", err)
+		return MongoDB{}, fmt.Errorf("Failed to ping to MongoDB: %w", err)
+	}
+
+	// Extract the database name from the URI
+	uriWithoutParams := strings.Split(uri, "?")[0] // Remove query parameters from the URI
+	parts := strings.Split(uriWithoutParams, "/")  // Split the string by "/"
+	dbName := parts[len(parts)-1]                  // The last part is the database name
+
+	// Ensure the extracted database name is valid
+	if dbName == "" || strings.Contains(dbName, "@") {
+		log.Fatal("No database name found in the URI")
 	}
 
 	return MongoDB{
@@ -129,13 +141,13 @@ func (m *MongoDB) CreateCollection() error {
 		return fmt.Errorf("erro ao criar a coleção: %w", err)
 	}
 
-	fmt.Println("Coleção criada com sucesso:", companyTableName)
+	log.Output(1, fmt.Sprintf("Collection %s created successfully", companyTableName))
 
 	if err := m.Database.CreateCollection(m.Context, metaTableName); err != nil {
 		return fmt.Errorf("erro ao criar a coleção: %w", err)
 	}
 
-	fmt.Println("Coleção criada com sucesso:", metaTableName)
+	log.Output(1, fmt.Sprintf("Collection %s created successfully", metaTableName))
 
 	return nil
 }
@@ -236,11 +248,11 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 
 		_, err := collection.InsertMany(ctx, empresas)
 		if err != nil {
-			return fmt.Errorf("erro ao inserir empresas no MongoDB: %w", err)
+			return fmt.Errorf("error inserting companies into MongoDB: %w", err)
 		}
 
 	} else {
-		fmt.Println("Nenhuma empresa válida para inserir.")
+		fmt.Println("No valid company to insert.")
 	}
 
 	return nil
@@ -249,13 +261,13 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 func (m *MongoDB) MetaSave(k, v string) error {
 
 	if m == nil {
-		return fmt.Errorf("conexão com o MongoDB não inicializada")
+		return fmt.Errorf("MongoDB connection not initialized")
 	}
 
 	collection := m.Database.Collection(metaTableName)
 
 	if len(k) > 16 {
-		return fmt.Errorf("a chave pode ter no máximo 16 caracteres")
+		return fmt.Errorf("The key can have a maximum of 16 characters.")
 	}
 
 	doc := bson.M{
@@ -268,7 +280,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 
 	_, err := collection.InsertOne(ctx, doc)
 	if err != nil {
-		return fmt.Errorf("erro ao salvar %s na coleção meta: %w", k, err)
+		return fmt.Errorf("error saving %s to the meta collection: %w", k, err)
 	}
 
 	return nil
@@ -297,13 +309,13 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 	return result.Value, nil
 }
 
-// Close encerra a conexão com o MongoDB.
+// Close terminates the connection to MongoDB.
 func (m *MongoDB) Close() error {
 
 	if err := m.Client.Disconnect(m.Context); err != nil {
-		return fmt.Errorf("erro ao desconectar do MongoDB: %w", err)
+		return fmt.Errorf("Error disconnecting from MongoDB: %w", err)
 	}
-	fmt.Println("Conexão com o MongoDB encerrada com sucesso.")
+	fmt.Println("Successfully disconnected from MongoDB")
 	return nil
 }
 

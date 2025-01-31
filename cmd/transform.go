@@ -40,40 +40,33 @@ var transformCmd = &cobra.Command{
 			return err
 		}
 
-		if strings.Contains(os.Getenv("DATABASE_URL"), "mongodb") {
-			mdb, err := db.NewMongoDB(mongoDatabase)
+		uri := os.Getenv("DATABASE_URL")
+		if strings.HasPrefix(uri, "mongodb://") {
+			mdb, err := db.NewMongoDB(uri)
 			if err != nil {
 				return err
 			}
-
 			if cleanUp {
-
 				err = mdb.DropCollection()
 				if err != nil {
 					return err
 				}
-
 				err = mdb.CreateCollection()
 				if err != nil {
 					return err
 				}
-
 				err = mdb.CreateIndexes()
 				if err != nil {
 					return err
 				}
 			}
-
 			return transform.Transform(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy)
-		} else if strings.Contains(os.Getenv("DATABASE_URL"), "postgres") {
-
+		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-
 			if err != nil {
 				return err
 			}
 			defer pg.Close()
-
 			if cleanUp {
 				if err := pg.DropTable(); err != nil {
 					return err
@@ -84,8 +77,7 @@ var transformCmd = &cobra.Command{
 			}
 			return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy)
 		} else {
-			fmt.Println("A URL não contém 'mongodb' nem 'postgres'")
-			return nil
+			return fmt.Errorf("A URL não contém 'mongodb' nem 'postgres'")
 		}
 
 	},

@@ -25,7 +25,6 @@ var (
 	dir            string
 	databaseURI    string
 	postgresSchema string
-	mongoDatabase  string
 )
 
 func assertDirExists() error {
@@ -71,7 +70,7 @@ var createCmd = &cobra.Command{
 
 		uri := os.Getenv("DATABASE_URL")
 		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, err := db.NewMongoDB(mongoDatabase)
+			mdb, err := db.NewMongoDB(uri)
 			if err != nil {
 				return err
 			}
@@ -111,7 +110,7 @@ var dropCmd = &cobra.Command{
 		}
 		uri := os.Getenv("DATABASE_URL")
 		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, err := db.NewMongoDB(mongoDatabase)
+			mdb, err := db.NewMongoDB(uri)
 			if err != nil {
 				return err
 			}
@@ -119,7 +118,6 @@ var dropCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-
 			return err
 		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
@@ -140,12 +138,9 @@ func addDataDir(c *cobra.Command) *cobra.Command {
 }
 
 func addDatabase(c *cobra.Command) *cobra.Command {
-
 	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Mongo URI (default MONGO_URL environment variable)")
-	c.Flags().StringVarP(&mongoDatabase, "database-name", "s", "minhareceita", "MongoDB Database")
 	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URL environment variable)")
 	c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
-
 	return c
 }
 
