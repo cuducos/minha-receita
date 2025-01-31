@@ -64,7 +64,7 @@ var apiCmd = &cobra.Command{
 
 		uri := os.Getenv("DATABASE_URL")
 		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, _ := db.NewMongoDB(mongoDatabase)
+			mdb, _ := db.NewMongoDB(uri)
 			if err != nil {
 				return err
 			}

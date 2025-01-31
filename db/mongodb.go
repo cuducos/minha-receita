@@ -95,26 +95,26 @@ type Detalhes struct {
 }
 
 type MongoDB struct {
-	Client   *mongo.Client
-	Database *mongo.Database
-	Context  context.Context
+	client *mongo.Client
+	db     *mongo.Database
+	ctx    context.Context
 }
 
-// NewMongoDB inicializa uma nova conexão MongoDB encapsulada em uma estrutura.
+// NewMongoDB initializes a new MongoDB connection wrapped in a structure.
 func NewMongoDB(uri string) (MongoDB, error) {
 
 	clientOptions := options.Client().ApplyURI(uri)
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		return MongoDB{}, fmt.Errorf("Failed to connect to MongoDB: %w", err)
+		return MongoDB{}, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 
 	// Verify the connection
 	if err := client.Ping(ctx, nil); err != nil {
-		return MongoDB{}, fmt.Errorf("Failed to ping to MongoDB: %w", err)
+		return MongoDB{}, fmt.Errorf("failed to ping to MongoDB: %w", err)
 	}
 
 	// Extract the database name from the URI
@@ -128,22 +128,22 @@ func NewMongoDB(uri string) (MongoDB, error) {
 	}
 
 	return MongoDB{
-		Client:   client,
-		Database: client.Database(dbName),
-		Context:  ctx,
+		client: client,
+		db:     client.Database(dbName),
+		ctx:    ctx,
 	}, nil
 }
 
 // CreateCollection cria a coleção especificada, se ainda não existir.
 func (m *MongoDB) CreateCollection() error {
 
-	if err := m.Database.CreateCollection(m.Context, companyTableName); err != nil {
+	if err := m.db.CreateCollection(m.ctx, companyTableName); err != nil {
 		return fmt.Errorf("erro ao criar a coleção: %w", err)
 	}
 
 	log.Output(1, fmt.Sprintf("Collection %s created successfully", companyTableName))
 
-	if err := m.Database.CreateCollection(m.Context, metaTableName); err != nil {
+	if err := m.db.CreateCollection(m.ctx, metaTableName); err != nil {
 		return fmt.Errorf("erro ao criar a coleção: %w", err)
 	}
 
@@ -155,7 +155,7 @@ func (m *MongoDB) CreateCollection() error {
 // CreateIndexes cria os índices na coleção especificada.
 func (m *MongoDB) CreateIndexes() error {
 
-	collection := m.Database.Collection(companyTableName)
+	collection := m.db.Collection(companyTableName)
 
 	indexes := []mongo.IndexModel{
 		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
@@ -183,7 +183,7 @@ func (m *MongoDB) CreateIndexes() error {
 		{Keys: bson.D{{Key: "json.descricaosituacaocadastral", Value: 1}}},
 		{Keys: bson.D{{Key: "json.uf", Value: 1}}},
 	}
-	_, err := collection.Indexes().CreateMany(m.Context, indexes)
+	_, err := collection.Indexes().CreateMany(m.ctx, indexes)
 	if err != nil {
 		return fmt.Errorf("erro ao criar índices: %w", err)
 	}
@@ -198,9 +198,9 @@ func (m *MongoDB) DropCollection() error {
 	collections := []string{companyTableName, metaTableName}
 
 	for _, v := range collections {
-		collection := m.Database.Collection(v)
+		collection := m.db.Collection(v)
 
-		if err := collection.Drop(m.Context); err != nil {
+		if err := collection.Drop(m.ctx); err != nil {
 			return fmt.Errorf("erro ao excluir a coleção: %w", err)
 		}
 
@@ -218,7 +218,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		return fmt.Errorf("conexão com o MongoDB não inicializada")
 	}
 
-	collection := m.Database.Collection(companyTableName)
+	collection := m.db.Collection(companyTableName)
 
 	var empresas []interface{}
 
@@ -264,7 +264,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 		return fmt.Errorf("MongoDB connection not initialized")
 	}
 
-	collection := m.Database.Collection(metaTableName)
+	collection := m.db.Collection(metaTableName)
 
 	if len(k) > 16 {
 		return fmt.Errorf("The key can have a maximum of 16 characters.")
@@ -296,7 +296,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 		Value string `bson:"value"`
 	}
 
-	collection := m.Database.Collection(metaTableName)
+	collection := m.db.Collection(metaTableName)
 
 	err := collection.FindOne(ctx, bson.M{"key": k}).Decode(&result)
 	if err != nil {
@@ -312,7 +312,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 // Close terminates the connection to MongoDB.
 func (m *MongoDB) Close() error {
 
-	if err := m.Client.Disconnect(m.Context); err != nil {
+	if err := m.client.Disconnect(m.ctx); err != nil {
 		return fmt.Errorf("Error disconnecting from MongoDB: %w", err)
 	}
 	fmt.Println("Successfully disconnected from MongoDB")
@@ -333,7 +333,7 @@ func (m *MongoDB) PostLoad() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	collection := m.Database.Collection(companyTableName)
+	collection := m.db.Collection(companyTableName)
 
 	pipeline := mongo.Pipeline{
 		{{"$group", bson.D{
@@ -383,7 +383,7 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	collection := m.Database.Collection(companyTableName)
+	collection := m.db.Collection(companyTableName)
 
 	filter := bson.M{"cnpj": cnpj}
 
