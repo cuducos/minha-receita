@@ -350,7 +350,7 @@ func (m *MongoDB) PostLoad() error {
 	}
 	defer cursor.Close(ctx)
 
-	// Itera pelos resultados e remove duplicados
+	// Iterates through the results and removes duplicates
 	for cursor.Next(ctx) {
 		var result struct {
 			ID   string               `bson:"_id"`
@@ -361,9 +361,9 @@ func (m *MongoDB) PostLoad() error {
 			return fmt.Errorf("erro ao decodificar resultado: %w", err)
 		}
 
-		// Mantém o primeiro documento e remove os demais
+		// Keep the first document and remove the others
 		if len(result.Docs) > 1 {
-			toRemove := result.Docs[1:] // Exclui o primeiro documento
+			toRemove := result.Docs[1:] // Delete the first document
 			_, err := collection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
 			if err != nil {
 				return fmt.Errorf("erro ao remover duplicados: %w", err)
