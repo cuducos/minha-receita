@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Empresa struct {
+type empresa struct {
 	Cnpj string            `json:"cnpj"`
 	Json transform.Company `json:"json"`
 }
@@ -140,16 +140,14 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	var empresas []interface{}
 	for _, row := range batch {
 		if len(row) < 2 {
-			fmt.Println("line skipped due to insufficient length:", row)
-			continue
+			return fmt.Errorf("line skipped due to insufficient length: %s", row)
 		}
-		var empresa Empresa
+		var empresa empresa
 		empresa.Cnpj = row[0]
 		empresaJSON := row[1]
 		err := json.Unmarshal([]byte(empresaJSON), &empresa.Json)
 		if err != nil {
-			fmt.Printf("error deserializing JSON: %s, erro: %v\n", empresaJSON, err)
-			continue
+			return fmt.Errorf("error deserializing JSON: %s, erro: %v", empresaJSON, err)
 		}
 		empresas = append(empresas, empresa)
 	}
@@ -270,7 +268,7 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 	defer cancel()
 	collection := m.db.Collection(companyTableName)
 	filter := bson.M{"cnpj": cnpj}
-	var empresa Empresa
+	var empresa empresa
 	err := collection.FindOne(ctx, filter).Decode(&empresa)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
