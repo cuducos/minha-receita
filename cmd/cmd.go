@@ -62,24 +62,20 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Creates the required tables in the database",
 	RunE: func(_ *cobra.Command, _ []string) error {
-
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
-
 		uri := os.Getenv("DATABASE_URL")
 		if strings.HasPrefix(uri, "mongodb://") {
 			mdb, err := db.NewMongoDB(uri)
 			if err != nil {
 				return err
 			}
-			// TODO: create method in database interface
 			err = mdb.CreateCollection()
 			if err != nil {
 				return err
 			}
-
 			err = mdb.CreateIndexes()
 			if err != nil {
 				return err
@@ -87,7 +83,6 @@ var createCmd = &cobra.Command{
 			defer mdb.Close()
 			return err
 		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
-
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 			if err != nil {
 				return err
@@ -138,8 +133,7 @@ func addDataDir(c *cobra.Command) *cobra.Command {
 }
 
 func addDatabase(c *cobra.Command) *cobra.Command {
-	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Mongo URI (default MONGO_URL environment variable)")
-	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default POSTGRES_URL environment variable)")
+	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Database URI (default DATABASE_URL environment variable)")
 	c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
 	return c
 }
