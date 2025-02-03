@@ -59,7 +59,7 @@ func NewMongoDB(uri string) (MongoDB, error) {
 	}, nil
 }
 
-// CreateCollection cria a coleção especificada, se ainda não existir.
+// CreateCollection creates the specified collection if it does not already exist.
 func (m *MongoDB) CreateCollection() error {
 
 	if err := m.db.CreateCollection(m.ctx, companyTableName); err != nil {
@@ -79,11 +79,8 @@ func (m *MongoDB) CreateCollection() error {
 
 // CreateIndexes creates the indexes on the specified collection.
 func (m *MongoDB) CreateIndexes() error {
-
 	fmt.Println("Creating the indexes...")
-
 	collection := m.db.Collection(companyTableName)
-
 	indexes := []mongo.IndexModel{
 		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
 		{Keys: bson.D{{Key: "json.cnpj", Value: 1}}},
@@ -114,16 +111,13 @@ func (m *MongoDB) CreateIndexes() error {
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-
 	fmt.Println("Indexes successfully created in the collection:", companyTableName)
 	return nil
 }
 
-// DropCollection exclui completamente uma coleção específica.
+// DropCollection completely deletes a specific collection.
 func (m *MongoDB) DropCollection() error {
-
 	collections := []string{companyTableName, metaTableName}
-
 	for _, v := range collections {
 		collection := m.db.Collection(v)
 
@@ -134,97 +128,73 @@ func (m *MongoDB) DropCollection() error {
 		fmt.Println("Collection deleted successfully:", v)
 	}
 	m.Close()
-
 	return nil
 }
 
 // CreateCompanies insere uma matriz de dados no MongoDB.
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
-
 	if m == nil {
 		return fmt.Errorf("mongodb connection not initialized")
 	}
-
 	collection := m.db.Collection(companyTableName)
-
 	var empresas []interface{}
-
 	for _, row := range batch {
-
 		if len(row) < 2 {
 			fmt.Println("line skipped due to insufficient length:", row)
 			continue
 		}
-
 		var empresa Empresa
 		empresa.Cnpj = row[0]
-
 		empresaJSON := row[1]
 		err := json.Unmarshal([]byte(empresaJSON), &empresa.Json)
 		if err != nil {
 			fmt.Printf("error deserializing JSON: %s, erro: %v\n", empresaJSON, err)
 			continue
 		}
-
 		empresas = append(empresas, empresa)
 	}
-
 	if len(empresas) > 0 {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-
 		_, err := collection.InsertMany(ctx, empresas)
 		if err != nil {
 			return fmt.Errorf("error inserting companies into MongoDB: %w", err)
 		}
-
 	} else {
 		fmt.Println("No valid company to insert.")
 	}
-
 	return nil
 }
 
 func (m *MongoDB) MetaSave(k, v string) error {
-
 	if m == nil {
 		return fmt.Errorf("MongoDB connection not initialized")
 	}
-
 	collection := m.db.Collection(metaTableName)
-
 	if len(k) > 16 {
 		return fmt.Errorf("the key can have a maximum of 16 characters")
 	}
-
 	doc := bson.M{
 		"key":   k,
 		"value": v,
 	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	_, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		return fmt.Errorf("error saving %s to the meta collection: %w", k, err)
 	}
-
 	return nil
 }
 
 // MetaRead reads a key/value pair from the metadata collection.
 func (m *MongoDB) MetaRead(k string) (string, error) {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	var result struct {
 		Value string `bson:"value"`
 	}
-
 	collection := m.db.Collection(metaTableName)
-
 	err := collection.FindOne(ctx, bson.M{"key": k}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -232,36 +202,29 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 		}
 		return "", fmt.Errorf("error looking for metadata key %s: %w", k, err)
 	}
-
 	return result.Value, nil
 }
 
 // Close terminates the connection to MongoDB.
 func (m *MongoDB) Close() error {
-
 	if err := m.client.Disconnect(m.ctx); err != nil {
-		return fmt.Errorf("Error disconnecting from MongoDB: %w", err)
+		return fmt.Errorf("error disconnecting from MongoDB: %w", err)
 	}
 	fmt.Println("Successfully disconnected from MongoDB")
 	return nil
 }
 
-// PreLoad runs before starting to load data into the database. Currently it
-// disables autovacuum on PostgreSQL.
+// PreLoad runs before starting to load data into the database.
 func (m *MongoDB) PreLoad() error {
-
 	return nil
 }
 
-// PostLoad runs after loading data into the database. Currently it re-enables
-// autovacuum on PostgreSQL.
+// PostLoad runs after loading data into the database.
+// Removes duplicates and creates indexes.
 func (m *MongoDB) PostLoad() error {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	collection := m.db.Collection(companyTableName)
-
 	pipeline := mongo.Pipeline{
 		{{"$group", bson.D{
 			{"_id", "$cnpj"},
@@ -270,24 +233,20 @@ func (m *MongoDB) PostLoad() error {
 		}}},
 		{{"$match", bson.D{{"count", bson.D{{"$gt", 1}}}}}},
 	}
-
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return fmt.Errorf("error executing aggregation: %w", err)
 	}
 	defer cursor.Close(ctx)
-
 	// Iterates through the results and removes duplicates
 	for cursor.Next(ctx) {
 		var result struct {
 			ID   string               `bson:"_id"`
 			Docs []primitive.ObjectID `bson:"docs"`
 		}
-
 		if err := cursor.Decode(&result); err != nil {
 			return fmt.Errorf("error decoding result: %w", err)
 		}
-
 		// Keep the first document and remove the others
 		if len(result.Docs) > 1 {
 			toRemove := result.Docs[1:] // Delete the first document
@@ -297,29 +256,21 @@ func (m *MongoDB) PostLoad() error {
 			}
 		}
 	}
-
 	if err := cursor.Err(); err != nil {
 		return fmt.Errorf("error when iterating through results: %w", err)
 	}
-
 	if err := m.CreateIndexes(); err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-
 	return nil
 }
 
 func (m *MongoDB) GetCompany(cnpj string) (string, error) {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	collection := m.db.Collection(companyTableName)
-
 	filter := bson.M{"cnpj": cnpj}
-
 	var empresa Empresa
-
 	err := collection.FindOne(ctx, filter).Decode(&empresa)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -327,11 +278,9 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 		}
 		return "", fmt.Errorf("error querying CNPJ %s: %w", cnpj, err)
 	}
-
 	jsonBytes, err := json.Marshal(empresa.Json)
 	if err != nil {
 		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", cnpj, err)
 	}
-
 	return string(jsonBytes), nil
 }
