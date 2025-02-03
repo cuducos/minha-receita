@@ -55,10 +55,6 @@ var transformCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				err = mdb.CreateIndexes()
-				if err != nil {
-					return err
-				}
 			}
 			return transform.Transform(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy)
 		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {

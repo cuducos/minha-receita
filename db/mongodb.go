@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/cuducos/minha-receita/transform"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-type date time.Time
 
 type Empresa struct {
 	Cnpj string            `json:"cnpj"`
@@ -66,7 +63,7 @@ func NewMongoDB(uri string) (MongoDB, error) {
 func (m *MongoDB) CreateCollection() error {
 
 	if err := m.db.CreateCollection(m.ctx, companyTableName); err != nil {
-		return fmt.Errorf("erro ao criar a coleção: %w", err)
+		return fmt.Errorf("error creating collection: %w", err)
 	}
 
 	log.Output(1, fmt.Sprintf("Collection %s created successfully", companyTableName))
@@ -80,8 +77,10 @@ func (m *MongoDB) CreateCollection() error {
 	return nil
 }
 
-// CreateIndexes cria os índices na coleção especificada.
+// CreateIndexes creates the indexes on the specified collection.
 func (m *MongoDB) CreateIndexes() error {
+
+	fmt.Println("Creating the indexes...")
 
 	collection := m.db.Collection(companyTableName)
 
@@ -113,10 +112,10 @@ func (m *MongoDB) CreateIndexes() error {
 	}
 	_, err := collection.Indexes().CreateMany(m.ctx, indexes)
 	if err != nil {
-		return fmt.Errorf("erro ao criar índices: %w", err)
+		return fmt.Errorf("error creating indexes: %w", err)
 	}
 
-	fmt.Println("Índices criados com sucesso na coleção:", companyTableName)
+	fmt.Println("Indexes successfully created in the collection:", companyTableName)
 	return nil
 }
 
@@ -129,10 +128,10 @@ func (m *MongoDB) DropCollection() error {
 		collection := m.db.Collection(v)
 
 		if err := collection.Drop(m.ctx); err != nil {
-			return fmt.Errorf("erro ao excluir a coleção: %w", err)
+			return fmt.Errorf("error deleting collection: %w", err)
 		}
 
-		fmt.Println("Coleção excluída com sucesso:", v)
+		fmt.Println("Collection deleted successfully:", v)
 	}
 	m.Close()
 
@@ -143,7 +142,7 @@ func (m *MongoDB) DropCollection() error {
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
 
 	if m == nil {
-		return fmt.Errorf("conexão com o MongoDB não inicializada")
+		return fmt.Errorf("mongodb connection not initialized")
 	}
 
 	collection := m.db.Collection(companyTableName)
@@ -153,7 +152,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	for _, row := range batch {
 
 		if len(row) < 2 {
-			fmt.Println("Linha ignorada devido ao tamanho insuficiente:", row)
+			fmt.Println("line skipped due to insufficient length:", row)
 			continue
 		}
 
@@ -163,7 +162,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		empresaJSON := row[1]
 		err := json.Unmarshal([]byte(empresaJSON), &empresa.Json)
 		if err != nil {
-			fmt.Printf("Erro ao desserializar JSON: %s, erro: %v\n", empresaJSON, err)
+			fmt.Printf("error deserializing JSON: %s, erro: %v\n", empresaJSON, err)
 			continue
 		}
 
@@ -195,7 +194,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 	collection := m.db.Collection(metaTableName)
 
 	if len(k) > 16 {
-		return fmt.Errorf("The key can have a maximum of 16 characters.")
+		return fmt.Errorf("the key can have a maximum of 16 characters")
 	}
 
 	doc := bson.M{
@@ -274,7 +273,7 @@ func (m *MongoDB) PostLoad() error {
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return fmt.Errorf("erro ao executar agregação: %w", err)
+		return fmt.Errorf("error executing aggregation: %w", err)
 	}
 	defer cursor.Close(ctx)
 
@@ -286,7 +285,7 @@ func (m *MongoDB) PostLoad() error {
 		}
 
 		if err := cursor.Decode(&result); err != nil {
-			return fmt.Errorf("erro ao decodificar resultado: %w", err)
+			return fmt.Errorf("error decoding result: %w", err)
 		}
 
 		// Keep the first document and remove the others
@@ -294,13 +293,17 @@ func (m *MongoDB) PostLoad() error {
 			toRemove := result.Docs[1:] // Delete the first document
 			_, err := collection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
 			if err != nil {
-				return fmt.Errorf("erro ao remover duplicados: %w", err)
+				return fmt.Errorf("error removing duplicates: %w", err)
 			}
 		}
 	}
 
 	if err := cursor.Err(); err != nil {
-		return fmt.Errorf("erro ao iterar pelos resultados: %w", err)
+		return fmt.Errorf("error when iterating through results: %w", err)
+	}
+
+	if err := m.CreateIndexes(); err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
 	}
 
 	return nil

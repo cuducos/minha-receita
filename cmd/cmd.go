@@ -76,10 +76,6 @@ var createCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			err = mdb.CreateIndexes()
-			if err != nil {
-				return err
-			}
 			defer mdb.Close()
 			return err
 		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
