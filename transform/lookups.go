@@ -57,7 +57,7 @@ func newLookups(d string) (lookups, error) {
 	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], ls[5], c}, nil
 }
 
-func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
+func (c *Company) motivoSituacaoCadastral(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse MotivoSituacaoCadastral %s: %w", v, err)
@@ -73,7 +73,7 @@ func (c *company) motivoSituacaoCadastral(l *lookups, v string) error {
 	return nil
 }
 
-func (c *company) pais(l *lookups, v string) error {
+func (c *Company) pais(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
@@ -89,7 +89,7 @@ func (c *company) pais(l *lookups, v string) error {
 	return nil
 }
 
-func (c *company) municipio(l *lookups, v string) error {
+func (c *Company) municipio(l *lookups, v string) error {
 	if c.UF == "EX" {
 		return nil
 	}
@@ -118,24 +118,24 @@ func (c *company) municipio(l *lookups, v string) error {
 	return nil
 }
 
-type cnae struct {
+type Cnae struct {
 	Codigo    int    `json:"codigo"`
 	Descricao string `json:"descricao"`
 }
 
-func newCnae(l *lookups, v string) (cnae, error) {
+func newCnae(l *lookups, v string) (Cnae, error) {
 	i, err := toInt(v)
 	if err != nil {
-		return cnae{}, fmt.Errorf("error trying to parse cnae %s: %w", v, err)
+		return Cnae{}, fmt.Errorf("error trying to parse cnae %s: %w", v, err)
 	}
 	if i == nil {
-		return cnae{}, nil
+		return Cnae{}, nil
 	}
 	s := l.cnaes[*i]
-	return cnae{Codigo: *i, Descricao: s}, nil
+	return Cnae{Codigo: *i, Descricao: s}, nil
 }
 
-func (c *company) cnaes(l *lookups, p, s string) error {
+func (c *Company) cnaes(l *lookups, p, s string) error {
 	a, err := newCnae(l, p)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CNAEFiscal %s: %w", p, err)
@@ -155,7 +155,7 @@ func (c *company) cnaes(l *lookups, p, s string) error {
 	return nil
 }
 
-func (p *partnerData) qualificacaoSocio(l *lookups, q, r string) error {
+func (p *PartnerData) qualificacaoSocio(l *lookups, q, r string) error {
 	i, err := toInt(q)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoQualificacaoSocio %s: %w", q, err)

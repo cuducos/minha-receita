@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cuducos/minha-receita/transform"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,82 +17,9 @@ import (
 
 type date time.Time
 
-type QSA struct {
-	IdentificadorDeSocio                 *int    `json:"identificador_de_socio"`
-	NomeSocio                            string  `json:"nome_socio"`
-	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio"`
-	CodigoQualificacaoSocio              *int    `json:"codigo_qualificacao_socio"`
-	QualificaoSocio                      *string `json:"qualificacao_socio"`
-	DataEntradaSociedade                 *string `json:"data_entrada_sociedade"`
-	CodigoPais                           *int    `json:"codigo_pais"`
-	Pais                                 *string `json:"pais"`
-	CPFRepresentanteLegal                string  `json:"cpf_representante_legal"`
-	NomeRepresentanteLegal               string  `json:"nome_representante_legal"`
-	CodigoQualificacaoRepresentanteLegal *int    `json:"codigo_qualificacao_representante_legal"`
-	QualificacaoRepresentanteLegal       *string `json:"qualificacao_representante_legal"`
-	CodigoFaixaEtaria                    *int    `json:"codigo_faixa_etaria"`
-	FaixaEtaria                          *string `json:"faixa_etaria"`
-}
-
-type CNAESecundario struct {
-	Codigo    int    `json:"codigo"`
-	Descricao string `json:"descricao"`
-}
-
 type Empresa struct {
-	Cnpj string   `json:"cnpj"`
-	Json Detalhes `json:"json"`
-}
-
-type Detalhes struct {
-	CNPJ                             string           `json:"cnpj"`
-	IdentificadorMatrizFilial        *int             `json:"identificador_matriz_filial"`
-	DescricaoMatrizFilial            *string          `json:"descricao_identificador_matriz_filial"`
-	NomeFantasia                     string           `json:"nome_fantasia"`
-	SituacaoCadastral                *int             `json:"situacao_cadastral"`
-	DescricaoSituacaoCadastral       *string          `json:"descricao_situacao_cadastral"`
-	DataSituacaoCadastral            *string          `json:"data_situacao_cadastral"`
-	MotivoSituacaoCadastral          *int             `json:"motivo_situacao_cadastral"`
-	DescricaoMotivoSituacaoCadastral *string          `json:"descricao_motivo_situacao_cadastral"`
-	NomeCidadeNoExterior             string           `json:"nome_cidade_no_exterior"`
-	CodigoPais                       *int             `json:"codigo_pais"`
-	Pais                             *string          `json:"pais"`
-	DataInicioAtividade              *string          `json:"data_inicio_atividade"`
-	CNAEFiscal                       *int             `json:"cnae_fiscal"`
-	CNAEFiscalDescricao              *string          `json:"cnae_fiscal_descricao"`
-	DescricaoTipoDeLogradouro        string           `json:"descricao_tipo_de_logradouro"`
-	Logradouro                       string           `json:"logradouro"`
-	Numero                           string           `json:"numero"`
-	Complemento                      string           `json:"complemento"`
-	Bairro                           string           `json:"bairro"`
-	CEP                              string           `json:"cep"`
-	UF                               string           `json:"uf"`
-	CodigoMunicipio                  *int             `json:"codigo_municipio"`
-	CodigoMunicipioIBGE              *int             `json:"codigo_municipio_ibge"`
-	Municipio                        *string          `json:"municipio"`
-	Telefone1                        string           `json:"ddd_telefone_1"`
-	Telefone2                        string           `json:"ddd_telefone_2"`
-	Fax                              string           `json:"ddd_fax"`
-	Email                            *string          `json:"email"`
-	SituacaoEspecial                 string           `json:"situacao_especial"`
-	DataSituacaoEspecial             *string          `json:"data_situacao_especial"`
-	OpcaoPeloSimples                 *bool            `json:"opcao_pelo_simples"`
-	DataOpcaoPeloSimples             *string          `json:"data_opcao_pelo_simples"`
-	DataExclusaoDoSimples            *string          `json:"data_exclusao_do_simples"`
-	OpcaoPeloMEI                     *bool            `json:"opcao_pelo_mei"`
-	DataOpcaoPeloMEI                 *string          `json:"data_opcao_pelo_mei"`
-	DataExclusaoDoMEI                *string          `json:"data_exclusao_do_mei"`
-	RazaoSocial                      string           `json:"razao_social"`
-	CodigoNaturezaJuridica           *int             `json:"codigo_natureza_juridica"`
-	NaturezaJuridica                 *string          `json:"natureza_juridica"`
-	QualificacaoDoResponsavel        *int             `json:"qualificacao_do_responsavel"`
-	CapitalSocial                    *float32         `json:"capital_social"`
-	CodigoPorte                      *int             `json:"codigo_porte"`
-	Porte                            *string          `json:"porte"`
-	EnteFederativoResponsavel        string           `json:"ente_federativo_responsavel"`
-	DescricaoPorte                   string           `json:"descricao_porte"`
-	QSA                              []QSA            `json:"qsa"`
-	CNAESecundarios                  []CNAESecundario `json:"cnaes_secundarios"`
+	Cnpj string            `json:"cnpj"`
+	Json transform.Company `json:"json"`
 }
 
 type MongoDB struct {

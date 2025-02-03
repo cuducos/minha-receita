@@ -15,7 +15,7 @@ func companyNameClenup(n string) string {
 	return strings.TrimSpace(companyNameClenupRegex.ReplaceAllString(n, "$1***$3***"))
 }
 
-type company struct {
+type Company struct {
 	CNPJ                             string        `json:"cnpj"`
 	IdentificadorMatrizFilial        *int          `json:"identificador_matriz_filial"`
 	DescricaoMatrizFilial            *string       `json:"descricao_identificador_matriz_filial"`
@@ -62,11 +62,11 @@ type company struct {
 	Porte                            *string       `json:"porte"`
 	EnteFederativoResponsavel        string        `json:"ente_federativo_responsavel"`
 	DescricaoPorte                   string        `json:"descricao_porte"`
-	QuadroSocietario                 []partnerData `json:"qsa"`
-	CNAESecundarios                  []cnae        `json:"cnaes_secundarios"`
+	QuadroSocietario                 []PartnerData `json:"qsa"`
+	CNAESecundarios                  []Cnae        `json:"cnaes_secundarios"`
 }
 
-func (c *company) situacaoCadastral(v string) error {
+func (c *Company) situacaoCadastral(v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse SituacaoCadastral %s: %w", v, err)
@@ -93,7 +93,7 @@ func (c *company) situacaoCadastral(v string) error {
 	return nil
 }
 
-func (c *company) identificadorMatrizFilial(v string) error {
+func (c *Company) identificadorMatrizFilial(v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse IdentificadorMatrizFilial %s: %w", v, err)
@@ -114,8 +114,8 @@ func (c *company) identificadorMatrizFilial(v string) error {
 	return nil
 }
 
-func newCompany(row []string, l *lookups, kv kvStorage, privacy bool) (company, error) {
-	var c company
+func newCompany(row []string, l *lookups, kv kvStorage, privacy bool) (Company, error) {
+	var c Company
 	c.CNPJ = row[0] + row[1] + row[2]
 	c.NomeFantasia = row[4]
 	c.NomeCidadeNoExterior = row[8]
@@ -194,7 +194,7 @@ func newCompany(row []string, l *lookups, kv kvStorage, privacy bool) (company, 
 	return c, nil
 }
 
-func (c *company) JSON() (string, error) {
+func (c *Company) JSON() (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
