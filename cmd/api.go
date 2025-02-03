@@ -54,31 +54,25 @@ var apiCmd = &cobra.Command{
 				return err
 			}
 		}
-
 		if port == "" {
 			port = os.Getenv("PORT")
 		}
 		if port == "" {
 			port = defaultPort
 		}
-
-		uri := os.Getenv("DATABASE_URL")
-		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, _ := db.NewMongoDB(uri)
+		if strings.HasPrefix(u, "mongodb://") {
+			mdb, _ := db.NewMongoDB(u)
 			if err != nil {
 				return err
 			}
-
 			defer mdb.Close()
 			api.Serve(&mdb, port, nr)
-
-		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
+		} else if strings.HasPrefix(u, "postgres://") || strings.HasPrefix(u, "postgresql://") {
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nr)
 			if err != nil {
 				return err
 			}
 			defer pg.Close()
-
 			api.Serve(&pg, port, nr)
 		} else {
 			return fmt.Errorf("unsupported database URI, must start with postgres:// or mongodb://")
