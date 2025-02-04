@@ -138,18 +138,17 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	}
 	collection := m.db.Collection(companyTableName)
 	var empresas []interface{}
-	for _, row := range batch {
-		if len(row) < 2 {
-			return fmt.Errorf("line skipped due to insufficient length: %s", row)
+	for _, r := range batch {
+		if len(r) < 2 {
+			return fmt.Errorf("line skipped due to insufficient length: %s", r)
 		}
-		var empresa empresa
-		empresa.Cnpj = row[0]
-		empresaJSON := row[1]
-		err := json.Unmarshal([]byte(empresaJSON), &empresa.Json)
+		var c empresa
+		c.Cnpj = r[0]
+		err := json.Unmarshal([]byte(r[1]), &c.Json)
 		if err != nil {
-			return fmt.Errorf("error deserializing JSON: %s, erro: %v", empresaJSON, err)
+			return fmt.Errorf("error deserializing JSON: %s, erro: %v", r[1], err)
 		}
-		empresas = append(empresas, empresa)
+		empresas = append(empresas, c)
 	}
 	if len(empresas) > 0 {
 		ctx, cancel := context.WithCancel(context.Background())
