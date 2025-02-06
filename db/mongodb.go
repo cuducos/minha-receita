@@ -101,7 +101,7 @@ func (m *MongoDB) DropCollection() error {
 	return nil
 }
 
-// CreateCompanies insere uma matriz de dados no MongoDB.
+// CreateCompanies writes a batch of company data to MongoDB 
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	if m == nil {
 		return fmt.Errorf("mongodb connection not initialized")
