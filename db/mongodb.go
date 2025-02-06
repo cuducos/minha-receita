@@ -204,7 +204,6 @@ func (m *MongoDB) PostLoad() error {
 		return fmt.Errorf("error executing aggregation: %w", err)
 	}
 	defer cursor.Close(ctx)
-	// Iterates through the results and removes duplicates
 	for cursor.Next(ctx) {
 		var result struct {
 			ID   string               `bson:"_id"`
