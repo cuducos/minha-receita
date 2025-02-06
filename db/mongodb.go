@@ -177,7 +177,6 @@ func (m *MongoDB) Close() error {
 	if err := m.client.Disconnect(m.ctx); err != nil {
 		return fmt.Errorf("error disconnecting from MongoDB: %w", err)
 	}
-	fmt.Println("Successfully disconnected from MongoDB")
 	return nil
 }
 
