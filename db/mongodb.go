@@ -83,29 +83,6 @@ func (m *MongoDB) CreateIndexes() error {
 	collection := m.db.Collection(companyTableName)
 	indexes := []mongo.IndexModel{
 		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
-		{Keys: bson.D{{Key: "json.cnpj", Value: 1}}},
-		{Keys: bson.D{{Key: "json.qsa.cpf", Value: 1}}},
-		{Keys: bson.D{{Key: "json.razaosocial", Value: 1}}},
-		{Keys: bson.D{{Key: "json.nomefantasia", Value: 1}}},
-		{Keys: bson.D{{Key: "json.capitalsocial", Value: 1}}},
-		{Keys: bson.D{{Key: "json.telefone1", Value: 1}}},
-		{Keys: bson.D{{Key: "json.telefone2", Value: 1}}},
-		{Keys: bson.D{{Key: "json.naturezajuridica", Value: 1}}},
-		{Keys: bson.D{{Key: "json.qsa.cnpjcpfdosocio", Value: 1}}},
-		{Keys: bson.D{{Key: "json.qsa.qualificaosocio", Value: 1}}},
-		{Keys: bson.D{{Key: "json.qsa.qualificacaorepresentantelegal", Value: 1}}},
-		{Keys: bson.D{{Key: "json.qsa.nomesocio", Value: 1}}},
-		{Keys: bson.D{{Key: "json.bairro", Value: 1}}},
-		{Keys: bson.D{{Key: "json.cep", Value: 1}}},
-		{Keys: bson.D{{Key: "json.cnaefiscal", Value: 1}}},
-		{Keys: bson.D{{Key: "json.cnaessecundarios", Value: 1}}},
-		{Keys: bson.D{{Key: "json.cnaessecundarios.codigo", Value: 1}}},
-		{Keys: bson.D{{Key: "json.datainicioatividade", Value: 1}}},
-		{Keys: bson.D{{Key: "json.email", Value: 1}}},
-		{Keys: bson.D{{Key: "json.codigomunicipio", Value: 1}}},
-		{Keys: bson.D{{Key: "json.codigomunicipioibge", Value: 1}}},
-		{Keys: bson.D{{Key: "json.descricaosituacaocadastral", Value: 1}}},
-		{Keys: bson.D{{Key: "json.uf", Value: 1}}},
 	}
 	_, err := collection.Indexes().CreateMany(m.ctx, indexes)
 	if err != nil {
