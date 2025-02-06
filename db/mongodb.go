@@ -243,7 +243,7 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 		}
 		return "", fmt.Errorf("error querying CNPJ %s: %w", cnpj, err)
 	}
-	jsonBytes, err := json.Marshal(empresa.Json)
+	b, err := json.Marshal(empresa.Json)
 	if err != nil {
 		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", cnpj, err)
 	}
