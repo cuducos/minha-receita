@@ -191,7 +191,7 @@ func (m *MongoDB) PostLoad() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	coll := m.db.Collection(companyTableName)
-	pipeline := mongo.Pipeline{
+	p := mongo.Pipeline{
 		{{"$group", bson.D{
 			{"_id", "$cnpj"},
 			{"docs", bson.D{{"$push", "$_id"}}},
