@@ -185,8 +185,8 @@ func (m *MongoDB) PreLoad() error {
 	return nil
 }
 
-// PostLoad runs after loading data into the database.
-// Removes duplicates and creates indexes.
+// PostLoad runs after loading data into the database. Removes duplicates and
+// creates indexes.
 func (m *MongoDB) PostLoad() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
