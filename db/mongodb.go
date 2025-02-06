@@ -161,7 +161,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 	var result struct {
 		Value string `bson:"value"`
 	}
-	collection := m.db.Collection(metaTableName)
+	c := m.db.Collection(metaTableName)
 	err := collection.FindOne(ctx, bson.M{"key": k}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
