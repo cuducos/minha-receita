@@ -132,6 +132,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	return nil
 }
 
+// MetaSave saves a key/value pair in the metadata collection.
 func (m *MongoDB) MetaSave(k, v string) error {
 	if m == nil {
 		return fmt.Errorf("MongoDB connection not initialized")
