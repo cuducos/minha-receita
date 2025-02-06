@@ -200,7 +200,7 @@ func (m *MongoDB) PostLoad() error {
 		}}},
 		{{"$match", bson.D{{"count", bson.D{{"$gt", 1}}}}}},
 	}
-	cursor, err := collection.Aggregate(ctx, pipeline)
+	c, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return fmt.Errorf("error executing aggregation: %w", err)
 	}
