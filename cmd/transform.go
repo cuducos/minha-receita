@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/cuducos/minha-receita/db"
@@ -40,9 +39,8 @@ var transformCmd = &cobra.Command{
 			return err
 		}
 
-		uri := os.Getenv("DATABASE_URL")
-		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, err := db.NewMongoDB(uri)
+		if strings.HasPrefix(u, "mongodb://") {
+			mdb, err := db.NewMongoDB(u)
 			if err != nil {
 				return err
 			}
@@ -57,7 +55,7 @@ var transformCmd = &cobra.Command{
 				}
 			}
 			return transform.Transform(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy)
-		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
+		} else if strings.HasPrefix(u, "postgres://") || strings.HasPrefix(u, "postgresql://") {
 			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
 			if err != nil {
 				return err
