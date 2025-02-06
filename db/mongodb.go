@@ -190,7 +190,7 @@ func (m *MongoDB) PreLoad() error {
 func (m *MongoDB) PostLoad() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	collection := m.db.Collection(companyTableName)
+	coll := m.db.Collection(companyTableName)
 	pipeline := mongo.Pipeline{
 		{{"$group", bson.D{
 			{"_id", "$cnpj"},
