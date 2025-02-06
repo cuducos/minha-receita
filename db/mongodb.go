@@ -235,7 +235,7 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 	defer cancel()
 	collection := m.db.Collection(companyTableName)
 	filter := bson.M{"cnpj": cnpj}
-	var empresa empresa
+	var c empresa
 	err := collection.FindOne(ctx, filter).Decode(&empresa)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
