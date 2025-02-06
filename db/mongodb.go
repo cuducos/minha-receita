@@ -120,15 +120,14 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		}
 		empresas = append(empresas, c)
 	}
-	if len(empresas) > 0 {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		_, err := collection.InsertMany(ctx, empresas)
-		if err != nil {
-			return fmt.Errorf("error inserting companies into MongoDB: %w", err)
-		}
-	} else {
-		fmt.Println("No valid company to insert.")
+	if len(empresas) == 0 {
+		return nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_, err := collection.InsertMany(ctx, empresas)
+	if err != nil {
+		return fmt.Errorf("error inserting companies into MongoDB: %w", err)
 	}
 	return nil
 }
