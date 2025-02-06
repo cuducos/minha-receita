@@ -233,7 +233,7 @@ func (m *MongoDB) PostLoad() error {
 func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	collection := m.db.Collection(companyTableName)
+	coll := m.db.Collection(companyTableName)
 	filter := bson.M{"cnpj": cnpj}
 	var c empresa
 	err := collection.FindOne(ctx, filter).Decode(&empresa)
