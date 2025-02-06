@@ -214,7 +214,7 @@ func (m *MongoDB) PostLoad() error {
 		}
 		// Keep the first document and remove the others
 		if len(result.Docs) > 1 {
-			toRemove := result.Docs[1:] // Delete the first document
+			toRemove := result.Docs[1:] // Delete all but the first document
 			_, err := collection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
 			if err != nil {
 				return fmt.Errorf("error removing duplicates: %w", err)
