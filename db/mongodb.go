@@ -49,7 +49,7 @@ func NewMongoDB(uri string) (MongoDB, error) {
 
 	// Ensure the extracted database name is valid
 	if dbName == "" || strings.Contains(dbName, "@") {
-		log.Fatal("No database name found in the URI")
+		return nil, fmt.Errorf("No database name found in the URI")
 	}
 
 	return MongoDB{
