@@ -134,9 +134,6 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 
 // MetaSave saves a key/value pair in the metadata collection.
 func (m *MongoDB) MetaSave(k, v string) error {
-	if m == nil {
-		return fmt.Errorf("MongoDB connection not initialized")
-	}
 	c := m.db.Collection(metaTableName)
 	if len(k) > 16 {
 		return fmt.Errorf("the key can have a maximum of 16 characters")
