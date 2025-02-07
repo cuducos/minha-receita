@@ -33,7 +33,7 @@ func NewMongoDB(uri string) (MongoDB, error) {
 	if err != nil {
 		return MongoDB{}, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
-	if err := client.Ping(ctx, nil); err != nil {
+	if err := c.Ping(ctx, nil); err != nil {
 		return MongoDB{}, fmt.Errorf("failed to ping to MongoDB: %w", err)
 	}
 	u := strings.Split(uri, "?")[0] // Remove query parameters from the URI
@@ -42,12 +42,12 @@ func NewMongoDB(uri string) (MongoDB, error) {
 
 	// Ensure the extracted database name is valid
 	if dbName == "" || strings.Contains(dbName, "@") {
-		return nil, fmt.Errorf("No database name found in the URI")
+		return MongoDB{}, fmt.Errorf("No database name found in the URI")
 	}
 
 	return MongoDB{
-		client: client,
-		db:     client.Database(dbName),
+		client: c,
+		db:     c.Database(dbName),
 		ctx:    ctx,
 	}, nil
 }
@@ -101,7 +101,7 @@ func (m *MongoDB) DropCollection() error {
 	return nil
 }
 
-// CreateCompanies writes a batch of company data to MongoDB 
+// CreateCompanies writes a batch of company data to MongoDB
 func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	if m == nil {
 		return fmt.Errorf("mongodb connection not initialized")
@@ -144,7 +144,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, err := collection.InsertOne(ctx, doc)
+	_, err := c.InsertOne(ctx, doc)
 	if err != nil {
 		return fmt.Errorf("error saving %s to the meta collection: %w", k, err)
 	}
@@ -159,7 +159,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 		Value string `bson:"value"`
 	}
 	c := m.db.Collection(metaTableName)
-	err := collection.FindOne(ctx, bson.M{"key": k}).Decode(&result)
+	err := c.FindOne(ctx, bson.M{"key": k}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", fmt.Errorf("metadata key %s not found", k)
@@ -196,29 +196,29 @@ func (m *MongoDB) PostLoad() error {
 		}}},
 		{{"$match", bson.D{{"count", bson.D{{"$gt", 1}}}}}},
 	}
-	c, err := collection.Aggregate(ctx, pipeline)
+	c, err := coll.Aggregate(ctx, p)
 	if err != nil {
 		return fmt.Errorf("error executing aggregation: %w", err)
 	}
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
+	defer c.Close(ctx)
+	for c.Next(ctx) {
 		var result struct {
 			ID   string               `bson:"_id"`
 			Docs []primitive.ObjectID `bson:"docs"`
 		}
-		if err := cursor.Decode(&result); err != nil {
+		if err := c.Decode(&result); err != nil {
 			return fmt.Errorf("error decoding result: %w", err)
 		}
 		// Keep the first document and remove the others
 		if len(result.Docs) > 1 {
 			toRemove := result.Docs[1:] // Delete all but the first document
-			_, err := collection.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
+			_, err := coll.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": toRemove}})
 			if err != nil {
 				return fmt.Errorf("error removing duplicates: %w", err)
 			}
 		}
 	}
-	if err := cursor.Err(); err != nil {
+	if err := c.Err(); err != nil {
 		return fmt.Errorf("error when iterating through results: %w", err)
 	}
 	if err := m.CreateIndexes(); err != nil {
@@ -233,16 +233,16 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 	coll := m.db.Collection(companyTableName)
 	filter := bson.M{"cnpj": cnpj}
 	var c empresa
-	err := collection.FindOne(ctx, filter).Decode(&empresa)
+	err := coll.FindOne(ctx, filter).Decode(&c)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", fmt.Errorf("no document found for CNPJ %s", cnpj)
 		}
 		return "", fmt.Errorf("error querying CNPJ %s: %w", cnpj, err)
 	}
-	b, err := json.Marshal(empresa.Json)
+	b, err := json.Marshal(c.Json)
 	if err != nil {
 		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", cnpj, err)
 	}
-	return string(jsonBytes), nil
+	return string(b), nil
 }
