@@ -104,7 +104,7 @@ func TestEnrichCompany(t *testing.T) {
 	if err := kv.load(testdata, &l); err != nil {
 		t.Errorf("expected no error loading data, got %s", err)
 	}
-	c := company{CNPJ: "33683111000280"}
+	c := Company{CNPJ: "33683111000280"}
 	if err := kv.enrichCompany(&c); err != nil {
 		t.Errorf("expected no error enriching company, got %s", err)
 	}

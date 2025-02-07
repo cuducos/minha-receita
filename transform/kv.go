@@ -108,9 +108,9 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	}
 }
 
-func (kv *badgerStorage) enrichCompany(c *company) error {
+func (kv *badgerStorage) enrichCompany(c *Company) error {
 	n := cnpj.Base(c.CNPJ)
-	ps := make(chan []partnerData)
+	ps := make(chan []PartnerData)
 	bs := make(chan baseData)
 	ts := make(chan taxesData)
 	errs := make(chan error)
