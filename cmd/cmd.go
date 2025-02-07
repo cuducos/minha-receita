@@ -86,7 +86,7 @@ var createCmd = &cobra.Command{
 			defer pg.Close()
 			return pg.CreateTable()
 		} else {
-			return fmt.Errorf("A URL não contém 'mongodb' nem 'postgres'")
+			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
 		}
 	},
 }
@@ -118,7 +118,7 @@ var dropCmd = &cobra.Command{
 			defer pg.Close()
 			return pg.DropTable()
 		} else {
-			return fmt.Errorf("A URL não contém 'mongodb' nem 'postgres'")
+			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
 		}
 	},
 }

@@ -71,7 +71,7 @@ var transformCmd = &cobra.Command{
 			}
 			return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy)
 		} else {
-			return fmt.Errorf("A URL não contém 'mongodb' nem 'postgres'")
+			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
 		}
 
 	},
