@@ -84,9 +84,9 @@ func (m *MongoDB) CreateIndexes() error {
 
 // DropCollection completely deletes a specific collection.
 func (m *MongoDB) DropCollection() error {
-	collections := []string{companyTableName, metaTableName}
+	cs := []string{companyTableName, metaTableName}
 	for _, v := range collections {
-		collection := m.db.Collection(v)
+		c := m.db.Collection(v)
 
 		if err := collection.Drop(m.ctx); err != nil {
 			return fmt.Errorf("error deleting collection: %w", err)
