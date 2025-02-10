@@ -9,7 +9,7 @@ func TestMongoDB(t *testing.T) {
 	id := "33683111000280"
 	json := `{"qsa": [{"name": 42}, {"name": "forty-two"}], "answer": 42}`
 
-	u := os.Getenv("TEST_MONGODB_URL")
+	u := os.Getenv("TEST_DATABASE_URL")
 	if u == "" {
 		t.Errorf("expected a posgres uri at TEST_DATABASE_URL, found nothing")
 		return
