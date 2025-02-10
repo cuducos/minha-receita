@@ -113,7 +113,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		c.Cnpj = r[0]
 		err := json.Unmarshal([]byte(r[1]), &c.Json)
 		if err != nil {
-			return fmt.Errorf("error deserializing JSON: %s, erro: %v", r[1], err)
+			return fmt.Errorf("error deserializing JSON: %s, erro: %w", r[1], err)
 		}
 		cs = append(cs, c)
 	}
