@@ -69,30 +69,30 @@ func (m *MongoDB) CreateCollection() error {
 
 // CreateIndexes creates the indexes on the specified collection.
 func (m *MongoDB) CreateIndexes() error {
-	fmt.Println("Creating the indexes...")
+	log.Output(1, "Creating the indexes...")
 	c := m.db.Collection(companyTableName)
 	i := []mongo.IndexModel{
 		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
 	}
-	_, err := collection.Indexes().CreateMany(m.ctx, indexes)
+	_, err := c.Indexes().CreateMany(m.ctx, i)
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-	fmt.Println("Indexes successfully created in the collection:", companyTableName)
+	log.Output(1, fmt.Sprintf("Indexes successfully created in the collection: %s", companyTableName))
 	return nil
 }
 
 // DropCollection completely deletes a specific collection.
 func (m *MongoDB) DropCollection() error {
 	cs := []string{companyTableName, metaTableName}
-	for _, v := range collections {
+	for _, v := range cs {
 		c := m.db.Collection(v)
 
-		if err := collection.Drop(m.ctx); err != nil {
+		if err := c.Drop(m.ctx); err != nil {
 			return fmt.Errorf("error deleting collection: %w", err)
 		}
 
-		fmt.Println("Collection deleted successfully:", v)
+		log.Output(1, fmt.Sprintf("Collection deleted successfully: %s", v))
 	}
 	m.Close()
 	return nil
@@ -115,14 +115,14 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		if err != nil {
 			return fmt.Errorf("error deserializing JSON: %s, erro: %v", r[1], err)
 		}
-		empresas = append(empresas, c)
+		cs = append(cs, c)
 	}
-	if len(empresas) == 0 {
+	if len(cs) == 0 {
 		return nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, err := collection.InsertMany(ctx, empresas)
+	_, err := coll.InsertMany(ctx, cs)
 	if err != nil {
 		return fmt.Errorf("error inserting companies into MongoDB: %w", err)
 	}
