@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -14,9 +15,9 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected a mongodb uri at TEST_MONGODB_URL, found nothing")
 		return
 	}
-	db, err := NewMongoDB("minhareceita")
+	db, err := NewMongoDB(u)
 	if err != nil {
-		t.Errorf("expected no error connecting to postgres, got %s", err)
+		t.Errorf("expected no error connecting to mongodb, got %s", err)
 		return
 	}
 	if err := db.DropCollection(); err != nil {
@@ -40,6 +41,7 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	got, err := db.GetCompany("33683111000280")
+
 	if err != nil {
 		t.Errorf("expected no error getting a company, got %s", err)
 	}
@@ -57,6 +59,7 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}
 	metadata, err := db.MetaRead("answer")
+	fmt.Println(metadata)
 	if err != nil {
 		t.Errorf("expected no error getting metadata, got %s", err)
 	}

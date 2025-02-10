@@ -94,7 +94,6 @@ func (m *MongoDB) DropCollection() error {
 
 		log.Output(1, fmt.Sprintf("Collection deleted successfully: %s", v))
 	}
-	m.Close()
 	return nil
 }
 
@@ -120,8 +119,8 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	if len(cs) == 0 {
 		return nil
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
+
 	_, err := coll.InsertMany(ctx, cs)
 	if err != nil {
 		return fmt.Errorf("error inserting companies into MongoDB: %w", err)
@@ -139,8 +138,8 @@ func (m *MongoDB) MetaSave(k, v string) error {
 		"key":   k,
 		"value": v,
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
+
 	_, err := c.InsertOne(ctx, doc)
 	if err != nil {
 		return fmt.Errorf("error saving %s to the meta collection: %w", k, err)
