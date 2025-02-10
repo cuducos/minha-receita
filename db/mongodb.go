@@ -70,8 +70,8 @@ func (m *MongoDB) CreateCollection() error {
 // CreateIndexes creates the indexes on the specified collection.
 func (m *MongoDB) CreateIndexes() error {
 	fmt.Println("Creating the indexes...")
-	collection := m.db.Collection(companyTableName)
-	indexes := []mongo.IndexModel{
+	c := m.db.Collection(companyTableName)
+	i := []mongo.IndexModel{
 		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
 	}
 	_, err := collection.Indexes().CreateMany(m.ctx, indexes)
