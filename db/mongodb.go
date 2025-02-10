@@ -38,16 +38,13 @@ func NewMongoDB(uri string) (MongoDB, error) {
 	}
 	u := strings.Split(uri, "?")[0] // Remove query parameters from the URI
 	ps := strings.Split(u, "/")
-	dbName := ps[len(ps)-1]
-
-	// Ensure the extracted database name is valid
-	if dbName == "" || strings.Contains(dbName, "@") {
+	n := ps[len(ps)-1]
+	if n == "" || strings.Contains(n, "@") { // ensure the database name is valid
 		return MongoDB{}, fmt.Errorf("no database name found in the uri")
 	}
-
 	return MongoDB{
 		client: c,
-		db:     c.Database(dbName),
+		db:     c.Database(n),
 		ctx:    ctx,
 	}, nil
 }
