@@ -66,7 +66,7 @@ func TestNewCompany(t *testing.T) {
 	CodigoMunicipioIBGE := 5300108
 	municipio := "BRASILIA"
 
-	expected := company{
+	expected := Company{
 		CNPJ:                             "33683111000280",
 		IdentificadorMatrizFilial:        &identificadorMatrizFilial,
 		DescricaoMatrizFilial:            &DescricaoMatrizFilial,
@@ -300,7 +300,7 @@ func TestCompanyJSON(t *testing.T) {
 		t.Errorf("error creating DataInicioAtividade for expected company: %s", err)
 	}
 	dataInicioAtividade := date(dataInicioAtividadeAsTime)
-	c := company{
+	c := Company{
 		CNPJ:                 "33683111000280",
 		DataInicioAtividade:  &dataInicioAtividade,
 		DataSituacaoEspecial: nil,
