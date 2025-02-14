@@ -39,8 +39,10 @@ func TestMongoDB(t *testing.T) {
 	if err := db.CreateCompanies([][]string{{id, json}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
+	if err := db.PostLoad(); err != nil {
+		t.Errorf("expected no error post load, got %s", err)
+	}
 	got, err := db.GetCompany("33683111000280")
-
 	if err != nil {
 		t.Errorf("expected no error getting a company, got %s", err)
 	}
