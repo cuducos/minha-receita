@@ -9,6 +9,7 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         go: [1.21.x, 1.22.x]
+        mongodb-version: [8.0,5.0]
 
     runs-on: ${{ matrix.os }}
 
@@ -21,6 +22,8 @@ jobs:
       - name: Start MongoDB
         uses: ankane/setup-mongodb@v1
         id: mongodb
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
 
 
       - uses: actions/setup-go@v3
@@ -29,16 +32,12 @@ jobs:
 
       - run: go test ./...
         if: matrix.os == 'windows-latest'
-        with:
-          mongodb-version: 5.0
         env:
           TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
           TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin
 
       - run: go test --race ./...
         if: matrix.os == 'ubuntu-latest'
-        with:
-          mongodb-version: 8.0
         env:
           TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
           TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin
