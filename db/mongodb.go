@@ -132,22 +132,23 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 func (m *MongoDB) MetaSave(k, v string) error {
 	ctx := context.Background()
 	c := m.db.Collection(metaTableName)
-	f := bson.M{"key": k}
-	var existingDoc bson.M
-	err := c.FindOne(ctx, f).Decode(&existingDoc)
-	if err == mongo.ErrNoDocuments {
-		_, err = c.InsertOne(ctx, bson.M{"key": k, "value": v})
-		if err != nil {
-			return fmt.Errorf("error inserting %s into the meta collection: %w", k, err)
-		}
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("error checking existence of %s: %w", k, err)
+	if len(k) > 16 {
+		return fmt.Errorf("the key can have a maximum of 16 characters")
 	}
-	u := bson.M{"$set": bson.M{"value": v}}
-	_, err = c.UpdateOne(ctx, f, u)
+	f := bson.M{
+		"key": k,
+	}
+
+	//if it does not exist it creates it
+	o := options.Update().SetUpsert(true)
+
+	upd := bson.M{"$set": bson.M{"key": k, "value": v}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := c.UpdateOne(ctx, f, upd, o)
 	if err != nil {
-		return fmt.Errorf("error updating %s in the meta collection: %w", k, err)
+		return fmt.Errorf("error saving %s in the meta collection: %w", k, err)
 	}
 
 	return nil
