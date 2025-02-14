@@ -36,9 +36,10 @@ jobs:
           Start-Process -NoNewWindow -FilePath "docker" -ArgumentList "run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=minhareceita -e MONGO_INITDB_ROOT_PASSWORD=minhareceita -e MONGO_INITDB_DATABASE=minhareceita mongo:8"
 
       - name: Esperar MongoDB estar pronto
+        if: runner.os == 'Windows'
         run: |
           for i in {1..10}; do
-            docker exec mongodb mongosh -u minhareceita -p minhareceita --authenticationDatabase admin --eval 'db.runCommand("ping")' && exit 0
+            Start-Process -NoNewWindow -FilePath "docker" -ArgumentList "exec mongodb mongosh -u minhareceita -p minhareceita --authenticationDatabase admin --eval 'db.runCommand(\'ping\')'" && exit 0
             sleep 5
           done
           exit 1
