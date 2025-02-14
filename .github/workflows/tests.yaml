@@ -46,7 +46,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           for ($i=0; $i -lt 10; $i++) {
-            mongosh -u minhareceita -p minhareceita --authenticationDatabase admin --eval "db.runCommand('ping')"
+            C:\mongosh\mongosh-2.3.9-win32-x64\bin\mongosh.exe -u minhareceita -p minhareceita --authenticationDatabase admin --eval "db.runCommand('ping')"
             if ($?) { exit 0 }
             Start-Sleep -Seconds 5
           }
