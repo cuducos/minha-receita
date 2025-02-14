@@ -35,10 +35,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         env:
           TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
-          TEST_MONGODB_URL: mongodb://${{ steps.mongodb.mongodb-username }}:${{ steps.mongodb.mongodb-password }}@localhost:27017/${{ steps.mongodb.mongodb-db }}?authSource=admin
+          TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@mongo_test:27017/minhareceita?authSource=admin
 
       - run: go test --race ./...
         if: matrix.os == 'ubuntu-latest'
         env:
           TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
-          TEST_MONGODB_URL: mongodb://${{ steps.mongodb.mongodb-username }}:${{ steps.mongodb.mongodb-password }}@mongo_test:27017/${{ steps.mongodb.mongodb-db }}?authSource=admin
+          TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@mongo_test:27017/minhareceita?authSource=admin
