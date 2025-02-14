@@ -38,7 +38,7 @@ jobs:
       - name: Instalar MongoDB Shell no Windows
         if: runner.os == 'Windows'
         run: |
-          Invoke-WebRequest -Uri "https://downloads.mongodb.com/compass/mongodb-mongosh-2.1.0-win32-x64.zip" -OutFile "mongosh.zip"
+          Invoke-WebRequest -Uri "https://downloads.mongodb.com/compass/mongosh-2.3.9-win32-x64.zip" -OutFile "mongosh.zip"
           Expand-Archive -Path mongosh.zip -DestinationPath "C:\mongosh"
           echo "C:\mongosh" | Out-File -Append -Encoding ASCII $env:GITHUB_PATH
 
