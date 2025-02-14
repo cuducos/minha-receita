@@ -19,11 +19,31 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - name: Start MongoDB
-        uses: ankane/setup-mongodb@v1
-        id: mongodb
-        with:
-          mongodb-version: ${{ matrix.mongodb-version }}
+      - name: Iniciar MongoDB no Linux
+        if: runner.os == 'Linux'
+        run: |
+          docker run -d --name mongodb -p 27017:27017 \
+            -e MONGO_INITDB_ROOT_USERNAME=minhareceita \
+            -e MONGO_INITDB_ROOT_PASSWORD=minhareceita \
+            -e MONGO_INITDB_DATABASE=minhareceita \
+            --health-cmd "mongosh -u minhareceita -p minhareceita --authenticationDatabase admin --eval 'db.runCommand(\"ping\")'" \
+            --health-interval 10s --health-timeout 5s --health-retries 5 \
+            mongo:8
+
+
+      - name: Iniciar MongoDB no Windows
+        if: runner.os == 'Windows'
+        run: |
+          Start-Process -NoNewWindow -FilePath "docker" -ArgumentList "run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=minhareceita -e MONGO_INITDB_ROOT_PASSWORD=minhareceita -e MONGO_INITDB_DATABASE=minhareceita mongo:8"
+
+      - name: Esperar MongoDB estar pronto
+        run: |
+          for i in {1..10}; do
+            mongosh --host localhost --eval 'db.runCommand("ping")' && exit 0
+            sleep 1
+          done
+          exit 1
+        shell: bash
 
 
       - uses: actions/setup-go@v3
