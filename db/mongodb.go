@@ -128,7 +128,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	return nil
 }
 
-// MetaSaveOrUpdate inserts if the key doesn't exist, or updates the value if it does.
+// MetaSave inserts if the key doesn't exist, or updates the value if it does.
 func (m *MongoDB) MetaSave(k, v string) error {
 	ctx := context.Background()
 	c := m.db.Collection(metaTableName)
