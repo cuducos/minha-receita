@@ -35,18 +35,10 @@ jobs:
         run: |
           Start-Process -NoNewWindow -FilePath "docker" -ArgumentList "run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=minhareceita -e MONGO_INITDB_ROOT_PASSWORD=minhareceita -e MONGO_INITDB_DATABASE=minhareceita mongo:8"
 
-      - name: Instalar MongoDB Shell no Windows
-        if: runner.os == 'Windows'
-        run: |
-          Invoke-WebRequest -Uri "https://downloads.mongodb.com/compass/mongosh-2.3.9-win32-x64.zip" -OutFile "mongosh.zip"
-          Expand-Archive -Path mongosh.zip -DestinationPath "C:\mongosh"
-          echo "C:\mongosh" | Out-File -Append -Encoding ASCII $env:GITHUB_PATH
-
       - name: Esperar MongoDB estar pronto
         if: runner.os == 'Windows'
         run: |
           for i in {1..10}; do
-            mongosh -u minhareceita -p minhareceita --authenticationDatabase admin --eval 'db.runCommand("ping")' && exit 0
             sleep 5
           done
           exit 1
