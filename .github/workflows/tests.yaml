@@ -18,6 +18,15 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.12.0
+        id: mongodb
+        with:
+          mongodb-version: '8.0'
+          mongodb-username: minhareceita
+          mongodb-password: minhareceita
+          mongodb-db: minhareceita
+
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
@@ -25,9 +34,11 @@ jobs:
       - run: go test ./...
         if: matrix.os == 'windows-latest'
         env:
-          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_MONGODB_URL: mongodb://${{ steps.mongodb.mongodb-username }}:${{ steps.mongodb.mongodb-password }}@localhost:27017/${{ steps.mongodb.mongodb-db }}?authSource=admin
 
       - run: go test --race ./...
         if: matrix.os == 'ubuntu-latest'
         env:
-          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_MONGODB_URL: mongodb://${{ steps.mongodb.mongodb-username }}:${{ steps.mongodb.mongodb-password }}@mongo_test:27017/${{ steps.mongodb.mongodb-db }}?authSource=admin
