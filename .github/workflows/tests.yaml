@@ -33,7 +33,7 @@ jobs:
       - name: Iniciar MongoDB no Windows
         if: runner.os == 'Windows'
         run: |
-          Start-Process -NoNewWindow -FilePath "docker" -ArgumentList "run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=minhareceita -e MONGO_INITDB_ROOT_PASSWORD=minhareceita -e MONGO_INITDB_DATABASE=minhareceita mongo:8"
+          docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=minhareceita -e MONGO_INITDB_ROOT_PASSWORD=minhareceita -e MONGO_INITDB_DATABASE=minhareceita mongo:8
 
       - name: Instalar MongoDB Shell no Windows
         if: runner.os == 'Windows'
