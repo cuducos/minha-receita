@@ -35,7 +35,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         env:
           TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
-          TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin
+          # TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin
 
       - run: go test --race ./...
         if: matrix.os == 'ubuntu-latest'

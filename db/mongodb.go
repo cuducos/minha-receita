@@ -143,8 +143,6 @@ func (m *MongoDB) MetaSave(k, v string) error {
 	o := options.Update().SetUpsert(true)
 
 	upd := bson.M{"$set": bson.M{"key": k, "value": v}}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	_, err := c.UpdateOne(ctx, f, upd, o)
 	if err != nil {
