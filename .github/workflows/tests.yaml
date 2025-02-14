@@ -9,7 +9,6 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         go: [1.21.x, 1.22.x]
-        mongodb-version: [8.0,5.0]
 
     runs-on: ${{ matrix.os }}
 
