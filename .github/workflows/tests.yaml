@@ -18,8 +18,14 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - uses: yog27ray/mongo-inmemory-action@v1.1.0
-        id: mongodb
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.12.0
+        with:
+          mongodb-version: '8.0'
+          mongodb-username: minhareceita
+          mongodb-password: minhareceita
+          mongodb-db: minhareceita
+
        
       - uses: actions/setup-go@v3
         with:
