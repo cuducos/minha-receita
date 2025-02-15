@@ -12,27 +12,26 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    services:
+      mongo:
+        image: mongo:latest
+        env:
+          MONGO_INITDB_ROOT_USERNAME: minhareceita
+          MONGO_INITDB_ROOT_PASSWORD: minhareceita
+          MONGO_INITDB_DATABASE: minhareceita
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --username minhareceita --password minhareceita --authenticationDatabase minhareceita --eval 'db.runCommand(\"ping\")'" 
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
-
-      - name: Iniciar MongoDB no Linux
-        if: runner.os == 'Linux'
-        run: |
-          docker run -d --name mongodb -p 27017:27017 \
-            -e MONGO_INITDB_ROOT_USERNAME=minhareceita \
-            -e MONGO_INITDB_ROOT_PASSWORD=minhareceita \
-            -e MONGO_INITDB_DATABASE=minhareceita \
-            --health-cmd "mongosh -u minhareceita -p minhareceita --authenticationDatabase admin --eval 'db.runCommand(\"ping\")'" \
-            --health-interval 10s --health-timeout 5s --health-retries 5 \
-            mongo:8
-
-      - name: Iniciar MongoDB no Windows
-        if: runner.os == 'Windows'
-        run: |
-          docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=minhareceita -e MONGO_INITDB_ROOT_PASSWORD=minhareceita -e MONGO_INITDB_DATABASE=minhareceita mongo:8
 
       - uses: actions/setup-go@v3
         with:
