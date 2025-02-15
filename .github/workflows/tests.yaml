@@ -18,7 +18,7 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - uses: SusanDoggie/mongodb-action
+      - uses: susandoggie/mongodb-action
         id: mongodb
         with:
           MONGO_DATABASE: "minhareceita" # "atlas", "standalone", "replica-set", "sharded" (default: "atlas")
