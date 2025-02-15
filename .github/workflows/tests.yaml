@@ -3,6 +3,49 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
+  start-mongo:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8
+        env:
+          MONGO_INITDB_ROOT_USERNAME: minhareceita
+          MONGO_INITDB_ROOT_PASSWORD: minhareceita
+          MONGO_INITDB_DATABASE: minhareceita
+        ports:
+          - 27017:27017
+    outputs:
+      mongo_host: "localhost"
+      mongo_user: "minhareceita"
+      mongo_pass: "minhareceita"
+      mongo_db: "minhareceita"
+
+    steps:
+      - name: Exibir conexão
+        run: |
+          echo "MongoDB rodando em ${{ steps.setup.outputs.mongo_host }}"
+
+  test-linux:
+    needs: start-mongo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Testando conexão no Linux
+        run: |
+          sudo apt update && sudo apt install -y mongodb-clients
+          mongosh "mongodb://${{ needs.start-mongo.outputs.mongo_user }}:${{ needs.start-mongo.outputs.mongo_pass }}@${{ needs.start-mongo.outputs.mongo_host }}:27017/${{ needs.start-mongo.outputs.mongo_db }}?authSource=admin" --eval "db.stats()"
+
+  test-windows:
+    needs: start-mongo
+    runs-on: windows-latest
+    steps:
+      - name: Instalar MongoDB Shell
+        run: |
+          choco install mongosh -y
+      - name: Testando conexão no Windows
+        run: |
+          mongosh "mongodb://${{ needs.start-mongo.outputs.mongo_user }}:${{ needs.start-mongo.outputs.mongo_pass }}@${{ needs.start-mongo.outputs.mongo_host }}:27017/${{ needs.start-mongo.outputs.mongo_db }}?authSource=admin" --eval "db.stats()"
+
+
   test:
     strategy:
       fail-fast: false
@@ -17,15 +60,6 @@ jobs:
 
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
-
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.12.0
-        with:
-          mongodb-version: '5.0'
-          mongodb-username: minhareceita
-          mongodb-password: minhareceita
-          mongodb-db: minhareceita
-
        
       - uses: actions/setup-go@v3
         with:
