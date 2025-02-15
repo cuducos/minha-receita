@@ -18,13 +18,8 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - uses: susandoggie/mongodb-action
+      - uses: yog27ray/mongo-inmemory-action@v1.1.0
         id: mongodb
-        with:
-          MONGO_DATABASE: "minhareceita" # "atlas", "standalone", "replica-set", "sharded" (default: "atlas")
-          MONGO_USERNAME: "minhareceita"       # Omit to skip authentication (default: "")
-          MONGO_PASSWORD: "minhareceita"       # Omit to skip authentication (default: "")
-          MONGO_PORT: "27017"          # Change to a non-default port (default: "27017")
        
       - uses: actions/setup-go@v3
         with:
