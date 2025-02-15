@@ -18,21 +18,14 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - name: Start a MongoDB Atlas container
-        id: tomodo
-        uses: yuvalherziger/tomodo-github-action@v1
+      - user: SusanDoggie/mongodb-action
+        id: mongodb
         with:
-          instance-type: "standalone" # "atlas", "standalone", "replica-set", "sharded" (default: "atlas")
-          username: "minhareceita"       # Omit to skip authentication (default: "")
-          password: "minhareceita"       # Omit to skip authentication (default: "")
-          port: "27017"          # Change to a non-default port (default: "27017")
-          image-tag: "8.0"       # Change for a specific MongoDB version (default: "latest")
-          replicas: "1"          # Number of nodes in a replica-set/shard (default: "3")
-          shards: "2"            # Number of shards in a sharded cluster (default: "2")
-          config-servers: "1"    # Number of config servers in a sharded cluster (default: "1")
-          mongos: "1"            # Number of mongos routers in a sharded cluster (default: "1")
-          network-name: "my-net" # Name for the instance's docker network (default: "mongo-network")
-
+          MONGO_DATABASE: "minhareceita" # "atlas", "standalone", "replica-set", "sharded" (default: "atlas")
+          MONGO_USERNAME: "minhareceita"       # Omit to skip authentication (default: "")
+          MONGO_PASSWORD: "minhareceita"       # Omit to skip authentication (default: "")
+          MONGO_PORT: "27017"          # Change to a non-default port (default: "27017")
+       
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
