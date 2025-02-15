@@ -26,8 +26,12 @@ jobs:
           username: "minhareceita"       # Omit to skip authentication (default: "")
           password: "minhareceita"       # Omit to skip authentication (default: "")
           port: "27017"          # Change to a non-default port (default: "27017")
-          image-tag: "7.0"       # Change for a specific MongoDB version (default: "latest")
-
+          image-tag: "8.0"       # Change for a specific MongoDB version (default: "latest")
+          replicas: "1"          # Number of nodes in a replica-set/shard (default: "3")
+          shards: "2"            # Number of shards in a sharded cluster (default: "2")
+          config-servers: "1"    # Number of config servers in a sharded cluster (default: "1")
+          mongos: "1"            # Number of mongos routers in a sharded cluster (default: "1")
+          network-name: "my-net" # Name for the instance's docker network (default: "mongo-network")
 
       - uses: actions/setup-go@v3
         with:
