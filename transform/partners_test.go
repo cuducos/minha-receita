@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func newTestPartner() partnerData {
+func newTestPartner() PartnerData {
 	identificacaoDoSocio := 1
 	codigoQualificacaoSocio := 16
 	qualificacaoSocio := "Presidente"
@@ -16,7 +16,7 @@ func newTestPartner() partnerData {
 	codigoFaixaEtaria := 4
 	faixaEtarua := "Entre 31 a 40 anos"
 	dataEntradaSociedade := date(time.Date(2007, 8, 12, 0, 0, 0, 0, time.UTC))
-	return partnerData{
+	return PartnerData{
 		&identificacaoDoSocio,
 		"Hannah",
 		"123",

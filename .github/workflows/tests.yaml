@@ -18,6 +18,19 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start MongoDB container
+        run: |
+          docker run -d --name mongodb \
+            -p 27017:27017 \
+            -e MONGO_INITDB_ROOT_USERNAME=minhareceita \
+            -e MONGO_INITDB_ROOT_PASSWORD=minhareceita \
+            -e MONGO_INITDB_DATABASE=minhareceita \
+            mongo:6
+        shell: bash
+       
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
@@ -25,9 +38,11 @@ jobs:
       - run: go test ./...
         if: matrix.os == 'windows-latest'
         env:
-          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin
 
       - run: go test --race ./...
         if: matrix.os == 'ubuntu-latest'
         env:
-          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_MONGODB_URL: mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin

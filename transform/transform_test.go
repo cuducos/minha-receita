@@ -11,10 +11,10 @@ var (
 	testdata = filepath.Join("..", "testdata")
 )
 
-func companyFromString(j string) (company, error) {
-	var c company
+func companyFromString(j string) (Company, error) {
+	var c Company
 	if err := json.Unmarshal([]byte(j), &c); err != nil {
-		return company{}, fmt.Errorf("error unmarshalling: %w", err)
+		return Company{}, fmt.Errorf("error unmarshalling: %w", err)
 	}
 	return c, nil
 }

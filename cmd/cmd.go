@@ -4,10 +4,10 @@ package cmd
 import (
 	"fmt"
 	"os"
-
-	"github.com/spf13/cobra"
+	"strings"
 
 	"github.com/cuducos/minha-receita/db"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -47,7 +47,7 @@ func loadDatabaseURI() (string, error) {
 	}
 	u := os.Getenv("DATABASE_URL")
 	if u == "" {
-		return "", fmt.Errorf("could not find a database URI, set the DATABASE_URL environment variable with the credentials for a PostgreSQL database")
+		return "", fmt.Errorf("could not find a database URI, set the DATABASE_URL environment variable with the credentials for a PostgreSQL or MongoDB database")
 	}
 	return u, nil
 }
@@ -60,18 +60,34 @@ var rootCmd = &cobra.Command{
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Creates the required tables in PostgreSQL",
+	Short: "Creates the required tables in the database",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		u, err := loadDatabaseURI()
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-		if err != nil {
+		uri := os.Getenv("DATABASE_URL")
+		if strings.HasPrefix(uri, "mongodb://") {
+			mdb, err := db.NewMongoDB(uri)
+			if err != nil {
+				return err
+			}
+			err = mdb.CreateCollection()
+			if err != nil {
+				return err
+			}
+			defer mdb.Close()
 			return err
+		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
+			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
+			if err != nil {
+				return err
+			}
+			defer pg.Close()
+			return pg.CreateTable()
+		} else {
+			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
 		}
-		defer pg.Close()
-		return pg.CreateTable()
 	},
 }
 
@@ -83,12 +99,27 @@ var dropCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-		if err != nil {
+		uri := os.Getenv("DATABASE_URL")
+		if strings.HasPrefix(uri, "mongodb://") {
+			mdb, err := db.NewMongoDB(uri)
+			if err != nil {
+				return err
+			}
+			err = mdb.DropCollection()
+			if err != nil {
+				return err
+			}
 			return err
+		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
+			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
+			if err != nil {
+				return err
+			}
+			defer pg.Close()
+			return pg.DropTable()
+		} else {
+			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
 		}
-		defer pg.Close()
-		return pg.DropTable()
 	},
 }
 
@@ -98,7 +129,7 @@ func addDataDir(c *cobra.Command) *cobra.Command {
 }
 
 func addDatabase(c *cobra.Command) *cobra.Command {
-	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "PostgreSQL URI (default DATABASE_URL environment variable)")
+	c.Flags().StringVarP(&databaseURI, "database-uri", "u", "", "Database URI (default DATABASE_URL environment variable)")
 	c.Flags().StringVarP(&postgresSchema, "postgres-schema", "s", "public", "PostgreSQL schema")
 	return c
 }

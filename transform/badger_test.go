@@ -30,7 +30,7 @@ var (
 	testQualificacaoRepresentanteLegal1       = "Quatro"
 	testCodigoFaixaEtaria1                    = 5
 	testFaixaEtarua1                          = "Cinco"
-	testPartner1                              = partnerData{
+	testPartner1                              = PartnerData{
 		&testIdentificacaoDoSocio1,
 		"Nome da pessoa 1",
 		"123",
@@ -56,7 +56,7 @@ var (
 	testQualificacaoRepresentanteLegal2       = "Nove"
 	testCodigoFaixaEtaria2                    = 10
 	testFaixaEtarua2                          = "Dez"
-	testPartner2                              = partnerData{
+	testPartner2                              = PartnerData{
 		&testIdentificacaoDoSocio2,
 		"Nome da pessoa 2",
 		"789",
@@ -87,12 +87,12 @@ func TestMergePartners(t *testing.T) {
 	p := newTestPartner()
 	v := toBytes(t, p)
 	for _, tc := range []struct {
-		existing []partnerData
-		expected []partnerData
+		existing []PartnerData
+		expected []PartnerData
 	}{
-		{nil, []partnerData{p}},
-		{[]partnerData{testPartner1}, []partnerData{testPartner1, p}},
-		{[]partnerData{testPartner1, testPartner2}, []partnerData{testPartner1, testPartner2, p}},
+		{nil, []PartnerData{p}},
+		{[]PartnerData{testPartner1}, []PartnerData{testPartner1, p}},
+		{[]PartnerData{testPartner1, testPartner2}, []PartnerData{testPartner1, testPartner2, p}},
 	} {
 		t.Run(fmt.Sprintf("merging to %d partners", len(tc.existing)), func(t *testing.T) {
 			db := newTestBadgerDB(t)
@@ -109,7 +109,7 @@ func TestMergePartners(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected no error merging partners, got %s", err)
 			}
-			var got []partnerData
+			var got []PartnerData
 			if err := json.Unmarshal(m, &got); err != nil {
 				t.Errorf("could not parse merged partners: %s", err)
 			}
