@@ -18,13 +18,34 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - uses: getong/mongo-action@v1.1
-        with:
-          mongo version: '4.2-bionic'
-          host port: 27017
-          mongo username: 'minhareceita'
-          mongo password: 'minhareceita'
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Start MongoDB container
+        run: |
+          docker run -d --name mongodb \
+            -p 27017:27017 \
+            -e MONGO_INITDB_ROOT_USERNAME=minhareceita \
+            -e MONGO_INITDB_ROOT_PASSWORD=minhareceita \
+            -e MONGO_INITDB_DATABASE=minhareceita \
+            mongo:6
+        shell: bash
+
+      - name: Wait for MongoDB to be ready
+        run: |
+          for i in {1..10}; do
+            if docker exec mongodb mongosh -u minhareceita -p minhareceita --authenticationDatabase minhareceita --eval "db.runCommand({ ping: 1 })"; then
+              echo "MongoDB is ready!"
+              exit 0
+            fi
+            echo "Waiting for MongoDB..."
+            sleep 3
+          done
+          echo "MongoDB failed to start"
+          exit 1
+        shell: bash
+
+      - name: Run tests
        
       - uses: actions/setup-go@v3
         with:

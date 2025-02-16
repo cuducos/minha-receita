@@ -4,16 +4,6 @@ on:
     branches: ['main']
 
 jobs:
-  build:
-    runs-on: windows-latest
-    steps:
-      - name: Configurar Docker no Windows
-        run: |
-          Get-Service docker | Start-Service
-          docker version
-
-      - name: Testar Docker (opcional)
-        run: docker run hello-world
   build-and-push-image:
     runs-on: ubuntu-latest
     env:
