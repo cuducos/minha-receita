@@ -18,14 +18,12 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
-      - name: Start MongoDB
-        if: matrix.os == 'ubuntu-latest'
-        uses: supercharge/mongodb-github-action@1.12.0
+      - uses: getong/mongo-action@v1.1
         with:
-          mongodb-version: '5.0'
-          mongodb-username: minhareceita
-          mongodb-password: minhareceita
-          mongodb-db: minhareceita
+          mongo version: '4.2-bionic'
+          host port: 27017
+          mongo username: 'minhareceita'
+          mongo password: 'minhareceita'
 
        
       - uses: actions/setup-go@v3
