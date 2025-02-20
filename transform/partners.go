@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type partnerData struct {
+type PartnerData struct {
 	IdentificadorDeSocio                 *int    `json:"identificador_de_socio"`
 	NomeSocio                            string  `json:"nome_socio"`
 	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio"`
@@ -22,7 +22,7 @@ type partnerData struct {
 	FaixaEtaria                          *string `json:"faixa_etaria"`
 }
 
-func (p *partnerData) faixaEtaria(v string) {
+func (p *PartnerData) faixaEtaria(v string) {
 	c, err := toInt(v)
 	if err != nil {
 		return
@@ -57,7 +57,7 @@ func (p *partnerData) faixaEtaria(v string) {
 	}
 }
 
-func (p *partnerData) pais(l *lookups, v string) error {
+func (p *PartnerData) pais(l *lookups, v string) error {
 	i, err := toInt(v)
 	if err != nil {
 		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
@@ -73,18 +73,18 @@ func (p *partnerData) pais(l *lookups, v string) error {
 	return nil
 }
 
-func newPartnerData(l *lookups, r []string) (partnerData, error) {
+func newPartnerData(l *lookups, r []string) (PartnerData, error) {
 	identificadorDeSocio, err := toInt(r[1])
 	if err != nil {
-		return partnerData{}, fmt.Errorf("error parsing IdentificadorDeSocio %s: %w", r[1], err)
+		return PartnerData{}, fmt.Errorf("error parsing IdentificadorDeSocio %s: %w", r[1], err)
 	}
 
 	dataEntradaSociedade, err := toDate(r[5])
 	if err != nil {
-		return partnerData{}, fmt.Errorf("error parsing DataEntradaSociedade %s: %w", r[5], err)
+		return PartnerData{}, fmt.Errorf("error parsing DataEntradaSociedade %s: %w", r[5], err)
 	}
 
-	p := partnerData{
+	p := PartnerData{
 		IdentificadorDeSocio:   identificadorDeSocio,
 		NomeSocio:              r[2],
 		CNPJCPFDoSocio:         r[3],

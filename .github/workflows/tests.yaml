@@ -18,6 +18,8 @@ jobs:
       - uses: ikalnytskyi/action-setup-postgres@v4
         id: postgres
 
+      - uses: ankane/setup-mongodb@v1
+
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
@@ -25,9 +27,11 @@ jobs:
       - run: go test ./...
         if: matrix.os == 'windows-latest'
         env:
-          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_MONGODB_URL: mongodb://localhost:27017/minhareceita?authSource=admin
 
       - run: go test --race ./...
         if: matrix.os == 'ubuntu-latest'
         env:
-          TEST_DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_POSTGRES_URL: ${{ steps.postgres.outputs.connection-uri }}
+          TEST_MONGODB_URL: mongodb://localhost:27017/minhareceita?authSource=admin

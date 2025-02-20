@@ -10,7 +10,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func saveBatch(db database, b []company) (int, error) {
+func saveBatch(db database, b []Company) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
@@ -74,7 +74,7 @@ func (t *venuesTask) produceRows() {
 
 func (t *venuesTask) consumeRows() {
 	defer t.shutdownWaitGroup.Done()
-	var b []company
+	var b []Company
 	for r := range t.rows {
 		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
 			return
@@ -97,7 +97,7 @@ func (t *venuesTask) consumeRows() {
 				return
 			}
 			t.saved <- n
-			b = []company{}
+			b = []Company{}
 		}
 	}
 	if len(b) == 0 || atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
