@@ -14,22 +14,22 @@ func TestPostgresDB(t *testing.T) {
 		t.Errorf("expected a posgres uri at TEST_POSTGRES_URL, found nothing")
 		return
 	}
-	pg, err := NewPostgreSQL(u, "public", nil)
+	pg, err := NewPostgreSQL(u, "public")
 	if err != nil {
 		t.Errorf("expected no error connecting to postgres, got %s", err)
 		return
 	}
-	if err := pg.DropTable(); err != nil {
+	if err := pg.Drop(); err != nil {
 		t.Errorf("expected no error dropping the table, got %s", err)
 	}
 	defer func() {
-		if err := pg.DropTable(); err != nil {
+		if err := pg.Drop(); err != nil {
 			t.Errorf("expected no error dropping the table, got %s", err)
 		}
 		pg.Close()
 	}()
 
-	if err := pg.CreateTable(); err != nil {
+	if err := pg.Create(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
 	if err := pg.PreLoad(); err != nil {

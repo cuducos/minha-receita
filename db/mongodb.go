@@ -42,57 +42,42 @@ func NewMongoDB(uri string) (MongoDB, error) {
 	if n == "" || strings.Contains(n, "@") { // ensure the database name is valid
 		return MongoDB{}, fmt.Errorf("no database name found in the uri")
 	}
-	return MongoDB{
-		client: c,
-		db:     c.Database(n),
-		ctx:    ctx,
-	}, nil
+	return MongoDB{client: c, db: c.Database(n), ctx: ctx}, nil
 }
 
-// CreateCollection creates the specified collection if it does not already exist.
-func (m *MongoDB) CreateCollection() error {
-
-	if err := m.db.CreateCollection(m.ctx, companyTableName); err != nil {
-		return fmt.Errorf("error creating collection: %w", err)
+// Create creates the required collections.
+func (m *MongoDB) Create() error {
+	for _, c := range []string{companyTableName, metaTableName} {
+		if err := m.db.CreateCollection(m.ctx, c); err != nil {
+			return fmt.Errorf("error creating collection %s: %w", c, err)
+		}
+		log.Output(1, fmt.Sprintf("Collection %s created successfully", c))
 	}
-
-	log.Output(1, fmt.Sprintf("Collection %s created successfully", companyTableName))
-
-	if err := m.db.CreateCollection(m.ctx, metaTableName); err != nil {
-		return fmt.Errorf("erro ao criar a coleção: %w", err)
-	}
-
-	log.Output(1, fmt.Sprintf("Collection %s created successfully", metaTableName))
-
 	return nil
 }
 
 // CreateIndexes creates the indexes on the specified collection.
 func (m *MongoDB) CreateIndexes() error {
 	log.Output(1, "Creating the indexes...")
+	// TODO: index meta collecation too
 	c := m.db.Collection(companyTableName)
-	i := []mongo.IndexModel{
-		{Keys: bson.D{{Key: "cnpj", Value: 1}}},
-	}
+	i := []mongo.IndexModel{{Keys: bson.D{{Key: "cnpj", Value: 1}}}}
 	_, err := c.Indexes().CreateMany(m.ctx, i)
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-	log.Output(1, fmt.Sprintf("Indexes successfully created in the collection: %s", companyTableName))
+	log.Output(1, fmt.Sprintf("Indexes successfully created in the collection %s", companyTableName))
 	return nil
 }
 
-// DropCollection completely deletes a specific collection.
-func (m *MongoDB) DropCollection() error {
-	cs := []string{companyTableName, metaTableName}
-	for _, v := range cs {
-		c := m.db.Collection(v)
-
+// Drop deletes the collectiosn created by `Create`.
+func (m *MongoDB) Drop() error {
+	for _, n := range []string{companyTableName, metaTableName} {
+		c := m.db.Collection(n)
 		if err := c.Drop(m.ctx); err != nil {
-			return fmt.Errorf("error deleting collection: %w", err)
+			return fmt.Errorf("error deleting collection %s: %w", n, err)
 		}
-
-		log.Output(1, fmt.Sprintf("Collection deleted successfully: %s", v))
+		log.Output(1, fmt.Sprintf("Collection %s deleted successfully", n))
 	}
 	return nil
 }
@@ -112,7 +97,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		c.Cnpj = r[0]
 		err := json.Unmarshal([]byte(r[1]), &c.Json)
 		if err != nil {
-			return fmt.Errorf("error deserializing JSON: %s, erro: %w", r[1], err)
+			return fmt.Errorf("error deserializing JSON: %s\nerror: %w", r[1], err)
 		}
 		cs = append(cs, c)
 	}
@@ -120,7 +105,6 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		return nil
 	}
 	ctx := context.Background()
-
 	_, err := coll.InsertMany(ctx, cs)
 	if err != nil {
 		return fmt.Errorf("error inserting companies into MongoDB: %w", err)
@@ -135,20 +119,13 @@ func (m *MongoDB) MetaSave(k, v string) error {
 	if len(k) > 16 {
 		return fmt.Errorf("the key can have a maximum of 16 characters")
 	}
-	f := bson.M{
-		"key": k,
-	}
-
-	//if it does not exist it creates it
-	o := options.Update().SetUpsert(true)
-
+	f := bson.M{"key": k}
+	o := options.Update().SetUpsert(true) // if it does not exist, creates it
 	upd := bson.M{"$set": bson.M{"key": k, "value": v}}
-
 	_, err := c.UpdateOne(ctx, f, upd, o)
 	if err != nil {
 		return fmt.Errorf("error saving %s in the meta collection: %w", k, err)
 	}
-
 	return nil
 }
 
@@ -171,11 +148,10 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 }
 
 // Close terminates the connection to MongoDB.
-func (m *MongoDB) Close() error {
+func (m *MongoDB) Close() {
 	if err := m.client.Disconnect(m.ctx); err != nil {
-		return fmt.Errorf("error disconnecting from MongoDB: %w", err)
+		log.Output(1, fmt.Sprintf("error disconnecting from MongoDB: %s", err))
 	}
-	return nil
 }
 
 // PreLoad runs before starting to load data into the database.

@@ -13,7 +13,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/newrelic/go-agent/v3/integrations/nrpgx5"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
@@ -78,8 +77,8 @@ func (p *PostgreSQL) MetaTableFullName() string {
 	return fmt.Sprintf("%s.%s", p.schema, p.MetaTableName)
 }
 
-// CreateTable creates the required database table.
-func (p *PostgreSQL) CreateTable() error {
+// Create creates the required database table.
+func (p *PostgreSQL) Create() error {
 	log.Output(1, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
 	if _, err := p.pool.Exec(context.Background(), p.sql["create"]); err != nil {
 		return fmt.Errorf("error creating table with: %s\n%w", p.sql["create"], err)
@@ -87,8 +86,8 @@ func (p *PostgreSQL) CreateTable() error {
 	return nil
 }
 
-// DropTable drops the database table created by `CreateTable`.
-func (p *PostgreSQL) DropTable() error {
+// Drop drops the database table created by `Create`.
+func (p *PostgreSQL) Drop() error {
 	log.Output(1, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
 	if _, err := p.pool.Exec(context.Background(), p.sql["drop"]); err != nil {
 		return fmt.Errorf("error dropping table with: %s\n%w", p.sql["drop"], err)
@@ -179,7 +178,7 @@ func (p *PostgreSQL) MetaRead(k string) (string, error) {
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
-func NewPostgreSQL(uri, schema string, nr *newrelic.Application) (PostgreSQL, error) {
+func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	cfg, err := pgxpool.ParseConfig(uri)
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not create database config: %w", err)
@@ -188,9 +187,6 @@ func NewPostgreSQL(uri, schema string, nr *newrelic.Application) (PostgreSQL, er
 	cfg.MinConns = 1
 	cfg.MaxConnIdleTime = 5 * time.Minute
 	cfg.MaxConnLifetime = 30 * time.Minute
-	if nr != nil {
-		cfg.ConnConfig.Tracer = nrpgx5.NewTracer()
-	}
 	conn, err := pgxpool.NewWithConfig(context.Background(), cfg)
 	if err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not connect to the database: %w", err)

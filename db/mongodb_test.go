@@ -19,17 +19,17 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected no error connecting to mongodb, got %s", err)
 		return
 	}
-	if err := db.DropCollection(); err != nil {
+	if err := db.Drop(); err != nil {
 		t.Errorf("expected no error dropping the table, got %s", err)
 	}
 	defer func() {
-		if err := db.DropCollection(); err != nil {
+		if err := db.Drop(); err != nil {
 			t.Errorf("expected no error dropping the table, got %s", err)
 		}
 		db.Close()
 	}()
 
-	if err := db.CreateCollection(); err != nil {
+	if err := db.Create(); err != nil {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
 

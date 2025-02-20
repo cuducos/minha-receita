@@ -4,9 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/cuducos/minha-receita/db"
 	"github.com/spf13/cobra"
 )
 
@@ -21,11 +19,7 @@ See --help for more details.
 `
 )
 
-var (
-	dir            string
-	databaseURI    string
-	postgresSchema string
-)
+var dir string
 
 func assertDirExists() error {
 	i, err := os.Stat(dir)
@@ -41,17 +35,6 @@ func assertDirExists() error {
 	return nil
 }
 
-func loadDatabaseURI() (string, error) {
-	if databaseURI != "" {
-		return databaseURI, nil
-	}
-	u := os.Getenv("DATABASE_URL")
-	if u == "" {
-		return "", fmt.Errorf("could not find a database URI, set the DATABASE_URL environment variable with the credentials for a PostgreSQL or MongoDB database")
-	}
-	return u, nil
-}
-
 var rootCmd = &cobra.Command{
 	Use:   "minha-receita <command>",
 	Short: "Minha Receita toolbox",
@@ -62,32 +45,12 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Creates the required tables in the database",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		u, err := loadDatabaseURI()
+		db, err := loadDatabase()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not find database: %w", err)
 		}
-		uri := os.Getenv("DATABASE_URL")
-		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, err := db.NewMongoDB(uri)
-			if err != nil {
-				return err
-			}
-			err = mdb.CreateCollection()
-			if err != nil {
-				return err
-			}
-			defer mdb.Close()
-			return err
-		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
-			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-			if err != nil {
-				return err
-			}
-			defer pg.Close()
-			return pg.CreateTable()
-		} else {
-			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
-		}
+		defer db.Close()
+		return db.Create()
 	},
 }
 
@@ -95,31 +58,12 @@ var dropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops the tables in PostgreSQL",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		u, err := loadDatabaseURI()
+		db, err := loadDatabase()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not find database: %w", err)
 		}
-		uri := os.Getenv("DATABASE_URL")
-		if strings.HasPrefix(uri, "mongodb://") {
-			mdb, err := db.NewMongoDB(uri)
-			if err != nil {
-				return err
-			}
-			err = mdb.DropCollection()
-			if err != nil {
-				return err
-			}
-			return err
-		} else if strings.HasPrefix(uri, "postgres://") || strings.HasPrefix(uri, "postgresql://") {
-			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-			if err != nil {
-				return err
-			}
-			defer pg.Close()
-			return pg.DropTable()
-		} else {
-			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
-		}
+		defer db.Close()
+		return db.Drop()
 	},
 }
 
