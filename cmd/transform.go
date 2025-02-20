@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/transform"
 	"github.com/spf13/cobra"
@@ -35,21 +38,42 @@ var transformCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
-		if err != nil {
-			return err
-		}
-		defer pg.Close()
 
-		if cleanUp {
-			if err := pg.DropTable(); err != nil {
+		if strings.HasPrefix(u, "mongodb://") {
+			mdb, err := db.NewMongoDB(u)
+			if err != nil {
 				return err
 			}
-			if err := pg.CreateTable(); err != nil {
+			if cleanUp {
+				err = mdb.DropCollection()
+				if err != nil {
+					return err
+				}
+				err = mdb.CreateCollection()
+				if err != nil {
+					return err
+				}
+			}
+			return transform.Transform(dir, &mdb, maxParallelDBQueries, batchSize, !noPrivacy)
+		} else if strings.HasPrefix(u, "postgres://") || strings.HasPrefix(u, "postgresql://") {
+			pg, err := db.NewPostgreSQL(u, postgresSchema, nil)
+			if err != nil {
 				return err
 			}
+			defer pg.Close()
+			if cleanUp {
+				if err := pg.DropTable(); err != nil {
+					return err
+				}
+				if err := pg.CreateTable(); err != nil {
+					return err
+				}
+			}
+			return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy)
+		} else {
+			return fmt.Errorf("url does not contain 'mongodb' nor 'postgres'")
 		}
-		return transform.Transform(dir, &pg, maxParallelDBQueries, batchSize, !noPrivacy)
+
 	},
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func TestTaskRun(t *testing.T) {
-	db := newTestDB(t)
+	db := newTestDB()
 	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
 		t.Fatal("error creating temporary key-value storage: %w", err)

@@ -31,3 +31,23 @@ services:
       - 5555:5432
     environment: *credentials
     command: ["postgres", "-c", "log_statement=all"]
+
+  mongo:
+    image: mongo:8.0-noble
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: minhareceita
+      MONGO_INITDB_ROOT_PASSWORD: minhareceita
+    volumes:
+      - ./data/mongodb:/data/db
+    ports:
+      - "27017:27017"
+
+  mongo_test:
+    image: mongo:8.0-noble
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: minhareceita
+      MONGO_INITDB_ROOT_PASSWORD: minhareceita
+    ports:
+      - "27117:27017"

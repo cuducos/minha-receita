@@ -3,43 +3,63 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
-	"testing"
-
-	"github.com/cuducos/minha-receita/db"
+	"sync"
 )
 
 var (
 	testdata = filepath.Join("..", "testdata")
 )
 
-func companyFromString(j string) (company, error) {
-	var c company
+func companyFromString(j string) (Company, error) {
+	var c Company
 	if err := json.Unmarshal([]byte(j), &c); err != nil {
-		return company{}, fmt.Errorf("error unmarshalling: %w", err)
+		return Company{}, fmt.Errorf("error unmarshalling: %w", err)
 	}
 	return c, nil
 }
 
-func newTestDB(t *testing.T) *db.PostgreSQL {
-	u := os.Getenv("TEST_DATABASE_URL")
-	if u == "" {
-		t.Errorf("expected a posgres uri at TEST_DATABASE_URL, found nothing")
-		return nil
+type storage struct {
+	data map[string]string
+	lock sync.RWMutex
+}
+
+type inMemoryDB struct {
+	cnpj *storage
+	meta *storage
+}
+
+func (i inMemoryDB) PreLoad() error  { return nil }
+func (i inMemoryDB) PostLoad() error { return nil }
+
+func (i inMemoryDB) CreateCompanies(cs [][]string) error {
+	i.cnpj.lock.Lock()
+	defer i.cnpj.lock.Unlock()
+	for _, c := range cs {
+		i.cnpj.data[c[0]] = c[1]
 	}
-	r, err := db.NewPostgreSQL(u, "public", nil)
-	if err != nil {
-		t.Errorf("expected no error creating a test database, got %s", err)
-		return nil
+	return nil
+}
+
+func (i inMemoryDB) MetaSave(k, v string) error {
+	i.meta.lock.Lock()
+	defer i.meta.lock.Unlock()
+	i.meta.data[k] = v
+	return nil
+}
+
+func (i inMemoryDB) GetCompany(n string) (string, error) {
+	i.cnpj.lock.RLock()
+	defer i.cnpj.lock.RUnlock()
+	if c, ok := i.cnpj.data[n]; ok {
+		return c, nil
 	}
-	if err := r.DropTable(); err != nil {
-		t.Errorf("expected no error dropping the table in the test database, got %s", err)
-		return nil
+	return "", fmt.Errorf("company %s not found", n)
+}
+
+func newTestDB() inMemoryDB {
+	return inMemoryDB{
+		cnpj: &storage{data: make(map[string]string)},
+		meta: &storage{data: make(map[string]string)},
 	}
-	if err := r.CreateTable(); err != nil {
-		t.Errorf("expected no error creating the table in the test database, got %s", err)
-		return nil
-	}
-	return &r
 }
