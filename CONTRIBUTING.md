@@ -12,24 +12,25 @@ Os testes requerem uma instância de cada banco de dados implementado. Atualment
 
 ## Docker
 
-### Apenas para o banco de dados PostgresSQL
+### Apenas para o banco de dados
 
 Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
 
 ```console
 $ docker compose up -d postgres
+$ docker compose up -d mongo
 ```
 
 Existe também um banco de dados para teste, que não persiste dados e que loga todas as queries:
 
 ```console
-$ docker compose up -d postgres_test
+$ docker compose up -d postgres_test mongo_test
 ```
 
 Para visualizar as queries efetuadas:
 
 ```console
-$ docker compose logs postgres_test
+$ docker compose logs postgres_test mongo_test
 ```
 
 As configurações padrão desses bancos são:
@@ -37,33 +38,8 @@ As configurações padrão desses bancos são:
 | Serviço | Ambiente | Variável de ambiente | Valor |
 |---|---|---|---|
 | `postgres` | Desenvolvimento | `DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
-| `postgres_test` | Testes | `TEST_POSTGRES_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
-
-### Apenas para o banco de dados MongoDB
-
-Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
-
-```console
-$ docker compose up -d mongo
-```
-
-Existe também um banco de dados para teste, que não persiste dados e que loga todas as queries:
-
-```console
-$ docker compose up -d mongo_test
-```
-
-Para visualizar as queries efetuadas:
-
-```console
-$ docker compose logs mongo_test
-```
-
-As configurações padrão desses bancos são:
-
-| Serviço | Ambiente | Variável de ambiente | Valor |
-|---|---|---|---|
 | `mongo` | Desenvolvimento | `DATABASE_URL` | `mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin` |
+| `postgres_test` | Testes | `TEST_POSTGRES_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
 | `mongo_test` | Testes | `TEST_MONGODB_URL` | `mongodb://minhareceita:minhareceita@localhost:27117/minhareceita?authSource=admin` |
 
 ### Rodando o projeto todo com Docker
