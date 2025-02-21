@@ -6,8 +6,6 @@ O projeto requer um banco de dados PostgreSQL ou MongoDB e os comandos que reque
 
 Caso deseje usar o Docker Compose do projeto para subir uma instância do banco de dados:
 
-### Banco de dados
-
 ```console
 $ docker compose up -d postgres
 $ docker compose up -d mongo
