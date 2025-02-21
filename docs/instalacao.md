@@ -19,7 +19,7 @@ _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certe
 É necessário cerca de 150Gb disponíveis de espaço em disco para armazenar os dados:
 
 * Os arquivos da Receita federal tem cerca de 6Gb
-* O banco de dados PostgreSQL gerado utiliza cerca de 140Gb
+* O banco de dados gerado utiliza cerca de 140Gb
 
 ### Requisitos e instalação
 
@@ -89,7 +89,8 @@ Para facilitar a manutenção, algumas variáveis de ambiente podem ser utilizad
 
 | Variável | Descrição |
 |---|---|
-| `DATABASE_URL` | URI de acesso ao banco de dados PostgreSQL |
+| `DATABASE_URL` | URI de acesso ao banco de dados |
 | `PORT` | Porta na qual a API web ficará disponível |
 | `NEW_RELIC_LICENSE_KEY` | Licença no New Relic para monitoramento |
-| `TEST_DATABASE_URL` | URI de acesso ao banco de dados PostgreSQL para ser utilizado nos testes |
+| `TEST_POSTGRES_URL` | URI de acesso ao banco de dados PostgreSQL para ser utilizado nos testes |
+| `TEST_MONGODB_URL` | URI de acesso ao banco de dados MongoDB para ser utilizado nos testes |
