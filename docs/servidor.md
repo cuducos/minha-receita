@@ -17,7 +17,6 @@ Usando PostgreSQL, a URI será `postgres://minhareceita:minhareceita@localhost:5
 
 Usando MongoDB, a URI será `mongodb://minhareceita:minhareceita@loocalhost:27017/minhareceita?authSource=admin`.
 
-
 ## Download dos dados
 
 O comando `download` baixa dados da Receita Federal, mais um arquivo do Tesouro Nacional com o código dos municípios do IBGE.
