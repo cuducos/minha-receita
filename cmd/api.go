@@ -3,10 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/cuducos/minha-receita/api"
-	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/monitor"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/spf13/cobra"
@@ -40,14 +38,11 @@ var apiCmd = &cobra.Command{
 	Short: "Spins up the web API",
 	Long:  apiHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		u, err := loadDatabaseURI()
-		if err != nil {
-			return err
-		}
 		if newRelic == "" {
 			newRelic = os.Getenv("NEW_RELIC_LICENSE_KEY")
 		}
 		var nr *newrelic.Application
+		var err error
 		if newRelic != "" {
 			nr, err = monitor.NewRelicApp(newRelic)
 			if err != nil {
@@ -60,24 +55,12 @@ var apiCmd = &cobra.Command{
 		if port == "" {
 			port = defaultPort
 		}
-		if strings.HasPrefix(u, "mongodb://") {
-			mdb, _ := db.NewMongoDB(u)
-			if err != nil {
-				return err
-			}
-			defer mdb.Close()
-			api.Serve(&mdb, port, nr)
-		} else if strings.HasPrefix(u, "postgres://") || strings.HasPrefix(u, "postgresql://") {
-			pg, err := db.NewPostgreSQL(u, postgresSchema, nr)
-			if err != nil {
-				return err
-			}
-			defer pg.Close()
-			api.Serve(&pg, port, nr)
-		} else {
-			return fmt.Errorf("unsupported database URI, must start with postgres:// or mongodb://")
+		db, err := loadDatabase()
+		if err != nil {
+			return fmt.Errorf("could not find database: %w", err)
 		}
-
+		defer db.Close()
+		api.Serve(db, port, nr)
 		return nil
 	},
 }
