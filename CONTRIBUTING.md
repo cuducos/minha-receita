@@ -8,11 +8,11 @@ $ staticcheck ./...
 $ go test --race ./...
 ```
 
-Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_DATABASE_URL` como no exemplo em `.env`.
+Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_POSTGRES_URL` ou `TEST_MONGODB_URL` como no exemplo em `.env`.
 
 ## Docker
 
-### Apenas para o banco de dados
+### Apenas para o banco de dados Postgres
 
 Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
 
@@ -38,6 +38,33 @@ As configurações padrão desses bancos são:
 |---|---|---|---|
 | `postgres` | Desenvolvimento | `DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
 | `postgres_test` | Testes | `TEST_DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
+
+### Apenas para o banco de dados MongoDB
+
+Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
+
+```console
+$ docker compose up -d mongo
+```
+
+Existe também um banco de dados para teste, que não persiste dados e que loga todas as queries:
+
+```console
+$ docker compose up -d mongo_test
+```
+
+Para visualizar as queries efetuadas:
+
+```console
+$ docker compose logs mongo_test
+```
+
+As configurações padrão desses bancos são:
+
+| Serviço | Ambiente | Variável de ambiente | Valor |
+|---|---|---|---|
+| `mongo` | Desenvolvimento | `DATABASE_URL` | `mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin` |
+| `mongo_test` | Testes | `TEST_DATABASE_URL` | `mongodb://minhareceita:minhareceita@localhost:27117/minhareceita?authSource=admin` |
 
 ### Rodando o projeto todo com Docker
 

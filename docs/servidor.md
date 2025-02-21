@@ -6,11 +6,21 @@ O projeto requer um banco de dados PostgreSQL e os comandos que requerem banco d
 
 Caso deseje usar o Docker Compose do projeto para subir uma instância do banco de dados:
 
+### Postgres
+
 ```console
 $ docker compose up -d postgres
 ```
 
 A URI de acesso será `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable`.
+
+### MongoDB
+
+```console
+$ docker compose up -d mongo
+```
+
+A URI de acesso será `mongodb://minhareceita:minhareceita@loocalhost:27017/minhareceita?authSource=admin`.
 
 ## Download dos dados
 
