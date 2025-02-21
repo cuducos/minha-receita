@@ -8,7 +8,7 @@ $ staticcheck ./...
 $ go test --race ./...
 ```
 
-Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_DATABASE_URL` como no exemplo em `.env`.
+Os testes requerem uma instância de cada banco de dados implementado. Atualmente eles precisam ser configurados em `TEST_POSTGRES_URL` e `TEST_MONGODB_URL`, como no exemplo em `.env`.
 
 ## Docker
 
@@ -18,18 +18,19 @@ Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
 
 ```console
 $ docker compose up -d postgres
+$ docker compose up -d mongo
 ```
 
 Existe também um banco de dados para teste, que não persiste dados e que loga todas as queries:
 
 ```console
-$ docker compose up -d postgres_test
+$ docker compose up -d postgres_test mongo_test
 ```
 
 Para visualizar as queries efetuadas:
 
 ```console
-$ docker compose logs postgres_test
+$ docker compose logs postgres_test mongo_test
 ```
 
 As configurações padrão desses bancos são:
@@ -37,7 +38,9 @@ As configurações padrão desses bancos são:
 | Serviço | Ambiente | Variável de ambiente | Valor |
 |---|---|---|---|
 | `postgres` | Desenvolvimento | `DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
-| `postgres_test` | Testes | `TEST_DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
+| `mongo` | Desenvolvimento | `DATABASE_URL` | `mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin` |
+| `postgres_test` | Testes | `TEST_POSTGRES_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
+| `mongo_test` | Testes | `TEST_MONGODB_URL` | `mongodb://minhareceita:minhareceita@localhost:27117/minhareceita?authSource=admin` |
 
 ### Rodando o projeto todo com Docker
 
@@ -83,7 +86,7 @@ Na leitura desses arquivos existem campos que contém um código numérico, mas 
 * Arquivo `Qualificacoes.zip` com a descrição da qualificação de cada pessoa do quadro societário
 * [Arquivo do Tesouro Nacional com os códigos dos municípios do IBGE](https://www.tesourotransparente.gov.br/ckan/dataset/lista-de-municipios-do-siafi/resource/eebb3bc6-9eea-4496-8bcf-304f33155282)
 
-### Estratégia de carregamento dos dados no PostgreSQL
+### Estratégia de carregamento dos dados
 
 A etapa de transformação dos dados, começa criando armazenamentos de chave e valor, com acesso rápido, para completar os dados dos CSVs principais, `Estabelecimentos*`. Isso é feito em memória para os dados que tem outras chaves, e em disco para os dados que tem como chave a base do CNPJ.
 
@@ -94,7 +97,7 @@ A partir daí, cada linha dos `Estabelecimentos*` é lida, enriquecida com esses
 | 1 | Armazena pares de chave e valor em memória para os dados de: `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE | Em memória |
 | 2 | Armazena pares de chave e valor em disco para os dados de: `Empresas*` (já enriquecidas com dados de `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE), `Socios*` (já enriquecidos com pares de chave e valor de `Qualificacoes.zip`) e `Simples.zip` | [Badger](https://dgraph.io/docs/badger/) |
 | 3 | Lê os arquivos `Estabelecimentos*` e os enriquece com os dados das etapas anteriores | Em memória |
-| 4 | Convert o `struct` para JSON e armazena o resultado no banco de dados | PostgreSQL |
+| 4 | Convert o `struct` para JSON e armazena o resultado no banco de dados | Banco de dados |
 
 ## Amostra dos arquivos para testes
 
@@ -107,7 +110,7 @@ $ ./minha-receita transform -d data/sample
 
 Explore mais opções com `--help`.
 
-Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u $TEST_DATABASE_URL` é uma boa forma de evitar isso.
+Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u ` usando `$TEST_POSTGRES_URL` e `$TEST_MONGODB_URL`   é uma boa forma de evitar isso.
 
 ## Documentação
 
