@@ -110,7 +110,7 @@ $ ./minha-receita transform -d data/sample
 
 Explore mais opções com `--help`.
 
-Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u ` usando `$TEST_POSTGRES_URL` ou `$TEST_MONGODB_URL`   é uma boa forma de evitar isso.
+Inconsistências podem acontecer no banco de dados de testes, e `./minha-receita drop -u ` usando `$TEST_POSTGRES_URL` e `$TEST_MONGODB_URL`   é uma boa forma de evitar isso.
 
 ## Documentação
 
