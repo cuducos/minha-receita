@@ -13,9 +13,9 @@ $ docker compose up -d postgres
 $ docker compose up -d mongo
 ```
 
-Usando PostgreSQL a URI será `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable`.
+Usando PostgreSQL, a URI será `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable`.
 
-Usando MongoDB a URI será `mongodb://minhareceita:minhareceita@loocalhost:27017/minhareceita?authSource=admin`.
+Usando MongoDB, a URI será `mongodb://minhareceita:minhareceita@loocalhost:27017/minhareceita?authSource=admin`.
 
 
 ## Download dos dados
