@@ -97,7 +97,7 @@ A partir daí, cada linha dos `Estabelecimentos*` é lida, enriquecida com esses
 | 1 | Armazena pares de chave e valor em memória para os dados de: `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE | Em memória |
 | 2 | Armazena pares de chave e valor em disco para os dados de: `Empresas*` (já enriquecidas com dados de `Cnaes.zip`, `Motivos.zip`, `Municipios.zip`, `Paises.zip`, `Naturezas.zip`, `Qualificacoes.zip` e códigos dos municípios do IBGE), `Socios*` (já enriquecidos com pares de chave e valor de `Qualificacoes.zip`) e `Simples.zip` | [Badger](https://dgraph.io/docs/badger/) |
 | 3 | Lê os arquivos `Estabelecimentos*` e os enriquece com os dados das etapas anteriores | Em memória |
-| 4 | Convert o `struct` para JSON e armazena o resultado no banco de dados | PostgreSQL ou MongoDB |
+| 4 | Convert o `struct` para JSON e armazena o resultado no banco de dados | Banco de dados |
 
 ## Amostra dos arquivos para testes
 
