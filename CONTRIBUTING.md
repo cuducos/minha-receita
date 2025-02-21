@@ -8,7 +8,7 @@ $ staticcheck ./...
 $ go test --race ./...
 ```
 
-Os testes requerem uma instância de cada banco de dados implementado. Atualmente eles precisam ser configurado em `TEST_POSTGRES_URL` e `TEST_MONGODB_URL`, como no exemplo em `.env`.
+Os testes requerem uma instância de cada banco de dados implementado. Atualmente eles precisam ser configurados em `TEST_POSTGRES_URL` e `TEST_MONGODB_URL`, como no exemplo em `.env`.
 
 ## Docker
 
