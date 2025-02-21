@@ -12,7 +12,7 @@ Os testes requerem um banco de dados de teste, com acesso configurado em `TEST_P
 
 ## Docker
 
-### Apenas para o banco de dados Postgres
+### Apenas para o banco de dados PostgresSQL
 
 Caso queira utilizar o Docker apenas para subir o banco de dados, utilize:
 
@@ -37,7 +37,7 @@ As configurações padrão desses bancos são:
 | Serviço | Ambiente | Variável de ambiente | Valor |
 |---|---|---|---|
 | `postgres` | Desenvolvimento | `DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5432/minhareceita?sslmode=disable` |
-| `postgres_test` | Testes | `TEST_DATABASE_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
+| `postgres_test` | Testes | `TEST_POSTGRES_URL` | `postgres://minhareceita:minhareceita@localhost:5555/minhareceita?sslmode=disable` |
 
 ### Apenas para o banco de dados MongoDB
 
@@ -64,7 +64,7 @@ As configurações padrão desses bancos são:
 | Serviço | Ambiente | Variável de ambiente | Valor |
 |---|---|---|---|
 | `mongo` | Desenvolvimento | `DATABASE_URL` | `mongodb://minhareceita:minhareceita@localhost:27017/minhareceita?authSource=admin` |
-| `mongo_test` | Testes | `TEST_DATABASE_URL` | `mongodb://minhareceita:minhareceita@localhost:27117/minhareceita?authSource=admin` |
+| `mongo_test` | Testes | `TEST_MONGODB_URL` | `mongodb://minhareceita:minhareceita@localhost:27117/minhareceita?authSource=admin` |
 
 ### Rodando o projeto todo com Docker
 
