@@ -122,7 +122,7 @@ func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodHead && r.Method != http.MethodGet {
-		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas os métodos GET e HEAD.")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
