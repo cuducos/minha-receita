@@ -1,8 +1,6 @@
 package transform
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -45,12 +43,12 @@ const (
 )
 
 type source struct {
-	kind       sourceType
-	dir        string
-	files      []string
-	readers    []*archivedCSV
-	totalLines int
-	shutdown   int32
+	kind     sourceType
+	dir      string
+	files    []string
+	readers  []*archivedCSV
+	total    int
+	shutdown int32
 }
 
 func (s *source) createReaders() error {
@@ -84,14 +82,10 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countNonEmptyLinesFor(a *archivedCSV, count chan<- int, errs chan<- error) {
+func (s *source) countCSVRows(a *archivedCSV, count chan<- int, errs chan<- error) {
 	var t int
-	r := bufio.NewReader(a.file)
 	for {
-		l, err := r.ReadBytes('\n')
-		if len(bytes.TrimSpace(l)) > 0 {
-			t++
-		}
+		_, err := a.read()
 		if err == io.EOF {
 			break
 		}
@@ -99,11 +93,8 @@ func (s *source) countNonEmptyLinesFor(a *archivedCSV, count chan<- int, errs ch
 			if atomic.CompareAndSwapInt32(&s.shutdown, 0, 1) {
 				errs <- err
 			}
-			return
 		}
-	}
-	if atomic.LoadInt32(&s.shutdown) == 1 {
-		return
+		t++
 	}
 	count <- t
 }
@@ -112,7 +103,7 @@ func (s *source) countLines() error {
 	count := make(chan int)
 	errs := make(chan error)
 	for _, r := range s.readers {
-		go s.countNonEmptyLinesFor(r, count, errs)
+		go s.countCSVRows(r, count, errs)
 	}
 	defer func() {
 		s.resetReaders()
@@ -125,7 +116,7 @@ func (s *source) countLines() error {
 		case err := <-errs:
 			return fmt.Errorf("error counting lines: %w", err)
 		case n := <-count:
-			s.totalLines += n
+			s.total += n
 			done++
 			if done == len(s.readers) {
 				return nil

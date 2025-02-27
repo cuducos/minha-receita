@@ -59,7 +59,7 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	}()
 	var t int
 	for _, src := range srcs {
-		t += src.totalLines
+		t += src.total
 		for _, a := range src.readers {
 			go func(s sourceType, a *archivedCSV) {
 				for {
