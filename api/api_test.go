@@ -153,7 +153,7 @@ func TestHealthHandler(t *testing.T) {
 		{
 			http.MethodPost,
 			http.StatusMethodNotAllowed,
-			`{"message":"Essa URL aceita apenas o método GET."}`,
+			`{"message":"Essa URL aceita apenas os métodos GET e HEAD."}`,
 		},
 		{
 			http.MethodHead,
