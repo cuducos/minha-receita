@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -44,12 +43,12 @@ const (
 )
 
 type source struct {
-	kind       sourceType
-	dir        string
-	files      []string
-	readers    []*archivedCSV
-	totalLines int
-	shutdown   int32
+	kind     sourceType
+	dir      string
+	files    []string
+	readers  []*archivedCSV
+	total    int
+	shutdown int32
 }
 
 func (s *source) createReaders() error {
@@ -83,12 +82,10 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV, count chan<- int, errs chan<- error) {
+func (s *source) countCSVRows(a *archivedCSV, count chan<- int, errs chan<- error) {
 	var t int
-	buf := make([]byte, 32*1024)
 	for {
-		c, err := a.file.Read(buf)
-		t += bytes.Count(buf[:c], []byte{'\n'})
+		_, err := a.read()
 		if err == io.EOF {
 			break
 		}
@@ -96,11 +93,8 @@ func (s *source) countLinesFor(a *archivedCSV, count chan<- int, errs chan<- err
 			if atomic.CompareAndSwapInt32(&s.shutdown, 0, 1) {
 				errs <- err
 			}
-			return
 		}
-	}
-	if atomic.LoadInt32(&s.shutdown) == 1 {
-		return
+		t++
 	}
 	count <- t
 }
@@ -109,7 +103,7 @@ func (s *source) countLines() error {
 	count := make(chan int)
 	errs := make(chan error)
 	for _, r := range s.readers {
-		go s.countLinesFor(r, count, errs)
+		go s.countCSVRows(r, count, errs)
 	}
 	defer func() {
 		s.resetReaders()
@@ -122,7 +116,7 @@ func (s *source) countLines() error {
 		case err := <-errs:
 			return fmt.Errorf("error counting lines: %w", err)
 		case n := <-count:
-			s.totalLines += n
+			s.total += n
 			done++
 			if done == len(s.readers) {
 				return nil

@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"io"
+	"log"
 	"sync"
 	"sync/atomic"
 
@@ -76,10 +77,15 @@ func (t *venuesTask) consumeRows() {
 	defer t.shutdownWaitGroup.Done()
 	var b []Company
 	for r := range t.rows {
+		if len(r) != 30 {
+			log.Output(1, fmt.Sprintf("Skipping row with %d columns (expected 30): %v", len(r), r))
+			t.saved <- 1
+			continue
+		}
 		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
 			return
 		}
-		if int(atomic.AddInt32(&t.sentToBatches, 1)) == t.source.totalLines {
+		if int(atomic.AddInt32(&t.sentToBatches, 1)) == t.source.total {
 			close(t.rows)
 		}
 		c, err := newCompany(r, t.lookups, t.kv, t.privacy)
@@ -127,7 +133,7 @@ func (t *venuesTask) run(m int) error {
 		go t.consumeRows()
 	}
 	defer func() {
-		if t.source.totalLines != int(t.sentToBatches) {
+		if t.source.total != int(t.sentToBatches) {
 			close(t.rows)
 		}
 		if atomic.LoadInt32(&t.shutdown) == 1 {
@@ -166,7 +172,7 @@ func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b 
 		rows:          make(chan []string),
 		saved:         make(chan int),
 		errors:        make(chan error),
-		bar:           progressbar.Default(int64(v.totalLines)),
+		bar:           progressbar.Default(int64(v.total)),
 	}
 	t.bar.Describe("Creating the JSON data for each CNPJ")
 	return &t, nil

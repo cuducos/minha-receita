@@ -43,7 +43,7 @@ func TestSource(t *testing.T) {
 	if len(s.readers) != 2 {
 		t.Errorf("expected a source with 2 readers, got %d", len(s.readers))
 	}
-	if s.totalLines != 2 {
-		t.Errorf("expected a source with 2 lines, got %d", s.totalLines)
+	if s.total != 2 {
+		t.Errorf("expected a source with 2 lines, got %d", s.total)
 	}
 }
