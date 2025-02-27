@@ -149,6 +149,7 @@ func (t *venuesTask) run(m int) error {
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
+				log.Output(1, "Consolidating the database…")
 				return t.db.PostLoad()
 			}
 		}
