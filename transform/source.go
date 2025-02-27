@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -83,12 +84,14 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countLinesFor(a *archivedCSV, count chan<- int, errs chan<- error) {
+func (s *source) countNonEmptyLinesFor(a *archivedCSV, count chan<- int, errs chan<- error) {
 	var t int
-	buf := make([]byte, 32*1024)
+	r := bufio.NewReader(a.file)
 	for {
-		c, err := a.file.Read(buf)
-		t += bytes.Count(buf[:c], []byte{'\n'})
+		l, err := r.ReadBytes('\n')
+		if len(bytes.TrimSpace(l)) > 0 {
+			t++
+		}
 		if err == io.EOF {
 			break
 		}
@@ -109,7 +112,7 @@ func (s *source) countLines() error {
 	count := make(chan int)
 	errs := make(chan error)
 	for _, r := range s.readers {
-		go s.countLinesFor(r, count, errs)
+		go s.countNonEmptyLinesFor(r, count, errs)
 	}
 	defer func() {
 		s.resetReaders()
