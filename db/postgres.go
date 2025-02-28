@@ -212,3 +212,18 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	}
 	return p, nil
 }
+
+func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
+	cols := strings.Join(idxs, ", ")
+	fmt.Println(companyTableName)
+	fmt.Println(p.CompanyTableFullName())
+	query := fmt.Sprintf(
+		"CREATE INDEX IF NOT EXISTS %s_pk ON %s (%s);",
+		companyTableName, p.JSONFieldName, cols,
+	)
+	if _, err := p.pool.Exec(context.Background(), query); err != nil {
+		return fmt.Errorf("error to create indexes %s: %w", cols, err)
+	}
+	log.Output(1, "Indexes created")
+	return nil
+}
