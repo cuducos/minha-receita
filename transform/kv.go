@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync/atomic"
+	"time"
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/dgraph-io/badger/v4"
@@ -45,6 +46,22 @@ type badgerStorage struct {
 	path string
 }
 
+func (kv *badgerStorage) garbageCollect() {
+	for {
+		err := kv.db.RunValueLogGC(0.5)
+		if err == badger.ErrRejected { // db already closed or more than one gc running
+			return
+		}
+		if err == badger.ErrNoRewrite { // no garbage to collect
+			return
+		}
+		if err != nil {
+			log.Output(1, fmt.Sprintf("Error running garbage collection: %v", err))
+			return
+		}
+	}
+}
+
 func (kv *badgerStorage) load(dir string, l *lookups) error {
 	srcs, err := newSources(dir, []sourceType{base, partners, taxes})
 	if err != nil {
@@ -53,9 +70,16 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	items := make(chan struct{})
 	errs := make(chan error)
 	var shutdown int32
+	tic := time.NewTicker(3 * time.Minute)
 	defer func() {
+		tic.Stop()
 		close(items)
 		close(errs)
+	}()
+	go func() {
+		for range tic.C {
+			kv.garbageCollect()
+		}
 	}()
 	var t int
 	for _, src := range srcs {
@@ -173,8 +197,8 @@ func (*noLogger) Warningf(string, ...interface{}) {}
 func (*noLogger) Infof(string, ...interface{})    {}
 func (*noLogger) Debugf(string, ...interface{})   {}
 
-func newBadgerStorage(dir string) (*badgerStorage, error) {
-	opt := badger.DefaultOptions(dir)
+func newBadgerStorage(dir string, ro bool) (*badgerStorage, error) {
+	opt := badger.DefaultOptions(dir).WithReadOnly(ro)
 	if os.Getenv("DEBUG") != "" {
 		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", dir))
 	} else {

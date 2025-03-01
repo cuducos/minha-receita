@@ -113,7 +113,7 @@ func TestNewCompany(t *testing.T) {
 			t.Fatal("error creating temporary key-value storage: %w", err)
 		}
 		defer os.RemoveAll(tmp)
-		kv, err := newBadgerStorage(tmp)
+		kv, err := newBadgerStorage(tmp, false)
 		if err != nil {
 			t.Errorf("expected no error creating badger, got %s", err)
 		}
@@ -269,7 +269,7 @@ func TestNewCompany(t *testing.T) {
 			t.Fatal("error creating temporary key-value storage: %w", err)
 		}
 		defer os.RemoveAll(tmp)
-		kv, err := newBadgerStorage(tmp)
+		kv, err := newBadgerStorage(tmp, false)
 		if err != nil {
 			t.Errorf("expected no error creating badger, got %s", err)
 		}

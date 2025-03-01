@@ -16,10 +16,11 @@ $ git clone https://github.com/cuducos/minha-receita.git
 
 _Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
 
-É necessário cerca de 150Gb disponíveis de espaço em disco para armazenar os dados:
+É necessário cerca de 160Gb disponíveis de espaço em disco para armazenar os dados:
 
 * Os arquivos da Receita federal tem cerca de 6Gb
 * O banco de dados gerado utiliza cerca de 140Gb
+* O processo de importação utiliza uma estrutura temporária de cerca de 10Gb
 
 ### Requisitos e instalação
 

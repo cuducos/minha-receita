@@ -45,7 +45,7 @@ func saveUpdatedAt(db database, dir string) error {
 }
 
 func createKeyValueStorage(dir string, pth string, l lookups) error {
-	kv, err := newBadgerStorage(pth)
+	kv, err := newBadgerStorage(pth, false)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
@@ -57,7 +57,7 @@ func createKeyValueStorage(dir string, pth string, l lookups) error {
 }
 
 func createJSONs(dir string, pth string, db database, l lookups, maxParallelDBQueries, batchSize int, privacy bool) error {
-	kv, err := newBadgerStorage(pth)
+	kv, err := newBadgerStorage(pth, true)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
