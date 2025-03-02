@@ -49,7 +49,7 @@ type venuesTask struct {
 func (t *venuesTask) produceRows() {
 	for _, r := range t.source.readers {
 		t.shutdownWaitGroup.Add(1)
-		go func(t *venuesTask, a *archivedCSV) {
+		go func(t *venuesTask, a *archivedCSVs) {
 			defer t.shutdownWaitGroup.Done()
 			for {
 				if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.

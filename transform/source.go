@@ -30,31 +30,54 @@ func pathsForSource(t sourceType, dir string) ([]string, error) {
 type sourceType string
 
 const (
-	venues         sourceType = "Estabelecimentos"
-	motives        sourceType = "Motivos"
-	base           sourceType = "Empresas"
-	cities         sourceType = "Municipios"
-	cnaes          sourceType = "Cnaes"
-	countries      sourceType = "Paises"
-	natures        sourceType = "Naturezas"
-	partners       sourceType = "Socios"
-	qualifications sourceType = "Qualificacoes"
-	taxes          sourceType = "Simples"
+	venues           sourceType = "Estabelecimentos"
+	motives          sourceType = "Motivos"
+	base             sourceType = "Empresas"
+	cities           sourceType = "Municipios"
+	cnaes            sourceType = "Cnaes"
+	countries        sourceType = "Paises"
+	natures          sourceType = "Naturezas"
+	partners         sourceType = "Socios"
+	qualifications   sourceType = "Qualificacoes"
+	simpleTaxes      sourceType = "Simples"
+	realProfit       sourceType = "Lucro Real"
+	presumedProfit   sourceType = "Lucro Presumido"
+	arbitratedProfit sourceType = "Lucro Arbitrado"
+	noTaxes          sourceType = "Imunes e Isentas"
 )
 
 type source struct {
 	kind     sourceType
 	dir      string
 	files    []string
-	readers  []*archivedCSV
+	readers  []*archivedCSVs
 	total    int
 	shutdown int32
 }
 
 func (s *source) createReaders() error {
-	s.readers = make([]*archivedCSV, len(s.files))
+	s.readers = make([]*archivedCSVs, len(s.files))
 	for i, p := range s.files {
-		r, err := newArchivedCSV(p, separator)
+		var h bool
+		var sep rune
+		switch s.kind {
+		case realProfit:
+			sep = ','
+			h = true
+		case presumedProfit:
+			sep = ','
+			h = true
+		case arbitratedProfit:
+			sep = ','
+			h = true
+		case noTaxes:
+			sep = ','
+			h = true
+		default:
+			sep = ';'
+			h = false
+		}
+		r, err := newArchivedCSV(p, sep, h)
 		if err != nil {
 			return fmt.Errorf("error reading %s: %w", p, err)
 		}
@@ -82,7 +105,7 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countCSVRows(a *archivedCSV, count chan<- int, errs chan<- error) {
+func (s *source) countCSVRows(a *archivedCSVs, count chan<- int, errs chan<- error) {
 	var t int
 	for {
 		_, err := a.read()
@@ -163,6 +186,7 @@ func newSources(dir string, kinds []sourceType) ([]*source, error) {
 			return nil, fmt.Errorf("error loading sources: %w", err)
 		case src := <-done:
 			srcs = append(srcs, src)
+			log.Output(1, fmt.Sprintf("[%d/%d] %s loaded!", len(srcs), len(kinds), src.kind))
 			if len(srcs) == len(kinds) {
 				return srcs, nil
 			}

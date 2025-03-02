@@ -74,7 +74,7 @@ var (
 	}
 )
 
-func toBytes(t *testing.T, i interface{}) []byte {
+func toBytes(t *testing.T, i any) []byte {
 	b, err := json.Marshal(i)
 	if err != nil {
 		t.Fatalf("error marshaling %v: %s", i, err)
@@ -170,11 +170,11 @@ func TestSaveAndReadItems(t *testing.T) {
 		defer db.Close()
 		d := newTestTaxes()
 		v := toBytes(t, d)
-		err := saveItem(db, taxes, []byte(keyForTaxes(testBaseCNPJ)), v)
+		err := saveItem(db, simpleTaxes, []byte(keyForSimpleTaxes(testBaseCNPJ)), v)
 		if err != nil {
 			t.Errorf("expected no error saving partner, got %s", err)
 		}
-		got, err := taxesOf(db, testBaseCNPJ)
+		got, err := simpleTaxesOf(db, testBaseCNPJ)
 		if err != nil {
 			t.Errorf("expected no error reading taxes, got %s", err)
 		}

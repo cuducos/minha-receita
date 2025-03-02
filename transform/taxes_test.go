@@ -5,17 +5,17 @@ import (
 	"time"
 )
 
-func newTestTaxes() taxesData {
+func newTestTaxes() simpleTaxesData {
 	simples := true
 	dtSimples := date(time.Date(2022, time.December, 17, 0, 0, 0, 0, time.UTC))
 	mei := false
 	inMEI := date(time.Date(2022, time.November, 18, 0, 0, 0, 0, time.UTC))
 	outMEI := date(time.Date(2022, time.December, 1, 0, 0, 0, 0, time.UTC))
-	return taxesData{&simples, &dtSimples, nil, &mei, &inMEI, &outMEI}
+	return simpleTaxesData{&simples, &dtSimples, nil, &mei, &inMEI, &outMEI}
 }
 
 var (
-	taxesCSVRow = []string{
+	simpleTaxesCSVRow = []string{
 		"BASE DO CNPJ",
 		"S",        // OpcaoPeloSimples
 		"20221217", // DataOpcaoPeloSimples
@@ -27,7 +27,7 @@ var (
 )
 
 func TestNewTaxes(t *testing.T) {
-	d, err := newTaxesData(taxesCSVRow)
+	d, err := newSimpleTaxesData(simpleTaxesCSVRow)
 	if err != nil {
 		t.Errorf("expected no error creating taxes data, got %s", err)
 	}
@@ -53,7 +53,7 @@ func TestNewTaxes(t *testing.T) {
 
 func TestLoadTaxesRow(t *testing.T) {
 	expected := `{"opcao_pelo_simples":true,"data_opcao_pelo_simples":"2022-12-17","data_exclusao_do_simples":null,"opcao_pelo_mei":false,"data_opcao_pelo_mei":"2022-11-18","data_exclusao_do_mei":"2022-12-01"}`
-	d, err := loadTaxesRow(&lookups{}, taxesCSVRow)
+	d, err := loadSimpleTaxesRow(&lookups{}, simpleTaxesCSVRow)
 	if err != nil {
 		t.Errorf("expected no error loading taxes data row, got %s", err)
 	}

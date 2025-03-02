@@ -99,7 +99,7 @@ func TestToBool(t *testing.T) {
 	for _, c := range tc {
 		got := toBool(c.value)
 		if got == nil && c.expected != nil {
-			t.Errorf("expected %s to be nil, got %t", c.value, *got)
+			t.Errorf("expected %s to be nil, got nil", c.value)
 		}
 		if got != nil && *got != *c.expected {
 			t.Errorf("expected %s to be %t, got %t", c.value, *c.expected, *got)
