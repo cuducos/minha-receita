@@ -214,16 +214,34 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 }
 
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
-	cols := strings.Join(idxs, ", ")
-	fmt.Println(companyTableName)
-	fmt.Println(p.CompanyTableFullName())
-	query := fmt.Sprintf(
-		"CREATE INDEX IF NOT EXISTS %s_pk ON %s (%s);",
-		companyTableName, p.JSONFieldName, cols,
-	)
-	if _, err := p.pool.Exec(context.Background(), query); err != nil {
-		return fmt.Errorf("error to create indexes %s: %w", cols, err)
+	for _, v := range idxs {
+		t := "((json->'" + v + "'))"
+		iname := "json_"
+		qsa := []string{"pais", "nome_socio", "codigo_pais", "faixa_etaria", "cnpj_cpf_do_socio", "qualificacao_socio", "codigo_faixa_etaria", "data_entrada_sociedade", "identificador_de_socio", "cpf_representante_legal", "nome_representante_legal", "codigo_qualificacao_socio", "qualificacao_representante_legal", "codigo_qualificacao_representante_legal"}
+		for _, v_qsa := range qsa {
+			if v == v_qsa {
+				t = "(jsonb_extract_path(json, 'qsa', '" + v_qsa + "') jsonb_ops)"
+				iname += "qsa_"
+				break
+			}
+		}
+		cnae := []string{"codigo", "descricao"}
+		for _, v_cnae := range cnae {
+			if v == v_cnae {
+				t = "(jsonb_extract_path(json, 'cnae', '" + v_cnae + "') jsonb_ops)"
+				iname += "cnae_"
+				break
+			}
+		}
+		q := fmt.Sprintf(
+			"CREATE INDEX IF NOT EXISTS idx_%s%s ON %s USING GIN %s;",
+			iname, v, p.CompanyTableName, t,
+		)
+		if _, err := p.pool.Exec(context.Background(), q); err != nil {
+			return fmt.Errorf("error to create indexe %s: %w", v, err)
+		}
+		log.Output(1, "Indexe "+v+" created")
 	}
-	log.Output(1, "Indexes created")
+
 	return nil
 }
