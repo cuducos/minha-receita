@@ -68,6 +68,7 @@ $ curl https://minhareceita.org/33683111000280
     "porte": "DEMAIS",
     "ente_federativo_responsavel": null,
     "descricao_porte": "",
+    "regime_tributario": null,
     "qsa": [
         {
             "identificador_de_socio": 2,

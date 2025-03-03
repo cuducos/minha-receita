@@ -6,10 +6,12 @@ import (
 	"strings"
 )
 
+var separator = ';'
+
 type lookup map[int]string
 
 func newLookup(p string) (lookup, error) {
-	z, err := newArchivedCSV(p, separator)
+	z, err := newArchivedCSV(p, separator, false)
 	if err != nil {
 		return nil, fmt.Errorf("error creating archivedCSV for %s: %w", p, err)
 	}

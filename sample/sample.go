@@ -18,11 +18,11 @@ import (
 )
 
 const (
-	// MaxLines to use when creating sample data
-	MaxLines = 10000
+	// DefaultMaxLines to use when creating sample data
+	DefaultMaxLines = 10000
 
-	// TargetDir to use when creating sample data
-	TargetDir = "sample"
+	// DefaultTargetDir to use when creating sample data
+	DefaultTargetDir = "sample"
 )
 
 func sampleLines(r io.Reader, w io.Writer, m int) error {

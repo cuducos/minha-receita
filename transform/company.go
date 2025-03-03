@@ -64,6 +64,7 @@ type Company struct {
 	DescricaoPorte                   string        `json:"descricao_porte"`
 	QuadroSocietario                 []PartnerData `json:"qsa"`
 	CNAESecundarios                  []Cnae        `json:"cnaes_secundarios"`
+	RegimeTributario                 TaxRegimes    `json:"regime_tributario"`
 }
 
 func (c *Company) situacaoCadastral(v string) error {

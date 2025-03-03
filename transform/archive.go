@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,44 +12,43 @@ import (
 	"golang.org/x/text/encoding/charmap"
 )
 
-const separator = ';'
-
 var multipleSpaces = regexp.MustCompile(`\s{2,}`)
 
-type archivedCSV struct {
-	path    string
-	file    io.ReadCloser
-	reader  *csv.Reader
-	toClose []io.Closer
+type archivedCSVs struct {
+	path      string
+	zipReader io.Closer
+	files     []io.ReadCloser
+	readers   []*csv.Reader
+	reading   int
 }
 
-func newArchivedCSV(p string, s rune) (*archivedCSV, error) {
+func newArchivedCSV(p string, s rune, h bool) (*archivedCSVs, error) {
 	r, err := zip.OpenReader(p)
 	if err != nil {
 		return nil, fmt.Errorf("error opening archive %s: %w", p, err)
 	}
-
-	var a *archivedCSV
-	t := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
+	var a *archivedCSVs
+	var fs []io.ReadCloser
+	var cs []*csv.Reader
 	for _, z := range r.File {
 		if z.FileInfo().IsDir() {
 			continue
 		}
-
 		f, err := z.Open()
 		if err != nil {
 			return nil, fmt.Errorf("error reading archived file %s in %s: %w", z.Name, p, err)
 		}
-
 		c := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(f))
 		c.Comma = s
-		a = &archivedCSV{p, f, c, []io.Closer{f, r}}
-		break
+		if h {
+			if _, err := c.Read(); err != nil {
+				return nil, fmt.Errorf("error skipping header of %s in %s: %w", z.Name, p, err)
+			}
+		}
+		fs = append(fs, f)
+		cs = append(cs, c)
 	}
-
-	if a == nil {
-		return nil, fmt.Errorf("could not find file %s in the archive %s", t, p)
-	}
+	a = &archivedCSVs{p, r, fs, cs, 0}
 	return a, nil
 }
 
@@ -61,10 +59,14 @@ func removeNulChar(r rune) rune {
 	return r
 }
 
-func (a *archivedCSV) read() ([]string, error) {
-	ls, err := a.reader.Read()
+func (a *archivedCSVs) read() ([]string, error) {
+	if a.reading >= len(a.readers) {
+		return []string{}, io.EOF
+	}
+	ls, err := a.readers[a.reading].Read()
 	if err == io.EOF {
-		return []string{}, err
+		a.reading += 1
+		return a.read()
 	}
 	if err != nil {
 		return []string{}, fmt.Errorf("error reading archived csv line from %s: %w", a.path, err)
@@ -75,16 +77,19 @@ func (a *archivedCSV) read() ([]string, error) {
 	return ls, nil
 }
 
-func (a *archivedCSV) close() error {
-	for _, i := range a.toClose {
-		if err := i.Close(); err != nil {
+func (a *archivedCSVs) close() error {
+	for _, f := range a.files {
+		if err := f.Close(); err != nil {
 			return fmt.Errorf("error closing resource from archive %s: %w", a.path, err)
 		}
+	}
+	if err := a.zipReader.Close(); err != nil {
+		return fmt.Errorf("error closing archive %s: %w", a.path, err)
 	}
 	return nil
 }
 
-func (a *archivedCSV) toLookup() (lookup, error) {
+func (a *archivedCSVs) toLookup() (lookup, error) {
 	m := make(map[int]string)
 	for {
 		l, err := a.read()

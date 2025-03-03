@@ -27,9 +27,21 @@ func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
 	case base:
 		i.key = []byte(keyForBase(r[0]))
 		h = loadBaseRow
-	case taxes:
-		i.key = []byte(keyForTaxes(r[0]))
-		h = loadTaxesRow
+	case simpleTaxes:
+		i.key = []byte(keyForSimpleTaxes(r[0]))
+		h = loadSimpleTaxesRow
+	case realProfit:
+		i.key = []byte(keyForTaxRegime(r[1]))
+		h = loadTaxRow
+	case presumedProfit:
+		i.key = []byte(keyForTaxRegime(r[1]))
+		h = loadTaxRow
+	case arbitratedProfit:
+		i.key = []byte(keyForTaxRegime(r[1]))
+		h = loadTaxRow
+	case noTaxes:
+		i.key = []byte(keyForTaxRegime(r[1]))
+		h = loadTaxRow
 	default:
 		return item{}, fmt.Errorf("unknown source type %s", string(s))
 	}
@@ -63,7 +75,15 @@ func (kv *badgerStorage) garbageCollect() {
 }
 
 func (kv *badgerStorage) load(dir string, l *lookups) error {
-	srcs, err := newSources(dir, []sourceType{base, partners, taxes})
+	srcs, err := newSources(dir, []sourceType{
+		base,
+		partners,
+		simpleTaxes,
+		noTaxes,
+		presumedProfit,
+		realProfit,
+		arbitratedProfit,
+	})
 	if err != nil {
 		return fmt.Errorf("could not load sources: %w", err)
 	}
@@ -85,7 +105,7 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	for _, src := range srcs {
 		t += src.total
 		for _, a := range src.readers {
-			go func(s sourceType, a *archivedCSV) {
+			go func(s sourceType, a *archivedCSVs) {
 				for {
 					r, err := a.read()
 					if err == io.EOF {
@@ -136,7 +156,8 @@ func (kv *badgerStorage) enrichCompany(c *Company) error {
 	n := cnpj.Base(c.CNPJ)
 	ps := make(chan []PartnerData)
 	bs := make(chan baseData)
-	ts := make(chan taxesData)
+	st := make(chan simpleTaxesData)
+	tr := make(chan TaxRegimes)
 	errs := make(chan error)
 	go func() {
 		p, err := partnersOf(kv.db, n)
@@ -153,13 +174,20 @@ func (kv *badgerStorage) enrichCompany(c *Company) error {
 		bs <- v
 	}()
 	go func() {
-		t, err := taxesOf(kv.db, n)
+		t, err := simpleTaxesOf(kv.db, n)
 		if err != nil {
 			errs <- err
 		}
-		ts <- t
+		st <- t
 	}()
-	for i := 0; i < 3; i++ {
+	go func() {
+		t, err := taxRegimeOf(kv.db, c.CNPJ)
+		if err != nil {
+			errs <- err
+		}
+		tr <- t
+	}()
+	for range [4]int{} {
 		select {
 		case p := <-ps:
 			c.QuadroSocietario = p
@@ -172,13 +200,15 @@ func (kv *badgerStorage) enrichCompany(c *Company) error {
 			c.QualificacaoDoResponsavel = v.QualificacaoDoResponsavel
 			c.CapitalSocial = v.CapitalSocial
 			c.EnteFederativoResponsavel = v.EnteFederativoResponsavel
-		case t := <-ts:
+		case t := <-st:
 			c.OpcaoPeloSimples = t.OpcaoPeloSimples
 			c.DataOpcaoPeloSimples = t.DataOpcaoPeloSimples
 			c.DataExclusaoDoSimples = t.DataExclusaoDoSimples
 			c.OpcaoPeloMEI = t.OpcaoPeloMEI
 			c.DataOpcaoPeloMEI = t.DataOpcaoPeloMEI
 			c.DataExclusaoDoMEI = t.DataExclusaoDoMEI
+		case t := <-tr:
+			c.RegimeTributario = t
 		case err := <-errs:
 			return fmt.Errorf("error enriching company: %w", err)
 		}
@@ -192,10 +222,10 @@ func (b *badgerStorage) close() error {
 
 type noLogger struct{}
 
-func (*noLogger) Errorf(string, ...interface{})   {}
-func (*noLogger) Warningf(string, ...interface{}) {}
-func (*noLogger) Infof(string, ...interface{})    {}
-func (*noLogger) Debugf(string, ...interface{})   {}
+func (*noLogger) Errorf(string, ...any)   {}
+func (*noLogger) Warningf(string, ...any) {}
+func (*noLogger) Infof(string, ...any)    {}
+func (*noLogger) Debugf(string, ...any)   {}
 
 func newBadgerStorage(dir string, ro bool) (*badgerStorage, error) {
 	opt := badger.DefaultOptions(dir).WithReadOnly(ro)

@@ -55,7 +55,7 @@ func downloadNationalTreasure(dir string, skip bool) error {
 	return nil
 }
 
-// Download all the files (might take days).
+// Download all the files (might take hours).
 func Download(dir string, timeout time.Duration, skip, restart bool, parallel int, retries uint, chunkSize int64) error {
 	log.Output(1, "Downloading file(s) from the National Treasure…")
 	if err := downloadNationalTreasure(dir, skip); err != nil {
@@ -66,6 +66,11 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel in
 	if err != nil {
 		return fmt.Errorf("error gathering resources for download: %w", err)
 	}
+	tr, err := getURLs(taxRegimeURL, taxRegimeGetURLs, dir, skip)
+	if err != nil {
+		return fmt.Errorf("error gathering resources for download: %w", err)
+	}
+	urls = append(urls, tr...)
 	if len(urls) == 0 {
 		return nil
 	}
@@ -92,8 +97,8 @@ func DownloadFromMirror(mirror string, dir string, timeout time.Duration, skip, 
 
 // URLs shows the URLs to be downloaded.
 func URLs(dir string, skip bool) error {
-	urls := []string{federalRevenueURL, nationalTreasureBaseURL}
-	handlers := []getURLsHandler{federalRevenueGetURLs, nationalTreasureGetURLs}
+	urls := []string{federalRevenueURL, nationalTreasureBaseURL, taxRegimeURL}
+	handlers := []getURLsHandler{federalRevenueGetURLs, nationalTreasureGetURLs, taxRegimeGetURLs}
 	var out []string
 	for idx := range urls {
 		u, err := getURLs(urls[idx], handlers[idx], dir, skip)
