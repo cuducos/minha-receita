@@ -17,7 +17,7 @@ func TestArchivedCSV(t *testing.T) {
 		}
 
 		var got [][]string
-		z, err := newArchivedCSV(path, separator)
+		z, err := newArchivedCSV(path, separator, false)
 		if err != nil {
 			t.Errorf("error creating archived CSV for the test: %s", err)
 		}
@@ -38,7 +38,7 @@ func TestArchivedCSV(t *testing.T) {
 	})
 
 	t.Run("close", func(t *testing.T) {
-		z, err := newArchivedCSV(path, separator)
+		z, err := newArchivedCSV(path, separator, false)
 		if err != nil {
 			t.Errorf("error creating archived CSV for the test: %s", err)
 		}
@@ -54,7 +54,7 @@ func TestArchivedCSVToLookup(t *testing.T) {
 	expected[0] = "SEM MOTIVO"
 	expected[1] = "EXTINCAO POR ENCERRAMENTO LIQUIDACAO VOLUNTARIA"
 
-	z, err := newArchivedCSV(path, separator)
+	z, err := newArchivedCSV(path, separator, false)
 	if err != nil {
 		t.Errorf("expected no error creating an archivedCSV with %s, got %s", path, err)
 	}

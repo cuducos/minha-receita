@@ -1,12 +1,10 @@
 # Instalação local
 
-## Requisitos
-
 Existem três formas de rodar essa aplicação localmente:
 
 * ou com a imagem Docker
 * ou gerando o binário a partir do código fonte
-* ou com Docker Compose — apenas para desenvolvimento (não é recomendado para o banco de dados completo por problemas de lentidão)
+* ou com Docker Compose — apenas para desenvolvimento (não recomendado para o banco de dados completo)
 
 As duas últimas alternativas necessitam do código fonte. Você pode usar o Git para baixar o código do projeto:
 
@@ -14,17 +12,15 @@ As duas últimas alternativas necessitam do código fonte. Você pode usar o Git
 $ git clone https://github.com/cuducos/minha-receita.git
 ```
 
-_Talvez_ seja necessário um sistema UNIX (Linux ou macOS), mas não tenho certeza pois não testei em Windows.
+## Requisitos e instalação
 
 É necessário cerca de 160Gb disponíveis de espaço em disco para armazenar os dados:
 
-* Os arquivos da Receita federal tem cerca de 6Gb
+* Os arquivos da Receita federal tem cerca de 7Gb
 * O banco de dados gerado utiliza cerca de 140Gb
 * O processo de importação utiliza uma estrutura temporária de cerca de 10Gb
 
-### Requisitos e instalação
-
-#### Imagem Docker
+### Imagem Docker
 
 * [Docker](https://www.docker.com/)
 
@@ -34,7 +30,7 @@ Baixar a imagem com:
 $ docker pull ghcr.io/cuducos/minha-receita:main
 ```
 
-#### A partir do código fonte
+### A partir do código fonte
 
 * [Go](https://golang.org/) versão 1.23
 
@@ -45,7 +41,7 @@ $ go get
 $ go build -o /usr/local/bin/minha-receita main.go
 ```
 
-#### Docker Compose
+### Docker Compose
 
 * [Docker](https://www.docker.com/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
@@ -66,8 +62,8 @@ Várias configurações podem ser passadas para a CLI, e elas estão documentada
 #### Imagem Docker
 
 ```console
-$ docker run --rm ghcr.io/cuducos/minha-receita:main --help --help
-$ docker run --rm ghcr.io/cuducos/minha-receita:main --help api --help
+$ docker run --rm ghcr.io/cuducos/minha-receita:main --help
+$ docker run --rm ghcr.io/cuducos/minha-receita:main api --help
 ```
 
 #### A partir do código fonte

@@ -28,11 +28,13 @@ const (
 
 	// Zipped CSV source
 	federalRevenueURL = "https://arquivos.receitafederal.gov.br/cnpj/dados_abertos_cnpj"
+	taxRegimeURL      = "https://arquivos.receitafederal.gov.br/dados/cnpj/regime_tributario"
 )
 
 var datePattern = regexp.MustCompile(`Data da última extração:? +(?P<updatedAt>\d{2}/\d{2}/\d{4})`)
 var yearMonthPattern = regexp.MustCompile(`href="(\d{4}-\d{2}/)"`)
 var filePattern = regexp.MustCompile(`href="(\w+\d?\.zip)"`)
+var taxRegimePattern = regexp.MustCompile(`href="((Imune|Lucro).+\.zip)"`)
 
 func httpGet(url string) (string, error) {
 	c := http.Client{}
@@ -84,6 +86,18 @@ func federalRevenueGetURLs(url string) ([]string, error) {
 	var urls []string
 	for _, m := range filePattern.FindAllStringSubmatch(b, -1) {
 		urls = append(urls, u+m[1])
+	}
+	return urls, nil
+}
+
+func taxRegimeGetURLs(url string) ([]string, error) {
+	b, err := httpGet(url)
+	if err != nil {
+		return nil, fmt.Errorf("error getting %s: %w", url, err)
+	}
+	var urls []string
+	for _, m := range taxRegimePattern.FindAllStringSubmatch(b, -1) {
+		urls = append(urls, url+"/"+m[1])
 	}
 	return urls, nil
 }

@@ -31,12 +31,12 @@ var sampleCmd = &cobra.Command{
 
 func sampleCLI() *cobra.Command {
 	sampleCmd = addDataDir(sampleCmd)
-	sampleCmd.Flags().IntVarP(&maxLines, "max-lines", "m", sample.MaxLines, "maximum lines per file")
+	sampleCmd.Flags().IntVarP(&maxLines, "max-lines", "m", sample.DefaultMaxLines, "maximum lines per file")
 	sampleCmd.Flags().StringVarP(
 		&targetDir,
 		"target-directory",
 		"t",
-		filepath.Join(defaultDataDir, sample.TargetDir),
+		filepath.Join(defaultDataDir, sample.DefaultTargetDir),
 		"directory for the sample CSV files",
 	)
 	sampleCmd.Flags().StringVarP(
