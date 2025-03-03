@@ -223,3 +223,21 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 	}
 	return string(b), nil
 }
+
+func (m *MongoDB) ExtraIndexes(idxs []string) error {
+	log.Output(1, "Creating the indexes...")
+	c := m.db.Collection(companyTableName)
+	var i []mongo.IndexModel
+	for _, field := range idxs {
+		i = append(i, mongo.IndexModel{
+			Keys: bson.D{{Key: field, Value: 1}},
+		})
+	}
+	_, err := c.Indexes().CreateMany(m.ctx, i)
+	if err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("Indexes successfully created in the collection %s", companyTableName))
+	return nil
+
+}
