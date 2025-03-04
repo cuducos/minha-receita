@@ -69,7 +69,7 @@ var dropCmd = &cobra.Command{
 
 var extraIndexesCmd = &cobra.Command{
 	Use:   "extra-indexes",
-	Short: "Creates indexes in database", //Acho que essa explicacao pode melhorar
+	Short: "Creates extra indexes in the company field",
 	RunE: func(_ *cobra.Command, args []string) error {
 		db, err := loadDatabase()
 		if err != nil {
