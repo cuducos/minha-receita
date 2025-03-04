@@ -220,7 +220,7 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		qsa := []string{"pais", "nome_socio", "codigo_pais", "faixa_etaria", "cnpj_cpf_do_socio", "qualificacao_socio", "codigo_faixa_etaria", "data_entrada_sociedade", "identificador_de_socio", "cpf_representante_legal", "nome_representante_legal", "codigo_qualificacao_socio", "qualificacao_representante_legal", "codigo_qualificacao_representante_legal"}
 		for _, v_qsa := range qsa {
 			if v == v_qsa {
-				t = "(jsonb_extract_path(json, 'qsa', '" + v_qsa + "') jsonb_ops)"
+				t = fmt.Sprintf("(jsonb_extract_path(json, 'qsa', '%s') jsonb_ops)", v_qsa)
 				iname += "qsa_"
 				break
 			}
@@ -228,7 +228,7 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		cnae := []string{"codigo", "descricao"}
 		for _, v_cnae := range cnae {
 			if v == v_cnae {
-				t = "(jsonb_extract_path(json, 'cnae', '" + v_cnae + "') jsonb_ops)"
+				t = fmt.Sprintf("(jsonb_extract_path(json, 'cnae', '%s') jsonb_ops)", v_cnae)
 				iname += "cnae_"
 				break
 			}
@@ -240,7 +240,7 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		if _, err := p.pool.Exec(context.Background(), q); err != nil {
 			return fmt.Errorf("error to create indexe %s: %w", v, err)
 		}
-		log.Output(1, "Indexe "+v+" created")
+		log.Output(1, fmt.Sprintf("Indexes successfully created in the collection %s", p.CompanyTableName))
 	}
 
 	return nil
