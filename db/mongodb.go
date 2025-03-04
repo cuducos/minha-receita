@@ -225,7 +225,7 @@ func (m *MongoDB) GetCompany(cnpj string) (string, error) {
 }
 
 func (m *MongoDB) ExtraIndexes(idxs []string) error {
-	log.Output(1, "Creating the indexes...")
+   log.Output(1, "Creating the indexes…")
 	c := m.db.Collection(companyTableName)
 	var i []mongo.IndexModel
 	for _, field := range idxs {
