@@ -67,6 +67,20 @@ var dropCmd = &cobra.Command{
 	},
 }
 
+var extraIndexesCmd = &cobra.Command{
+	Use:   "extra-indexes index-1 [index-2 …]",
+	Short: "Creates extra indexes in the JSON fields",
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(_ *cobra.Command, args []string) error {
+		db, err := loadDatabase()
+		if err != nil {
+			return fmt.Errorf("could not find database: %w", err)
+		}
+		defer db.Close()
+		return db.ExtraIndexes(args)
+	},
+}
+
 func addDataDir(c *cobra.Command) *cobra.Command {
 	c.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files")
 	return c
@@ -80,7 +94,7 @@ func addDatabase(c *cobra.Command) *cobra.Command {
 
 // CLI returns the root command from Cobra CLI tool.
 func CLI() *cobra.Command {
-	for _, c := range []*cobra.Command{createCmd, dropCmd} {
+	for _, c := range []*cobra.Command{createCmd, dropCmd, extraIndexesCmd} {
 		addDatabase(c)
 	}
 	for _, c := range []*cobra.Command{
@@ -92,6 +106,7 @@ func CLI() *cobra.Command {
 		checkCLI(),
 		createCmd,
 		dropCmd,
+		extraIndexesCmd,
 		transformCLI(),
 		sampleCLI(),
 		mirrorCLI(),
