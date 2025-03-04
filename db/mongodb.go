@@ -15,7 +15,7 @@ import (
 )
 
 type company struct {
-	Cnpj string            `json:"cnpj"`
+	Id   string            `json:"id"`
 	Json transform.Company `json:"json"`
 }
 
@@ -56,17 +56,21 @@ func (m *MongoDB) Create() error {
 	return nil
 }
 
-// CreateIndexes creates the indexes on the specified collection.
-func (m *MongoDB) CreateIndexes() error {
-	log.Output(1, "Creating the indexes...")
-	// TODO: index meta collecation too
-	c := m.db.Collection(companyTableName)
-	i := []mongo.IndexModel{{Keys: bson.D{{Key: "cnpj", Value: 1}}}}
-	_, err := c.Indexes().CreateMany(m.ctx, i)
-	if err != nil {
-		return fmt.Errorf("error creating indexes: %w", err)
+func (m *MongoDB) createIndexes() error {
+	for _, n := range []string{companyTableName, metaTableName} {
+		c := m.db.Collection(n)
+		var k string
+		if n == metaTableName {
+			k = keyFieldName
+		} else {
+			k = idFieldName
+		}
+		i := []mongo.IndexModel{{Keys: bson.D{{Key: k, Value: 1}}}}
+		_, err := c.Indexes().CreateMany(m.ctx, i)
+		if err != nil {
+			return fmt.Errorf("error creating index for %s in %s: %w", k, n, err)
+		}
 	}
-	log.Output(1, fmt.Sprintf("Indexes successfully created in the collection %s", companyTableName))
 	return nil
 }
 
@@ -94,7 +98,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 			return fmt.Errorf("line skipped due to insufficient length: %s", r)
 		}
 		var c company
-		c.Cnpj = r[0]
+		c.Id = r[0]
 		err := json.Unmarshal([]byte(r[1]), &c.Json)
 		if err != nil {
 			return fmt.Errorf("error deserializing JSON: %s\nerror: %w", r[1], err)
@@ -167,7 +171,7 @@ func (m *MongoDB) PostLoad() error {
 	coll := m.db.Collection(companyTableName)
 	p := mongo.Pipeline{
 		{{"$group", bson.D{
-			{"_id", "$cnpj"},
+			{"_id", fmt.Sprintf("$%s", idFieldName)},
 			{"docs", bson.D{{"$push", "$_id"}}},
 			{"count", bson.D{{"$sum", 1}}},
 		}}},
@@ -198,28 +202,27 @@ func (m *MongoDB) PostLoad() error {
 	if err := c.Err(); err != nil {
 		return fmt.Errorf("error when iterating through results: %w", err)
 	}
-	if err := m.CreateIndexes(); err != nil {
+	if err := m.createIndexes(); err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
 	return nil
 }
 
-func (m *MongoDB) GetCompany(cnpj string) (string, error) {
+func (m *MongoDB) GetCompany(id string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	coll := m.db.Collection(companyTableName)
-	filter := bson.M{"cnpj": cnpj}
 	var c company
-	err := coll.FindOne(ctx, filter).Decode(&c)
+	err := coll.FindOne(ctx, bson.M{idFieldName: id}).Decode(&c)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return "", fmt.Errorf("no document found for CNPJ %s", cnpj)
+			return "", fmt.Errorf("no document found for CNPJ %s", id)
 		}
-		return "", fmt.Errorf("error querying CNPJ %s: %w", cnpj, err)
+		return "", fmt.Errorf("error querying CNPJ %s: %w", id, err)
 	}
 	b, err := json.Marshal(c.Json)
 	if err != nil {
-		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", cnpj, err)
+		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", id, err)
 	}
 	return string(b), nil
 }
