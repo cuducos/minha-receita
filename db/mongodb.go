@@ -233,11 +233,11 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 			Keys: bson.D{{Key: field, Value: 1}},
 		})
 	}
-	_, err := c.Indexes().CreateMany(m.ctx, i)
+	r, err := c.Indexes().CreateMany(m.ctx, i)
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-	log.Output(1, fmt.Sprintf("Indexes successfully created in the collection %s", companyTableName))
+	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
 	return nil
 
 }
