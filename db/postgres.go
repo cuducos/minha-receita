@@ -240,7 +240,7 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		if _, err := p.pool.Exec(context.Background(), q); err != nil {
 			return fmt.Errorf("error to create indexe %s: %w", v, err)
 		}
-		log.Output(1, fmt.Sprintf("Indexes successfully created in the collection %s", p.CompanyTableName))
+		log.Output(1, fmt.Sprintf("Indexes successfully created for table %s", p.CompanyTableName))
 	}
 
 	return nil
