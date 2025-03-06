@@ -228,9 +228,16 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	log.Output(1, "Creating the indexes…")
 	c := m.db.Collection(companyTableName)
 	var i []mongo.IndexModel
-	for _, field := range idxs {
+	for _, v := range idxs {
+		if strings.Contains(v, "qsa_") {
+			v = strings.ReplaceAll(strings.Replace(v, "qsa_", "", 1), "_", "")
+			v = fmt.Sprintf("%s_%s", "qsa", v)
+		}
+		if strings.Contains(v, "secundario") && strings.Contains(v, "cnae") {
+			v = fmt.Sprintf("cnaesecundarios_%s", strings.Split(v, "secundarios_")[1])
+		}
 		i = append(i, mongo.IndexModel{
-			Keys: bson.D{{Key: field, Value: 1}},
+			Keys: bson.D{{Key: v, Value: 1}},
 		})
 	}
 	r, err := c.Indexes().CreateMany(m.ctx, i)
