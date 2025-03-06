@@ -226,3 +226,28 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	}
 	return string(b), nil
 }
+
+func (m *MongoDB) ExtraIndexes(idxs []string) error {
+	log.Output(1, "Creating the indexes…")
+	c := m.db.Collection(companyTableName)
+	var i []mongo.IndexModel
+	for _, v := range idxs {
+		if strings.Contains(v, "qsa_") {
+			v = strings.ReplaceAll(strings.Replace(v, "qsa_", "", 1), "_", "")
+			v = fmt.Sprintf("%s_%s", "qsa", v)
+		}
+		if strings.Contains(v, "secundario") && strings.Contains(v, "cnae") {
+			v = fmt.Sprintf("cnaesecundarios_%s", strings.Split(v, "secundarios_")[1])
+		}
+		i = append(i, mongo.IndexModel{
+			Keys: bson.D{{Key: v, Value: 1}},
+		})
+	}
+	r, err := c.Indexes().CreateMany(m.ctx, i)
+	if err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
+	return nil
+
+}
