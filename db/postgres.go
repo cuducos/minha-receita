@@ -218,17 +218,16 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 	for _, v := range idxs {
 		t := fmt.Sprintf("((json->'%s'))", v)
 		name := "json_"
-
-		if strings.Contains(v, "qsa") && !strings.Contains(v, "cnae") {
+		if strings.Contains(v, ".") {
 			v = strings.Split(v, ".")[1]
-			t = fmt.Sprintf("(jsonb_extract_path(json, 'qsa', '%s') jsonb_ops)", v)
-			name += "qsa_"
-		}
-
-		if !strings.Contains(v, "qsa") && strings.Contains(v, "cnae") {
-			v = strings.Split(v, ".")[1]
-			t = fmt.Sprintf("(jsonb_extract_path(json, 'cnaes_secundarios', '%s') jsonb_ops)", v)
-			name += "cnaes_secundarios_"
+			if strings.Contains(v, "qsa") {
+				t = fmt.Sprintf("(jsonb_extract_path(json, 'qsa', '%s') jsonb_ops)", v)
+				name += "qsa_"
+			}
+			if strings.Contains(v, "cnae") {
+				t = fmt.Sprintf("(jsonb_extract_path(json, 'cnaes_secundarios', '%s') jsonb_ops)", v)
+				name += "cnaes_secundarios_"
+			}
 		}
 		q := fmt.Sprintf(
 			"CREATE INDEX IF NOT EXISTS idx_%s%s ON %s USING GIN %s;",

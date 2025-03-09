@@ -229,13 +229,17 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	c := m.db.Collection(companyTableName)
 	var i []mongo.IndexModel
 	for _, v := range idxs {
-		if strings.Contains(v, "qsa_") {
-			v = strings.ReplaceAll(strings.Replace(v, "qsa_", "", 1), "_", "")
-			v = fmt.Sprintf("%s_%s", "qsa", v)
+		e := strings.Split(v, ".")
+		if len(e) > 1 {
+			v = strings.ReplaceAll(e[1], "_", "") // Se todo indice apos o . tiver um _ ele remove e deixa no padrao que esta no mongodb.
+			if strings.Contains(e[0], "qsa") {    // Se for qsa.index1 ele so converte para qsa_index1
+				v = fmt.Sprintf("%s.%s", "qsa", v)
+			}
+			if strings.Contains(e[0], "secundario") && strings.Contains(e[0], "cnae") { //Aqui no json esta cnaes_secundarios se o usuario digitar qualquer coisa proxima ele converte para o padrao
+				v = fmt.Sprintf("cnaesecundarios.%s", e[1])
+			}
 		}
-		if strings.Contains(v, "secundario") && strings.Contains(v, "cnae") {
-			v = fmt.Sprintf("cnaesecundarios_%s", strings.Split(v, "secundarios_")[1])
-		}
+		v = fmt.Sprintf("json.%s", v) // concatena o json. que e o nome da raiz
 		i = append(i, mongo.IndexModel{
 			Keys: bson.D{{Key: v, Value: 1}},
 		})
