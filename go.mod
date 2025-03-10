@@ -1,6 +1,6 @@
 module github.com/cuducos/minha-receita
 
-go 1.23
+go 1.24.1
 
 require (
 	github.com/avast/retry-go/v4 v4.6.1
@@ -14,7 +14,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/spf13/cobra v1.9.1
 	go.mongodb.org/mongo-driver v1.17.3
-	golang.org/x/text v0.22.0
+	golang.org/x/text v0.23.0
 )
 
 require (
@@ -47,7 +47,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
