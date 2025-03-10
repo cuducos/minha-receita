@@ -226,3 +226,32 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	}
 	return string(b), nil
 }
+
+func (m *MongoDB) ExtraIndexes(idxs []string) error {
+	log.Output(1, "Creating the indexes…")
+	c := m.db.Collection(companyTableName)
+	var i []mongo.IndexModel
+	for _, v := range idxs {
+		e := strings.Split(v, ".")
+		if len(e) > 1 {
+			v = strings.ReplaceAll(e[1], "_", "")
+			if strings.Contains(e[0], "qsa") {    // Se for qsa.index1 ele so converte para qsa_index1
+				v = fmt.Sprintf("%s.%s", "qsa", v)
+			}
+			if strings.Contains(e[0], "secundario") && strings.Contains(e[0], "cnae") { //Aqui no json esta cnaes_secundarios se o usuario digitar qualquer coisa proxima ele converte para o padrao
+				v = fmt.Sprintf("cnaesecundarios.%s", e[1])
+			}
+		}
+		v = fmt.Sprintf("json.%s", v) // concatena o json. que e o nome da raiz
+		i = append(i, mongo.IndexModel{
+			Keys: bson.D{{Key: v, Value: 1}},
+		})
+	}
+	r, err := c.Indexes().CreateMany(m.ctx, i)
+	if err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
+	return nil
+
+}
