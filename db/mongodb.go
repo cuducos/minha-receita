@@ -231,7 +231,7 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	for _, v := range idxs {
 		e := strings.Split(v, ".")
 		if len(e) > 1 {
-			v = strings.ReplaceAll(e[1], "_", "") // Se todo indice apos o . tiver um _ ele remove e deixa no padrao que esta no mongodb.
+			v = strings.ReplaceAll(e[1], "_", "")
 			if strings.Contains(e[0], "qsa") {    // Se for qsa.index1 ele so converte para qsa_index1
 				v = fmt.Sprintf("%s.%s", "qsa", v)
 			}
