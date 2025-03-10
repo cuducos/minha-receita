@@ -1,6 +1,7 @@
 module github.com/cuducos/minha-receita
 
-go 1.23
+go 1.24.1
+
 require (
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/aws/aws-sdk-go v1.55.6
