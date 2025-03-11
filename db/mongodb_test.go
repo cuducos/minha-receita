@@ -97,7 +97,7 @@ func (m *MongoDB) checkIndexes(indexes []string) (map[string]bool, error) {
 		if err := cur.Decode(&idx); err != nil {
 			return nil, err
 		}
-		if name, ok := idx["name"].(string); ok {
+		if n, ok := idx["name"].(string); ok {
 			existingIndexes[name] = true
 		}
 	}
