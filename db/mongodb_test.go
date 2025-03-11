@@ -91,7 +91,7 @@ func (m *MongoDB) checkIndexes(indexes []string) (map[string]bool, error) {
 		return nil, err
 	}
 	defer cur.Close(m.ctx)
-	existingIndexes := make(map[string]bool)
+	idxs := make(map[string]bool)
 	for cur.Next(m.ctx) {
 		var idx bson.M
 		if err := cur.Decode(&idx); err != nil {
