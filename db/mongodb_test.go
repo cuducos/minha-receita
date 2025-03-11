@@ -3,8 +3,6 @@ package db
 import (
 	"os"
 	"testing"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestMongoDB(t *testing.T) {
@@ -82,28 +80,4 @@ func TestMongoDB(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected array as the answer, got %s", err)
 	}
-}
-
-func (m *MongoDB) checkIndexes(indexes []string) (map[string]bool, error) {
-	c := m.db.Collection(companyTableName)
-	cur, err := c.Indexes().List(m.ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(m.ctx)
-	idxs := make(map[string]bool)
-	for cur.Next(m.ctx) {
-		var idx bson.M
-		if err := cur.Decode(&idx); err != nil {
-			return nil, err
-		}
-		if n, ok := idx["name"].(string); ok {
-			existingIndexes[name] = true
-		}
-	}
-	r := make(map[string]bool)
-	for _, index := range indexes {
-		result[index] = existingIndexes[index]
-	}
-	return result, nil
 }
