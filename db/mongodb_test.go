@@ -101,7 +101,7 @@ func (m *MongoDB) checkIndexes(indexes []string) (map[string]bool, error) {
 			existingIndexes[name] = true
 		}
 	}
-	result := make(map[string]bool)
+	r := make(map[string]bool)
 	for _, index := range indexes {
 		result[index] = existingIndexes[index]
 	}
