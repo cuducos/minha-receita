@@ -19,7 +19,7 @@ No entanto, [criando o seu banco de dados localmente](servidor.md), é possível
 SELECT *
 FROM cnpj
 WHERE json->>'cnae_fiscal' = '6204000'
-  AND json->'cnaes_secundarios' @> '[{"codigo":6204000}]
+   OR json->'cnaes_secundarios' @> '[{"codigo":6204000}]
 ```
 
 Você pode ainda criar índices para essas buscas ficarem mais rápidas, como por exemplo `CREATE INDEX cnpj_uf_idx ON cnpj((json->'uf'))`.
