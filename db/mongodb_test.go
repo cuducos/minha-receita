@@ -76,4 +76,8 @@ func TestMongoDB(t *testing.T) {
 	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
+	_, err = db.checkIndexes([]string{"teste.index1"})
+	if err != nil {
+		t.Errorf("expected array as the answer, got %s", err)
+	}
 }
