@@ -236,10 +236,13 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		if _, err := p.pool.Exec(context.Background(), q); err != nil {
 			return fmt.Errorf("error to create indexe %s: %w", v, err)
 		}
+		// name = fmt.Sprintf("idx_%s%s", name, v)
+		// _, err := p.pool.Query(context.Background(), p.sql["extra_indexes"], name, p.CompanyTableName, v)
+		// if err != nil {
+		// 	return fmt.Errorf("error to create indexe %s: %w", v, err)
+		// }
 		c += 1
 	}
-
 	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", c, p.CompanyTableName))
-
 	return nil
 }
