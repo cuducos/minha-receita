@@ -234,8 +234,7 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 			v = strings.ReplaceAll(e[1], "_", "")
 			if e[0] == "qsa" {
 				v = fmt.Sprintf("%s.%s", e[0], v)
-			}
-			if e[0] == "cnaes_secundarios" {
+			} else if e[0] == "cnaes_secundarios" {
 				v = fmt.Sprintf("cnaesecundarios.%s", e[1])
 			} else {
 				log.Output(1, fmt.Sprintf("the index %s does not exist in json, so it cannot be created.", e[0]))
@@ -254,28 +253,4 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
 	return nil
 
-}
-
-func (m *MongoDB) checkIndexes(indexes []string) (map[string]bool, error) {
-	c := m.db.Collection(companyTableName)
-	cur, err := c.Indexes().List(m.ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(m.ctx)
-	idxs := make(map[string]bool)
-	for cur.Next(m.ctx) {
-		var idx bson.M
-		if err := cur.Decode(&idx); err != nil {
-			return nil, err
-		}
-		if n, ok := idx["name"].(string); ok {
-			idxs[n] = true
-		}
-	}
-	r := make(map[string]bool)
-	for _, index := range indexes {
-		r[index] = idxs[index]
-	}
-	return r, nil
 }
