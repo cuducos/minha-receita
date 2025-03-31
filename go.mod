@@ -1,14 +1,13 @@
 module github.com/cuducos/minha-receita
 
 go 1.24.1
-
 require (
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/cuducos/chunk v1.1.4
 	github.com/cuducos/go-cnpj v0.1.2
 	github.com/dgraph-io/badger/v4 v4.6.0
-	github.com/jackc/pgx/v5 v5.7.3
+	github.com/jackc/pgx/v5 v5.7.4
 	github.com/newrelic/go-agent/v3 v3.38.0
 	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.1
 	github.com/schollz/progressbar/v3 v3.18.0
