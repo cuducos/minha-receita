@@ -19,6 +19,13 @@ Usando MongoDB, a URI será `mongodb://minhareceita:minhareceita@loocalhost:2701
 
 O comando `download` baixa dados da Receita Federal, mais um arquivo do Tesouro Nacional com o código dos municípios do IBGE.
 
+*Atenção*, por enquanto é preciso baixar manualmente os 4 arquivos de regime tributário:
+
+1. Acessar [dados.gov.br](https://dados.gov.br)
+2. Buscar por CNPJ
+3. Acessar o recurso _Regime Tributário_
+4. Baixar os quatro arquivos terminados em `.zip`
+
 O servidor da Receita Federal é lento e instável, então todo os arquivos são [baixados em pequenas fatias](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range).
 
 O comando aceita um opção `--directory` (ou `-d`) com um diretório onde serão salvos os arquivos originais da Receita Federal. O padrão é `data/`.
