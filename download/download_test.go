@@ -17,7 +17,8 @@ func TestGetURLs(t *testing.T) {
 		handler  getURLsHandler
 		expected int
 	}{
-		{"federal revenue", []string{"dados_abertos_cnpj.html", "2024-08.html"}, federalRevenueGetURLs, 37},
+		{"federal revenue", []string{"dados_abertos_cnpj.html", "2024-08.html", "regime_tributario.html"}, federalRevenueGetURLs, 41},
+
 		{"national treasure", []string{"national-treasure.json"}, nationalTreasureGetURLs, 1},
 	} {
 		ts := httpTestServer(t, tc.fixture)

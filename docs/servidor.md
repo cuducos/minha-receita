@@ -17,16 +17,7 @@ Usando MongoDB, a URI será `mongodb://minhareceita:minhareceita@loocalhost:2701
 
 ## Download dos dados
 
-O comando `download` baixa dados da Receita Federal, mais um arquivo do Tesouro Nacional com o código dos municípios do IBGE.
-
-*Atenção*, por enquanto é preciso baixar manualmente os 4 arquivos de regime tributário:
-
-1. Acessar [dados.gov.br](https://dados.gov.br)
-2. Buscar por CNPJ
-3. Acessar o recurso _Regime Tributário_
-4. Baixar os quatro arquivos terminados em `.zip`
-
-O servidor da Receita Federal é lento e instável, então todo os arquivos são [baixados em pequenas fatias](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range).
+O comando `download` baixa dados da Receita Federal, mais um arquivo do Tesouro Nacional com o código dos municípios do IBGE. O servidor da Receita Federal pode ser lento e instável, então todo os arquivos são [baixados em pequenas fatias](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range).
 
 O comando aceita um opção `--directory` (ou `-d`) com um diretório onde serão salvos os arquivos originais da Receita Federal. O padrão é `data/`.
 
@@ -37,20 +28,20 @@ Caso o download falhe, é recomendado variar as configurações explicadas no `-
 * tempo limite para cada fatia com `--timeout` (ou `-t`)
 * rodar o comando de download sucessivas vezes com a opção `--skip` (ou `-x`) para baixar apenas os arquivos que estão faltando
 
-Em último caso, é possível listar as URLs para download dos arquivos com comando `urls`; e, então, tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.).
+Em último caso, é possível listar as URLs para download dos arquivos com comando `urls`; e, então, tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.). Caso essa seja uma opção crie um arquivo `updated_at.txt` no mesmo diretório com a data de extração dos dados no formato `YYYY-MM-DD`.
 
 ### Espelho dos dados
 
-O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org). Você pode fazer o download dos arquivos de lá (ao invés de utilizar o servidor oficial) com a opção `--mirror YYYY-MM-DD` substituindo a data por alguma das disponíveis no espelho.
+O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org).
 
 ### Exemplos de uso
 
 Sem Docker:
 
 ```console
-$ minha-receita download --urls-only
+$ minha-receita download
 $ minha-receita download --timeout 1h42m12s
-$ minha-receita download --mirror 2022-12-17
+$ minha-receita urls
 ```
 
 Com Docker:

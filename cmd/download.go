@@ -12,21 +12,15 @@ const (
 Downloads the required ZIP and Excel files.
 
 The main files are downloaded from the official website of the Brazilian
-Federal Revenue. An extra Excel file is downloaded from IBGE. Since the server
-is extremely slow, all files are downloaded using multiple HTTP requests with
+Federal Revenue. An extra CSV file is downloaded from IBGE. Since the server
+might be slow, all files are downloaded using multiple HTTP requests with
 small content ranges.`
 
 	urlsHelper = `
-Shows the URLs of the required ZIP and Excel files.
+Shows the URLs of the required ZIP and CSV files.
 
 The main files are downloaded from the official website of the Brazilian
-Federal Revenue. An extra Excel file is downloaded from IBGE.`
-
-	hasUpdateHelper = `
-Checks if there is an update available when it comes to the required ZIP from
-the Federal Revenue.
-
-Exists with exit code 0 if there is an update available and 1 otherwise.`
+Federal Revenue. An extra CSV file is downloaded from the National Treasure.`
 )
 
 var (
@@ -36,7 +30,6 @@ var (
 	chunkSize         int64
 	skipExistingFiles bool
 	restart           bool
-	useMirror         string
 )
 
 var downloadCmd = &cobra.Command{
@@ -50,9 +43,6 @@ var downloadCmd = &cobra.Command{
 		dur, err := time.ParseDuration(timeout)
 		if err != nil {
 			return err
-		}
-		if useMirror != "" {
-			return download.DownloadFromMirror(useMirror, dir, dur, skipExistingFiles, restart, parallelDownloads, downloadRetries, chunkSize)
 		}
 		return download.Download(dir, dur, skipExistingFiles, restart, parallelDownloads, downloadRetries, chunkSize)
 	},
@@ -72,23 +62,6 @@ var urlsCmd = &cobra.Command{
 	},
 }
 
-var updatedAtCmd = &cobra.Command{
-	Use:   "updated-at",
-	Short: "Shows the latest updated at date of the required ZIP from the Federal Revenue.",
-	RunE: func(_ *cobra.Command, _ []string) error {
-		return download.UpdatedAt()
-	},
-}
-
-var hasUpdateCmd = &cobra.Command{
-	Use:   "has-update",
-	Short: "Checks if there is an update available when it comes to the required ZIP from the Federal Revenue.",
-	Long:  hasUpdateHelper,
-	RunE: func(_ *cobra.Command, _ []string) error {
-		return download.HasUpdate(dir)
-	},
-}
-
 func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
@@ -97,7 +70,6 @@ func downloadCLI() *cobra.Command {
 	downloadCmd.Flags().IntVarP(&parallelDownloads, "parallel", "p", download.DefaultMaxParallel, "maximum parallel downloads")
 	downloadCmd.Flags().Int64VarP(&chunkSize, "chunk-size", "c", download.DefaultChunkSize, "max length of the bytes range for each HTTP request")
 	downloadCmd.Flags().BoolVarP(&restart, "restart", "e", false, "restart all downloads from the beginning")
-	downloadCmd.Flags().StringVarP(&useMirror, "mirror", "m", "", "download from the mirror, not from the original source (YYYY-MM-DD)")
 	return downloadCmd
 }
 
@@ -105,13 +77,4 @@ func urlsCLI() *cobra.Command {
 	urlsCmd.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files, used only with --skip")
 	urlsCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	return urlsCmd
-}
-
-func updatedAtCLI() *cobra.Command {
-	return updatedAtCmd
-}
-
-func hasUpdateCLI() *cobra.Command {
-	hasUpdateCmd = addDataDir(hasUpdateCmd)
-	return hasUpdateCmd
 }
