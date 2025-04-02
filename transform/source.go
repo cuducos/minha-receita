@@ -24,6 +24,9 @@ func pathsForSource(t sourceType, dir string) ([]string, error) {
 			ls = append(ls, filepath.Join(dir, f.Name()))
 		}
 	}
+	if len(ls) == 0 {
+		return []string{}, fmt.Errorf("could not find any file matching %s in %s", string(t), dir)
+	}
 	return ls, nil
 }
 
@@ -166,6 +169,7 @@ func newSources(dir string, kinds []sourceType) ([]*source, error) {
 	srcs := []*source{}
 	done := make(chan *source)
 	errs := make(chan error)
+	ok := int32(1)
 	defer func() {
 		close(done)
 		close(errs)
@@ -174,15 +178,20 @@ func newSources(dir string, kinds []sourceType) ([]*source, error) {
 		go func(s sourceType) {
 			src, err := newSource(s, dir)
 			if err != nil {
-				errs <- fmt.Errorf("could not load source %s: %w", string(s), err)
+				if atomic.LoadInt32(&ok) == 1 {
+					errs <- fmt.Errorf("could not load source %s: %w", string(s), err)
+				}
 				return
 			}
-			done <- src
+			if atomic.LoadInt32(&ok) == 1 {
+				done <- src
+			}
 		}(s)
 	}
 	for {
 		select {
 		case err := <-errs:
+			atomic.SwapInt32(&ok, 0)
 			return nil, fmt.Errorf("error loading sources: %w", err)
 		case src := <-done:
 			srcs = append(srcs, src)
