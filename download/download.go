@@ -21,7 +21,6 @@ func getURLs(url string, handler getURLsHandler, dir string, skip bool) ([]strin
 	if !skip {
 		return urls, nil
 	}
-
 	var out []string
 	for _, u := range urls {
 		p := filepath.Join(dir, filepath.Base(u))
@@ -66,39 +65,22 @@ func Download(dir string, timeout time.Duration, skip, restart bool, parallel in
 	if err != nil {
 		return fmt.Errorf("error gathering resources for download: %w", err)
 	}
-	tr, err := getURLs(taxRegimeURL, taxRegimeGetURLs, dir, skip)
-	if err != nil {
-		return fmt.Errorf("error gathering resources for download: %w", err)
-	}
-	urls = append(urls, tr...)
 	if len(urls) == 0 {
 		return nil
 	}
 	if err := download(dir, urls, parallel, retries, chunkSize, timeout, restart); err != nil {
 		return fmt.Errorf("error downloading files from the federal revenue: %w", err)
 	}
-	if err := federalRevenueGetMetadata(federalRevenueMetadataURL, dir); err != nil {
-		return fmt.Errorf("error getting metadata: %w", err)
-	}
-	return nil
-}
-
-// Download all the files from the project's mirror
-func DownloadFromMirror(mirror string, dir string, timeout time.Duration, skip, restart bool, parallel int, retries uint, chunkSize int64) error {
-	urls, err := getMirrorURLs(mirror)
-	if err != nil {
-		return fmt.Errorf("error getting mirror urls: %w", err)
-	}
-	if err := download(dir, urls, parallel, retries, chunkSize, timeout, restart); err != nil {
-		return fmt.Errorf("error downloading files from the mirror: %w", err)
+	if err := saveUpdatedAt(dir); err != nil {
+		return fmt.Errorf("error getting updated at date: %w", err)
 	}
 	return nil
 }
 
 // URLs shows the URLs to be downloaded.
 func URLs(dir string, skip bool) error {
-	urls := []string{federalRevenueURL, nationalTreasureBaseURL, taxRegimeURL}
-	handlers := []getURLsHandler{federalRevenueGetURLs, nationalTreasureGetURLs, taxRegimeGetURLs}
+	urls := []string{federalRevenueURL, nationalTreasureBaseURL}
+	handlers := []getURLsHandler{federalRevenueGetURLs, nationalTreasureGetURLs}
 	var out []string
 	for idx := range urls {
 		u, err := getURLs(urls[idx], handlers[idx], dir, skip)
@@ -109,27 +91,5 @@ func URLs(dir string, skip bool) error {
 	}
 	sort.Strings(out)
 	fmt.Println(strings.Join(out, "\n"))
-	return nil
-}
-
-// UpdatedAt shows the updated at of the files to be downloaded.
-func UpdatedAt() error {
-	u, err := fetchUpdatedAt(federalRevenueMetadataURL)
-	if err != nil {
-		return fmt.Errorf("error getting updated at: %w", err)
-	}
-	fmt.Println(u)
-	return nil
-}
-
-// HasUpdate checks if there is an update available.
-func HasUpdate(dir string) error {
-	h, err := hasUpdate(federalRevenueMetadataURL, dir)
-	if err != nil {
-		return fmt.Errorf("error getting updated at: %w", err)
-	}
-	if !h {
-		os.Exit(1)
-	}
 	return nil
 }

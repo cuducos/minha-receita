@@ -87,8 +87,6 @@ func CLI() *cobra.Command {
 		apiCLI(),
 		downloadCLI(),
 		urlsCLI(),
-		updatedAtCLI(),
-		hasUpdateCLI(),
 		checkCLI(),
 		createCmd,
 		dropCmd,

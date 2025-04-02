@@ -8,10 +8,10 @@ import (
 )
 
 func TestDownloader(t *testing.T) {
-	ts := httpTestServer(t, []string{"cadastro-nacional-de-pessoa-juridica-cnpj.json"})
+	ts := httpTestServer(t, []string{"Empresas1.zip"})
 	defer ts.Close()
 
-	f, s := loadFixture(t, "cadastro-nacional-de-pessoa-juridica-cnpj.json")
+	f, s := loadFixture(t, "Empresas1.zip")
 	defer f.Close()
 
 	tmp := t.TempDir()
