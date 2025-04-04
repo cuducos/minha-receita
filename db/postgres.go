@@ -216,31 +216,37 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 	c := 0
 	for _, v := range idxs {
-		t := fmt.Sprintf("((json->'%s'))", v)
+		t := fmt.Sprintf("json->'%s'", v)
 		name := "json_"
 		if strings.Contains(v, ".") {
 			v = strings.Split(v, ".")[1]
 			if strings.Contains(v, "qsa") {
-				t = fmt.Sprintf("(jsonb_extract_path(json, 'qsa', '%s') jsonb_ops)", v)
+				t = fmt.Sprintf("jsonb_extract_path(json, 'qsa', '%s') jsonb_ops", v)
 				name += "qsa_"
 			}
 			if strings.Contains(v, "cnae") {
-				t = fmt.Sprintf("(jsonb_extract_path(json, 'cnaes_secundarios', '%s') jsonb_ops)", v)
+				t = fmt.Sprintf("jsonb_extract_path(json, 'cnaes_secundarios', '%s') jsonb_ops", v)
 				name += "cnaes_secundarios_"
 			}
 		}
-		q := fmt.Sprintf(
-			"CREATE INDEX IF NOT EXISTS idx_%s%s ON %s USING GIN %s;",
-			name, v, p.CompanyTableName, t,
-		)
-		if _, err := p.pool.Exec(context.Background(), q); err != nil {
-			return fmt.Errorf("error to create indexe %s: %w", v, err)
-		}
-		// name = fmt.Sprintf("idx_%s%s", name, v)
-		// _, err := p.pool.Query(context.Background(), p.sql["extra_indexes"], name, p.CompanyTableName, v)
-		// if err != nil {
+		// q := fmt.Sprintf(
+		// 	"CREATE INDEX IF NOT EXISTS idx_%s%s ON %s USING GIN %s;",
+		// 	name, v, p.CompanyTableName, t,
+		// )
+		// if _, err := p.pool.Exec(context.Background(), q); err != nil {
 		// 	return fmt.Errorf("error to create indexe %s: %w", v, err)
 		// }
+		p.IDFieldName = fmt.Sprintf("%s%s", name, v)
+		p.JSONFieldName = t
+		fmt.Printf("%s", p.IDFieldName)
+		fmt.Println()
+		fmt.Printf("%s", p.JSONFieldName)
+		fmt.Sprintf("%s", p.sql["extra_indexes"])
+		fmt.Println()
+		_, err := p.pool.Query(context.Background(), p.sql["extra_indexes"])
+		if err != nil {
+			return fmt.Errorf("error to create indexe %s: %w", v, err)
+		}
 		c += 1
 	}
 	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", c, p.CompanyTableName))
