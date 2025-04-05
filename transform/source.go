@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -151,49 +152,71 @@ func (s *source) countLines() error {
 	}
 }
 
-func newSource(t sourceType, d string) (*source, error) {
+func newSource(ctx context.Context, t sourceType, d string) (*source, error) {
 	log.Output(1, fmt.Sprintf("Loading %s files…", string(t)))
-	ls, err := pathsForSource(t, d)
-	if err != nil {
-		return nil, fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
+	var s source
+	ch := make(chan error, 1)
+	done := atomic.Bool{}
+	defer close(ch)
+	go func() {
+		ls, err := pathsForSource(t, d)
+		if err != nil {
+			if !done.Load() {
+				ch <- fmt.Errorf("error getting files for %s in %s: %w", string(t), d, err)
+			}
+			return
+		}
+		s = source{kind: t, dir: d, files: ls}
+		s.createReaders()
+		if err = s.countLines(); err != nil {
+			if !done.Load() {
+				ch <- fmt.Errorf("error counting lines for %s in %s: %w", string(t), d, err)
+			}
+		}
+		if !done.Load() {
+			ch <- nil
+		}
+	}()
+	select {
+	case <-ctx.Done():
+		done.Store(true)
+		return nil, ctx.Err()
+	case err := <-ch:
+		return &s, err
 	}
-	s := source{kind: t, dir: d, files: ls}
-	s.createReaders()
-	if err = s.countLines(); err != nil {
-		return nil, fmt.Errorf("error counting lines for %s in %s: %w", string(t), d, err)
-	}
-	return &s, nil
 }
 
 func newSources(dir string, kinds []sourceType) ([]*source, error) {
 	srcs := []*source{}
-	done := make(chan *source)
-	errs := make(chan error)
-	ok := int32(1)
+	ok := make(chan *source)
+	errs := make(chan error, 1)
+	done := atomic.Bool{}
+	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {
-		close(done)
+		cancel()
+		close(ok)
 		close(errs)
 	}()
 	for _, s := range kinds {
 		go func(s sourceType) {
-			src, err := newSource(s, dir)
+			src, err := newSource(ctx, s, dir)
 			if err != nil {
-				if atomic.LoadInt32(&ok) == 1 {
+				if !done.Load() {
 					errs <- fmt.Errorf("could not load source %s: %w", string(s), err)
 				}
 				return
 			}
-			if atomic.LoadInt32(&ok) == 1 {
-				done <- src
+			if !done.Load() {
+				ok <- src
 			}
 		}(s)
 	}
 	for {
 		select {
 		case err := <-errs:
-			atomic.SwapInt32(&ok, 0)
+			done.Store(true)
 			return nil, fmt.Errorf("error loading sources: %w", err)
-		case src := <-done:
+		case src := <-ok:
 			srcs = append(srcs, src)
 			log.Output(1, fmt.Sprintf("[%d/%d] %s loaded!", len(srcs), len(kinds), src.kind))
 			if len(srcs) == len(kinds) {

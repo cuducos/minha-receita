@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"context"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -32,8 +33,8 @@ func TestPathsForSource(t *testing.T) {
 }
 
 func TestSource(t *testing.T) {
-	s, err := newSource(base, testdata)
-
+	ctx := context.Background()
+	s, err := newSource(ctx, base, testdata)
 	if err != nil {
 		t.Errorf("expected no error creating a source, got: %s", err)
 	}

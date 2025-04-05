@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -128,7 +129,7 @@ func (t *venuesTask) run(m int) error {
 		return fmt.Errorf("error preparing the database: %w", err)
 	}
 	t.produceRows()
-	for i := 0; i < m; i++ {
+	for range m {
 		t.shutdownWaitGroup.Add(1)
 		go t.consumeRows()
 	}
@@ -157,7 +158,8 @@ func (t *venuesTask) run(m int) error {
 }
 
 func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b int, p bool) (*venuesTask, error) {
-	v, err := newSource(venues, dir)
+	ctx := context.Background() // TODO: implement cancel
+	v, err := newSource(ctx, venues, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for venues from %s: %w", dir, err)
 	}
