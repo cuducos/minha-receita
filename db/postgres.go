@@ -212,3 +212,32 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	}
 	return p, nil
 }
+
+func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
+	c := 0
+	for _, v := range idxs {
+		t := fmt.Sprintf("json->'%s'", v)
+		name := "json_"
+		if strings.Contains(v, ".") {
+			v = strings.Split(v, ".")[1]
+			if strings.Contains(v, "qsa") {
+				t = fmt.Sprintf("jsonb_extract_path(json, 'qsa', '%s') jsonb_ops", v)
+				name = fmt.Sprintf("%sqsa_", name)
+			}
+			if strings.Contains(v, "cnae") {
+				t = fmt.Sprintf("jsonb_extract_path(json, 'cnaes_secundarios', '%s') jsonb_ops", v)
+				name = fmt.Sprintf("%scnaes_secundarios_", name)
+			}
+		}
+
+		p.IDFieldName = fmt.Sprintf("%s%s", name, v)
+		p.JSONFieldName = t
+		_, err := p.pool.Query(context.Background(), p.sql["extra_indexes"])
+		if err != nil {
+			return fmt.Errorf("error to create indexe %s: %w", v, err)
+		}
+		c += 1
+	}
+	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", c, p.CompanyTableName))
+	return nil
+}

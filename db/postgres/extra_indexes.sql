@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_{{ .IDFieldName }} ON {{ .CompanyTableFullName }} USING GIN ({{ .JSONFieldName }});
