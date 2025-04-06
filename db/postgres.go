@@ -43,6 +43,7 @@ type PostgreSQL struct {
 	KeyFieldName          string
 	ValueFieldName        string
 	PartnersJSONFieldName string
+	OptExtraIndexes       map[string]string
 }
 
 func (p *PostgreSQL) loadTemplates() error {
@@ -203,6 +204,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		KeyFieldName:          keyFieldName,
 		ValueFieldName:        valueFieldName,
 		PartnersJSONFieldName: partnersJSONFieldName,
+		OptExtraIndexes:       make(map[string]string),
 	}
 	if err = p.loadTemplates(); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not load the sql templates: %w", err)
@@ -216,26 +218,31 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 	c := 0
 	for _, v := range idxs {
-		t := fmt.Sprintf("json->'%s'", v)
+		p.OptExtraIndexes = map[string]string{
+			"Type":  "root",
+			"Name":  "",
+			"Value": "",
+		}
+
 		name := "json_"
 		if strings.Contains(v, ".") {
 			v = strings.Split(v, ".")[1]
+			fmt.Println(v)
 			if strings.Contains(v, "qsa") {
-				t = fmt.Sprintf("jsonb_extract_path(json, 'qsa', '%s') jsonb_ops", v)
+				p.OptExtraIndexes["Type"] = "qsa"
 				name = fmt.Sprintf("%sqsa_", name)
 			}
 			if strings.Contains(v, "cnae") {
-				t = fmt.Sprintf("jsonb_extract_path(json, 'cnaes_secundarios', '%s') jsonb_ops", v)
+				p.OptExtraIndexes["Type"] = "cnaes_secundarios"
 				name = fmt.Sprintf("%scnaes_secundarios_", name)
 			}
 		}
-
-		p.IDFieldName = fmt.Sprintf("%s%s", name, v)
-		p.JSONFieldName = t
-		_, err := p.pool.Query(context.Background(), p.sql["extra_indexes"])
-		if err != nil {
-			return fmt.Errorf("error to create indexe %s: %w", v, err)
-		}
+		p.OptExtraIndexes["Name"] = fmt.Sprintf("%s%s", name, v)
+		fmt.Println(p.OptExtraIndexes)
+		// _, err := p.pool.Query(context.Background(), p.sql["extra_indexes"])
+		// if err != nil {
+		// 	return fmt.Errorf("error to create indexe %s: %w", v, err)
+		// }
 		c += 1
 	}
 	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", c, p.CompanyTableName))
