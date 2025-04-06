@@ -204,7 +204,6 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		KeyFieldName:          keyFieldName,
 		ValueFieldName:        valueFieldName,
 		PartnersJSONFieldName: partnersJSONFieldName,
-		OptExtraIndexes:       make(map[string]string),
 	}
 	if err = p.loadTemplates(); err != nil {
 		return PostgreSQL{}, fmt.Errorf("could not load the sql templates: %w", err)
@@ -217,32 +216,36 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 	c := 0
-	for _, v := range idxs {
-		p.OptExtraIndexes = map[string]string{
-			"Type":  "root",
-			"Name":  "",
-			"Value": "",
+	for _, idx := range idxs {
+		v := idx
+		name := "json_"
+
+		typeIdx := "root"
+		nameIdx := fmt.Sprintf("%s%s", name, v)
+		valueIdx := idx
+		if strings.Contains(idx, ".") {
+			v = strings.Split(idx, ".")[1]
+			if strings.Contains(idx, "qsa") {
+				typeIdx = "qsa"
+				nameIdx = fmt.Sprintf("%sqsa_%s", name, v)
+			}
+			if strings.Contains(idx, "cnae") {
+				typeIdx = "cnaes_secundarios"
+				nameIdx = fmt.Sprintf("%scnaes_secundarios_%s", name, v)
+			}
+			valueIdx = v
 		}
 
-		name := "json_"
-		if strings.Contains(v, ".") {
-			v = strings.Split(v, ".")[1]
-			fmt.Println(v)
-			if strings.Contains(v, "qsa") {
-				p.OptExtraIndexes["Type"] = "qsa"
-				name = fmt.Sprintf("%sqsa_", name)
-			}
-			if strings.Contains(v, "cnae") {
-				p.OptExtraIndexes["Type"] = "cnaes_secundarios"
-				name = fmt.Sprintf("%scnaes_secundarios_", name)
-			}
+		p.OptExtraIndexes = map[string]string{
+			"TypeIdx":  typeIdx,
+			"NameIdx":  nameIdx,
+			"ValueIdx": valueIdx,
 		}
-		p.OptExtraIndexes["Name"] = fmt.Sprintf("%s%s", name, v)
-		fmt.Println(p.OptExtraIndexes)
-		// _, err := p.pool.Query(context.Background(), p.sql["extra_indexes"])
-		// if err != nil {
-		// 	return fmt.Errorf("error to create indexe %s: %w", v, err)
-		// }
+
+		_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
+		if err != nil {
+			return fmt.Errorf("error to create indexe %s: %w", v, err)
+		}
 		c += 1
 	}
 	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", c, p.CompanyTableName))
