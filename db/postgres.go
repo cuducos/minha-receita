@@ -221,10 +221,10 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 }
 
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
-	for c, idx := range idxs {
+	c := 0
+	for _, idx := range idxs {
 		v := idx
 		name := "json_"
-
 		typeIdx := "root"
 		nameIdx := fmt.Sprintf("%s%s", name, v)
 		valueIdx := idx
@@ -240,11 +240,10 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 			}
 			valueIdx = v
 		}
-
 		p.ExtraIndexesFields.Type = typeIdx
 		p.ExtraIndexesFields.Name = nameIdx
 		p.ExtraIndexesFields.Value = valueIdx
-
+		p.loadTemplates()
 		_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
 		if err != nil {
 			return fmt.Errorf("error to create indexe %s: %w", v, err)
