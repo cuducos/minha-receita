@@ -29,6 +29,12 @@ const (
 //go:embed postgres
 var sql embed.FS
 
+type ExtraIndexes struct {
+	Type  string
+	Name  string
+	Value string
+}
+
 // PostgreSQL database interface.
 type PostgreSQL struct {
 	pool                  *pgxpool.Pool
@@ -43,7 +49,7 @@ type PostgreSQL struct {
 	KeyFieldName          string
 	ValueFieldName        string
 	PartnersJSONFieldName string
-	OptExtraIndexes       map[string]string
+	ExtraIndexesFields    ExtraIndexes
 }
 
 func (p *PostgreSQL) loadTemplates() error {
@@ -235,11 +241,9 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 			valueIdx = v
 		}
 
-		p.OptExtraIndexes = map[string]string{
-			"TypeIdx":  typeIdx,
-			"NameIdx":  nameIdx,
-			"ValueIdx": valueIdx,
-		}
+		p.ExtraIndexesFields.Type = typeIdx
+		p.ExtraIndexesFields.Name = nameIdx
+		p.ExtraIndexesFields.Value = valueIdx
 
 		_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
 		if err != nil {
