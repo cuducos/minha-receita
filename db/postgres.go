@@ -215,8 +215,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 }
 
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
-	c := 0
-	for _, idx := range idxs {
+	for c, idx := range idxs {
 		v := idx
 		name := "json_"
 
