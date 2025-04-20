@@ -229,6 +229,6 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 
 func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	log.Output(1, fmt.Sprintf("indexes: %s", strings.Join(idxs, ", ")))
-	log.Output(1, fmt.Sprintf("has not yet been implemented"))
+	log.Output(1, "has not yet been implemented")
 	return nil
 }
