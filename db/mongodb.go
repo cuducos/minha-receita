@@ -228,6 +228,31 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 }
 
 func (m *MongoDB) ExtraIndexes(idxs []string) error {
-	log.Output(1, fmt.Sprintf("indexes: %s", strings.Join(idxs, ", ")))
-	return fmt.Errorf("extra-indexes not implemented (yet)")
+	log.Output(1, "Creating the indexes…")
+	c := m.db.Collection(companyTableName)
+	var i []mongo.IndexModel
+	for _, v := range idxs {
+		e := strings.Split(v, ".")
+		if len(e) > 1 {
+			v = strings.ReplaceAll(e[1], "_", "")
+			if e[0] == "qsa" {
+				v = fmt.Sprintf("quadrosocietario.%s", v)
+			} else if e[0] == "cnaes_secundarios" {
+				v = fmt.Sprintf("cnaesecundarios.%s", e[1])
+			} else {
+				log.Output(1, fmt.Sprintf("the index %s does not exist in json, so it cannot be created.", e[0]))
+				return nil
+			}
+		}
+		v = fmt.Sprintf("json.%s", v)
+		i = append(i, mongo.IndexModel{
+			Keys: bson.D{{Key: v, Value: 1}},
+		})
+	}
+	r, err := c.Indexes().CreateMany(m.ctx, i)
+	if err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
+	return nil
 }

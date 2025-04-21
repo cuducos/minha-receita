@@ -3,6 +3,8 @@ package db
 import (
 	"os"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestMongoDB(t *testing.T) {
@@ -75,5 +77,32 @@ func TestMongoDB(t *testing.T) {
 	}
 	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
+	}
+	err = db.ExtraIndexes([]string{"teste.index1"})
+	if err != nil {
+		t.Errorf("error creating new index, got %s", err) // preciso de ajuda ao melhorar a mensagem de erro.
+	}
+	c := db.db.Collection(companyTableName)
+	cur, err := c.Indexes().List(db.ctx)
+	if err != nil {
+		t.Errorf("error checking index list: %s", err)
+	}
+	defer cur.Close(db.ctx)
+	idxs := make(map[string]bool)
+	for cur.Next(db.ctx) {
+		var idx bson.M
+		if err := cur.Decode(&idx); err != nil {
+			t.Errorf("error decoding index: %s", err) // mais uma ajuda
+		}
+		if n, ok := idx["name"].(string); ok {
+			idxs[n] = true
+		}
+	}
+	r := make(map[string]bool)
+	for _, index := range []string{"index1"} {
+		r[index] = idxs[index]
+	}
+	if len(r) == 0 {
+		t.Errorf("index not found, got %s", err) // mais uma ajuda
 	}
 }
