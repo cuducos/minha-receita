@@ -239,6 +239,8 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 				v = fmt.Sprintf("quadrosocietario.%s", v)
 			} else if e[0] == "cnaes_secundarios" {
 				v = fmt.Sprintf("cnaesecundarios.%s", e[1])
+			} else if e[0] == "regime_tributario" {
+				v = fmt.Sprintf("regimetributario.%s", e[1])
 			} else {
 				log.Output(1, fmt.Sprintf("Ignoring %s: field does not exist in the json", e[0]))
 				return nil
