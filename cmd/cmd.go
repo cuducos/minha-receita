@@ -80,7 +80,7 @@ func addDatabase(c *cobra.Command) *cobra.Command {
 
 var extraIndexesCmd = &cobra.Command{
 	Use:   "extra-indexes <index1> [index2 …]",
-	Short: "Creates extra indexes in the JSON fields",
+	Short: "Creates extra indexes in the company fields",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
 		db, err := loadDatabase()
