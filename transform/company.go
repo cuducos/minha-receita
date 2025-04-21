@@ -64,7 +64,7 @@ type Company struct {
 	EnteFederativoResponsavel        string        `json:"ente_federativo_responsavel"`
 	DescricaoPorte                   string        `json:"descricao_porte"`
 	QuadroSocietario                 []PartnerData `json:"qsa"`
-	CNAESecundarios                  []Cnae        `json:"cnaes_secundarios"`
+	CNAESecundarios                  []CNAE        `json:"cnaes_secundarios"`
 	RegimeTributario                 TaxRegimes    `json:"regime_tributario"`
 }
 
@@ -204,14 +204,40 @@ func (c *Company) JSON() (string, error) {
 	return string(b), nil
 }
 
-// JSONFields lists the field names/paths for the JSON of a company.
-func CompanyJSONFields() []string {
-	// TODO: we need also the nested fields, but this would do it by now
+func jsonFields(i interface{}) []string {
 	var fs []string
-	t := reflect.TypeOf(Company{})
+	t := reflect.TypeOf(i)
 	for i := range t.NumField() {
 		f := t.Field(i)
 		fs = append(fs, f.Tag.Get("json"))
+	}
+	return fs
+}
+
+// JSONFields lists the field names/paths for the JSON of a company.
+func CompanyJSONFields() []string {
+	c := jsonFields(Company{})
+	t := reflect.TypeOf(Company{})
+	var fs []string
+	for i := range c {
+		f := t.Field(i)
+		t := f.Tag.Get("json")
+		switch t {
+		case "qsa":
+			for _, n := range jsonFields(PartnerData{}) {
+				fs = append(fs, fmt.Sprintf("%s.%s", t, n))
+			}
+		case "cnaes_secundarios":
+			for _, n := range jsonFields(CNAE{}) {
+				fs = append(fs, fmt.Sprintf("%s.%s", t, n))
+			}
+		case "regime_tributario":
+			for _, n := range jsonFields(TaxRegime{}) {
+				fs = append(fs, fmt.Sprintf("%s.%s", t, n))
+			}
+		default:
+			fs = append(fs, t)
+		}
 	}
 	return fs
 }
