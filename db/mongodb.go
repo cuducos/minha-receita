@@ -240,7 +240,7 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 			} else if e[0] == "cnaes_secundarios" {
 				v = fmt.Sprintf("cnaesecundarios.%s", e[1])
 			} else {
-				log.Output(1, fmt.Sprintf("the index %s does not exist in json, so it cannot be created.", e[0]))
+				log.Output(1, fmt.Sprintf("Ignoring %s: field does not exist in the json", e[0]))
 				return nil
 			}
 		}
