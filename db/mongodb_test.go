@@ -84,7 +84,7 @@ func TestMongoDB(t *testing.T) {
 	c := db.db.Collection(companyTableName)
 	cur, err := c.Indexes().List(db.ctx)
 	if err != nil {
-		t.Errorf("error checking index list: %s", err)
+		t.Errorf("expected no errors checking index list, got %s", err)
 	}
 	defer cur.Close(db.ctx)
 	idxs := make(map[string]bool)
