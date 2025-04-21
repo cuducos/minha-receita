@@ -226,8 +226,3 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	}
 	return string(b), nil
 }
-
-func (m *MongoDB) ExtraIndexes(idxs []string) error {
-	log.Output(1, fmt.Sprintf("indexes: %s", strings.Join(idxs, ", ")))
-	return fmt.Errorf("extra-indexes not implemented (yet)")
-}
