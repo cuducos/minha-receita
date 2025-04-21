@@ -102,6 +102,6 @@ func TestMongoDB(t *testing.T) {
 		r[index] = idxs[index]
 	}
 	if len(r) == 0 {
-		t.Errorf("index not found, got %s", err) // mais uma ajuda
+		t.Errorf("expected 1 index, got 0") // mais uma ajuda
 	}
 }
