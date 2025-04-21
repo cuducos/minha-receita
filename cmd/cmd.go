@@ -82,7 +82,7 @@ var extraIndexesCmd = &cobra.Command{
 	Use:   "extra-indexes <index1> [index2 …]",
 	Short: "Creates extra indexes in the company fields",
 	Args:  cobra.MinimumNArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, idxs []string) error {
 		db, err := loadDatabase()
 		if err != nil {
 			return fmt.Errorf("could not find database: %w", err)
