@@ -3,6 +3,7 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -201,4 +202,16 @@ func (c *Company) JSON() (string, error) {
 		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
 	}
 	return string(b), nil
+}
+
+// JSONFields lists the field names/paths for the JSON of a company.
+func CompanyJSONFields() []string {
+	// TODO: we need also the nested fields, but this would do it by now
+	var fs []string
+	t := reflect.TypeOf(Company{})
+	for i := range t.NumField() {
+		f := t.Field(i)
+		fs = append(fs, f.Tag.Get("json"))
+	}
+	return fs
 }

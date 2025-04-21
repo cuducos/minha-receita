@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/testutils"
 )
 
 func TestNewCompany(t *testing.T) {
@@ -320,4 +321,60 @@ func TestCompanyJSON(t *testing.T) {
 	if !strings.Contains(got, `"data_situacao_especial":null`) {
 		t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
 	}
+}
+
+func TestCompanyJSONFields(t *testing.T) {
+	got := CompanyJSONFields()
+	exp := []string{
+		"cnpj",
+		"identificador_matriz_filial",
+		"descricao_identificador_matriz_filial",
+		"nome_fantasia",
+		"situacao_cadastral",
+		"descricao_situacao_cadastral",
+		"data_situacao_cadastral",
+		"motivo_situacao_cadastral",
+		"descricao_motivo_situacao_cadastral",
+		"nome_cidade_no_exterior",
+		"codigo_pais",
+		"pais",
+		"data_inicio_atividade",
+		"cnae_fiscal",
+		"cnae_fiscal_descricao",
+		"descricao_tipo_de_logradouro",
+		"logradouro",
+		"numero",
+		"complemento",
+		"bairro",
+		"cep",
+		"uf",
+		"codigo_municipio",
+		"codigo_municipio_ibge",
+		"municipio",
+		"ddd_telefone_1",
+		"ddd_telefone_2",
+		"ddd_fax",
+		"email",
+		"situacao_especial",
+		"data_situacao_especial",
+		"opcao_pelo_simples",
+		"data_opcao_pelo_simples",
+		"data_exclusao_do_simples",
+		"opcao_pelo_mei",
+		"data_opcao_pelo_mei",
+		"data_exclusao_do_mei",
+		"razao_social",
+		"codigo_natureza_juridica",
+		"natureza_juridica",
+		"qualificacao_do_responsavel",
+		"capital_social",
+		"codigo_porte",
+		"porte",
+		"ente_federativo_responsavel",
+		"descricao_porte",
+		"qsa",
+		"cnaes_secundarios",
+		"regime_tributario",
+	}
+	testutils.AssertArraysHaveSameItems(t, got, exp)
 }
