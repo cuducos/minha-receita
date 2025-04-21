@@ -215,6 +215,5 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 	log.Output(1, fmt.Sprintf("indexes: %s", strings.Join(idxs, ", ")))
-	log.Output(1, "has not yet been implemented")
-	return nil
+	return fmt.Errorf("extra-indexes not implemented (yet)")
 }
