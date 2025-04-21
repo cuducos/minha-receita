@@ -88,7 +88,7 @@ var extraIndexesCmd = &cobra.Command{
 			return fmt.Errorf("could not find database: %w", err)
 		}
 		defer db.Close()
-		return db.ExtraIndexes(args)
+		return db.ExtraIndexes(idxs)
 	},
 }
 
