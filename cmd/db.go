@@ -22,6 +22,8 @@ type database interface {
 	CreateCompanies([][]string) error
 	PostLoad() error
 	MetaSave(string, string) error
+	// extra indexes
+	ExtraIndexes(idxs []string) error
 	// api
 	GetCompany(string) (string, error)
 	MetaRead(string) (string, error)
