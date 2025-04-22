@@ -1,23 +1,24 @@
 package transform
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-type IndexValidator struct {
-	indexes map[string]struct{}
-}
-
-func (v *IndexValidator) Validate(i string) error {
-	_, ok := v.indexes[i]
-	if !ok {
-		return fmt.Errorf("invalid index %s", i)
-	}
-	return nil
-}
-
-func NewIndexValidator() IndexValidator {
+func ValidateIndexes(idxs []string) error {
 	m := make(map[string]struct{})
+	var errs []string
 	for _, i := range CompanyJSONFields() {
 		m[i] = struct{}{}
 	}
-	return IndexValidator{m}
+	for _, i := range idxs {
+		_, ok := m[i]
+		if !ok {
+			errs = append(errs, i)
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("invalid index(es): %s", strings.Join(errs, ", "))
+	}
+	return nil
 }

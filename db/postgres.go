@@ -11,6 +11,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/cuducos/minha-receita/transform"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -214,6 +215,9 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 }
 
 func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
+	if err := transform.ValidateIndexes(idxs); err != nil {
+		return fmt.Errorf("index name error: %w", err)
+	}
 	log.Output(1, fmt.Sprintf("indexes: %s", strings.Join(idxs, ", ")))
 	return fmt.Errorf("extra-indexes not implemented (yet)")
 }

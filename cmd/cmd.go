@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cuducos/minha-receita/transform"
 	"github.com/spf13/cobra"
 )
 
@@ -84,12 +83,6 @@ var extraIndexesCmd = &cobra.Command{
 	Short: "Creates extra indexes in the company fields",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(_ *cobra.Command, idxs []string) error {
-		v := transform.NewIndexValidator()
-		for _, i := range idxs {
-			if err := v.Validate(i); err != nil {
-				return err
-			}
-		}
 		db, err := loadDatabase()
 		if err != nil {
 			return fmt.Errorf("could not find database: %w", err)
