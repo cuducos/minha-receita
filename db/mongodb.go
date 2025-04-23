@@ -239,12 +239,11 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 		i = append(i, mongo.IndexModel{
 			Keys: bson.D{{Key: v, Value: 1}},
 		})
-		r, err := c.Indexes().CreateMany(m.ctx, i)
-		if err != nil {
-			return fmt.Errorf("error creating indexes: %w", err)
-		}
-		log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
-		return nil
 	}
+	r, err := c.Indexes().CreateMany(m.ctx, i)
+	if err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
 	return nil
 }
