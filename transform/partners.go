@@ -6,20 +6,20 @@ import (
 )
 
 type PartnerData struct {
-	IdentificadorDeSocio                 *int    `json:"identificador_de_socio" bson:"identificador_de_socio,omitempty"`
+	IdentificadorDeSocio                 *int    `json:"identificador_de_socio" bson:"identificador_de_socio"`
 	NomeSocio                            string  `json:"nome_socio" bson:"nome_socio"`
 	CNPJCPFDoSocio                       string  `json:"cnpj_cpf_do_socio" bson:"cnpj_cpf_do_socio"`
-	CodigoQualificacaoSocio              *int    `json:"codigo_qualificacao_socio" bson:"codigo_qualificacao_socio,omitempty"`
-	QualificaoSocio                      *string `json:"qualificacao_socio" bson:"qualificacao_socio,omitempty"`
-	DataEntradaSociedade                 *date   `json:"data_entrada_sociedade" bson:"data_entrada_sociedade,omitempty"`
-	CodigoPais                           *int    `json:"codigo_pais" bson:"codigo_pais,omitempty"`
-	Pais                                 *string `json:"pais" bson:"pais,omitempty"`
+	CodigoQualificacaoSocio              *int    `json:"codigo_qualificacao_socio" bson:"codigo_qualificacao_socio"`
+	QualificaoSocio                      *string `json:"qualificacao_socio" bson:"qualificacao_socio"`
+	DataEntradaSociedade                 *date   `json:"data_entrada_sociedade" bson:"data_entrada_sociedade"`
+	CodigoPais                           *int    `json:"codigo_pais" bson:"codigo_pais"`
+	Pais                                 *string `json:"pais" bson:"pais"`
 	CPFRepresentanteLegal                string  `json:"cpf_representante_legal" bson:"cpf_representante_legal"`
 	NomeRepresentanteLegal               string  `json:"nome_representante_legal" bson:"nome_representante_legal"`
-	CodigoQualificacaoRepresentanteLegal *int    `json:"codigo_qualificacao_representante_legal" bson:"codigo_qualificacao_representante_legal,omitempty"`
-	QualificacaoRepresentanteLegal       *string `json:"qualificacao_representante_legal" bson:"qualificacao_representante_legal,omitempty"`
-	CodigoFaixaEtaria                    *int    `json:"codigo_faixa_etaria" bson:"codigo_faixa_etaria,omitempty"`
-	FaixaEtaria                          *string `json:"faixa_etaria" bson:"faixa_etaria,omitempty"`
+	CodigoQualificacaoRepresentanteLegal *int    `json:"codigo_qualificacao_representante_legal" bson:"codigo_qualificacao_representante_legal"`
+	QualificacaoRepresentanteLegal       *string `json:"qualificacao_representante_legal" bson:"qualificacao_representante_legal"`
+	CodigoFaixaEtaria                    *int    `json:"codigo_faixa_etaria" bson:"codigo_faixa_etaria"`
+	FaixaEtaria                          *string `json:"faixa_etaria" bson:"faixa_etaria"`
 }
 
 func (p *PartnerData) faixaEtaria(v string) {

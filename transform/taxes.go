@@ -7,17 +7,17 @@ import (
 )
 
 type simpleTaxesData struct {
-	OpcaoPeloSimples      *bool `json:"opcao_pelo_simples" bson:"opcao_pelo_simples,omitempty"`
-	DataOpcaoPeloSimples  *date `json:"data_opcao_pelo_simples" bson:"data_opcao_pelo_simples,omitempty"`
-	DataExclusaoDoSimples *date `json:"data_exclusao_do_simples" bson:"data_exclusao_do_simples,omitempty"`
-	OpcaoPeloMEI          *bool `json:"opcao_pelo_mei" bson:"opcao_pelo_mei,omitempty"`
-	DataOpcaoPeloMEI      *date `json:"data_opcao_pelo_mei" bson:"data_opcao_pelo_mei,omitempty"`
-	DataExclusaoDoMEI     *date `json:"data_exclusao_do_mei" bson:"data_exclusao_do_mei,omitempty"`
+	OpcaoPeloSimples      *bool `json:"opcao_pelo_simples" bson:"opcao_pelo_simples"`
+	DataOpcaoPeloSimples  *date `json:"data_opcao_pelo_simples" bson:"data_opcao_pelo_simples"`
+	DataExclusaoDoSimples *date `json:"data_exclusao_do_simples" bson:"data_exclusao_do_simples"`
+	OpcaoPeloMEI          *bool `json:"opcao_pelo_mei" bson:"opcao_pelo_mei"`
+	DataOpcaoPeloMEI      *date `json:"data_opcao_pelo_mei" bson:"data_opcao_pelo_mei"`
+	DataExclusaoDoMEI     *date `json:"data_exclusao_do_mei" bson:"data_exclusao_do_mei"`
 }
 
 type TaxRegime struct {
 	Ano                       int     `json:"ano" bson:"ano"`
-	CNPJDaSCP                 *string `json:"cnpj_da_scp" bson:"cnpj_da_scp,omitempty"`
+	CNPJDaSCP                 *string `json:"cnpj_da_scp" bson:"cnpj_da_scp"`
 	FormaDeTributação         string  `json:"forma_de_tributacao" bson:"forma_de_tributacao"`
 	QuantidadeDeEscrituracoes int     `json:"quantidade_de_escrituracoes" bson:"quantidade_de_escrituracoes"`
 }
