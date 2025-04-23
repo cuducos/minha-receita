@@ -22,7 +22,6 @@ type PartnerData struct {
 	FaixaEtaria                          *string `json:"faixa_etaria" bson:"faixa_etaria,omitempty"`
 }
 
-
 func (p *PartnerData) faixaEtaria(v string) {
 	c, err := toInt(v)
 	if err != nil {
