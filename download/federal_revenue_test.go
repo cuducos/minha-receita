@@ -1,6 +1,9 @@
 package download
 
-import "testing"
+import (
+	"github.com/cuducos/minha-receita/testutils"
+	"testing"
+)
 
 func TestFederalRevenueGetMostRecentURL(t *testing.T) {
 	ts := httpTestServer(t, []string{"dados_abertos_cnpj.html"})
@@ -70,6 +73,6 @@ func TestFederalRevenueGetURLs(t *testing.T) {
 			ts.URL + "/regime_tributario/Lucro%20Real.zip",
 			ts.URL + "/regime_tributario/Imunes%20e%20Isentas.zip",
 		}
-		assertArraysHaveSameItems(t, got, expected)
+		testutils.AssertArraysHaveSameItems(t, got, expected)
 	})
 }

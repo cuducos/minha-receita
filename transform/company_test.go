@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/testutils"
 )
 
 func TestNewCompany(t *testing.T) {
@@ -99,7 +100,7 @@ func TestNewCompany(t *testing.T) {
 		SituacaoEspecial:                 "",
 		DataSituacaoEspecial:             nil,
 		RegimeTributario:                 nil,
-		CNAESecundarios: []Cnae{
+		CNAESecundarios: []CNAE{
 			{Codigo: 6201501, Descricao: "Desenvolvimento de programas de computador sob encomenda"},
 			{Codigo: 6202300, Descricao: "Desenvolvimento e licenciamento de programas de computador customizáveis"},
 			{Codigo: 6203100, Descricao: "Desenvolvimento e licenciamento de programas de computador não-customizáveis"},
@@ -320,4 +321,77 @@ func TestCompanyJSON(t *testing.T) {
 	if !strings.Contains(got, `"data_situacao_especial":null`) {
 		t.Errorf("expected to find null for data_situacao_especial in JSON %s", got)
 	}
+}
+
+func TestCompanyJSONFields(t *testing.T) {
+	got := CompanyJSONFields()
+	exp := []string{
+		"bairro",
+		"capital_social",
+		"cep",
+		"cnae_fiscal",
+		"cnae_fiscal_descricao",
+		"cnaes_secundarios.codigo",
+		"cnaes_secundarios.descricao",
+		"cnpj",
+		"codigo_municipio",
+		"codigo_municipio_ibge",
+		"codigo_natureza_juridica",
+		"codigo_pais",
+		"codigo_porte",
+		"complemento",
+		"data_exclusao_do_mei",
+		"data_exclusao_do_simples",
+		"data_inicio_atividade",
+		"data_opcao_pelo_mei",
+		"data_opcao_pelo_simples",
+		"data_situacao_cadastral",
+		"data_situacao_especial",
+		"ddd_fax",
+		"ddd_telefone_1",
+		"ddd_telefone_2",
+		"descricao_identificador_matriz_filial",
+		"descricao_motivo_situacao_cadastral",
+		"descricao_porte",
+		"descricao_situacao_cadastral",
+		"descricao_tipo_de_logradouro",
+		"email",
+		"ente_federativo_responsavel",
+		"identificador_matriz_filial",
+		"logradouro",
+		"motivo_situacao_cadastral",
+		"municipio",
+		"natureza_juridica",
+		"nome_cidade_no_exterior",
+		"nome_fantasia",
+		"numero",
+		"opcao_pelo_mei",
+		"opcao_pelo_simples",
+		"pais",
+		"porte",
+		"qsa.cnpj_cpf_do_socio",
+		"qsa.codigo_faixa_etaria",
+		"qsa.codigo_pais",
+		"qsa.codigo_qualificacao_representante_legal",
+		"qsa.codigo_qualificacao_socio",
+		"qsa.cpf_representante_legal",
+		"qsa.data_entrada_sociedade",
+		"qsa.faixa_etaria",
+		"qsa.identificador_de_socio",
+		"qsa.nome_representante_legal",
+		"qsa.nome_socio",
+		"qsa.pais",
+		"qsa.qualificacao_representante_legal",
+		"qsa.qualificacao_socio",
+		"qualificacao_do_responsavel",
+		"razao_social",
+		"regime_tributario.ano",
+		"regime_tributario.cnpj_da_scp",
+		"regime_tributario.forma_de_tributacao",
+		"regime_tributario.quantidade_de_escrituracoes",
+		"situacao_cadastral",
+		"situacao_especial",
+		"uf",
+	}
+	testutils.AssertArraysHaveSameItems(t, got, exp)
 }

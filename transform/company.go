@@ -3,6 +3,7 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -16,55 +17,55 @@ func companyNameClenup(n string) string {
 }
 
 type Company struct {
-	CNPJ                             string        `json:"cnpj"`
-	IdentificadorMatrizFilial        *int          `json:"identificador_matriz_filial"`
-	DescricaoMatrizFilial            *string       `json:"descricao_identificador_matriz_filial"`
-	NomeFantasia                     string        `json:"nome_fantasia"`
-	SituacaoCadastral                *int          `json:"situacao_cadastral"`
-	DescricaoSituacaoCadastral       *string       `json:"descricao_situacao_cadastral"`
-	DataSituacaoCadastral            *date         `json:"data_situacao_cadastral"`
-	MotivoSituacaoCadastral          *int          `json:"motivo_situacao_cadastral"`
-	DescricaoMotivoSituacaoCadastral *string       `json:"descricao_motivo_situacao_cadastral"`
-	NomeCidadeNoExterior             string        `json:"nome_cidade_no_exterior"`
-	CodigoPais                       *int          `json:"codigo_pais"`
-	Pais                             *string       `json:"pais"`
-	DataInicioAtividade              *date         `json:"data_inicio_atividade"`
-	CNAEFiscal                       *int          `json:"cnae_fiscal"`
-	CNAEFiscalDescricao              *string       `json:"cnae_fiscal_descricao"`
-	DescricaoTipoDeLogradouro        string        `json:"descricao_tipo_de_logradouro"`
-	Logradouro                       string        `json:"logradouro"`
-	Numero                           string        `json:"numero"`
-	Complemento                      string        `json:"complemento"`
-	Bairro                           string        `json:"bairro"`
-	CEP                              string        `json:"cep"`
-	UF                               string        `json:"uf"`
-	CodigoMunicipio                  *int          `json:"codigo_municipio"`
-	CodigoMunicipioIBGE              *int          `json:"codigo_municipio_ibge"`
-	Municipio                        *string       `json:"municipio"`
-	Telefone1                        string        `json:"ddd_telefone_1"`
-	Telefone2                        string        `json:"ddd_telefone_2"`
-	Fax                              string        `json:"ddd_fax"`
-	Email                            *string       `json:"email"`
-	SituacaoEspecial                 string        `json:"situacao_especial"`
-	DataSituacaoEspecial             *date         `json:"data_situacao_especial"`
-	OpcaoPeloSimples                 *bool         `json:"opcao_pelo_simples"`
-	DataOpcaoPeloSimples             *date         `json:"data_opcao_pelo_simples"`
-	DataExclusaoDoSimples            *date         `json:"data_exclusao_do_simples"`
-	OpcaoPeloMEI                     *bool         `json:"opcao_pelo_mei"`
-	DataOpcaoPeloMEI                 *date         `json:"data_opcao_pelo_mei"`
-	DataExclusaoDoMEI                *date         `json:"data_exclusao_do_mei"`
-	RazaoSocial                      string        `json:"razao_social"`
-	CodigoNaturezaJuridica           *int          `json:"codigo_natureza_juridica"`
-	NaturezaJuridica                 *string       `json:"natureza_juridica"`
-	QualificacaoDoResponsavel        *int          `json:"qualificacao_do_responsavel"`
-	CapitalSocial                    *float32      `json:"capital_social"`
-	CodigoPorte                      *int          `json:"codigo_porte"`
-	Porte                            *string       `json:"porte"`
-	EnteFederativoResponsavel        string        `json:"ente_federativo_responsavel"`
-	DescricaoPorte                   string        `json:"descricao_porte"`
-	QuadroSocietario                 []PartnerData `json:"qsa"`
-	CNAESecundarios                  []Cnae        `json:"cnaes_secundarios"`
-	RegimeTributario                 TaxRegimes    `json:"regime_tributario"`
+	CNPJ                             string        `json:"cnpj" bson:"cnpj"`
+	IdentificadorMatrizFilial        *int          `json:"identificador_matriz_filial" bson:"identificador_matriz_filial"`
+	DescricaoMatrizFilial            *string       `json:"descricao_identificador_matriz_filial" bson:"descricao_identificador_matriz_filial"`
+	NomeFantasia                     string        `json:"nome_fantasia" bson:"nome_fantasia"`
+	SituacaoCadastral                *int          `json:"situacao_cadastral" bson:"situacao_cadastral"`
+	DescricaoSituacaoCadastral       *string       `json:"descricao_situacao_cadastral" bson:"descricao_situacao_cadastral"`
+	DataSituacaoCadastral            *date         `json:"data_situacao_cadastral" bson:"data_situacao_cadastral"`
+	MotivoSituacaoCadastral          *int          `json:"motivo_situacao_cadastral" bson:"motivo_situacao_cadastral"`
+	DescricaoMotivoSituacaoCadastral *string       `json:"descricao_motivo_situacao_cadastral" bson:"descricao_motivo_situacao_cadastral"`
+	NomeCidadeNoExterior             string        `json:"nome_cidade_no_exterior" bson:"nome_cidade_no_exterior"`
+	CodigoPais                       *int          `json:"codigo_pais" bson:"codigo_pais"`
+	Pais                             *string       `json:"pais" bson:"pais"`
+	DataInicioAtividade              *date         `json:"data_inicio_atividade" bson:"data_inicio_atividade"`
+	CNAEFiscal                       *int          `json:"cnae_fiscal" bson:"cnae_fiscal"`
+	CNAEFiscalDescricao              *string       `json:"cnae_fiscal_descricao" bson:"cnae_fiscal_descricao"`
+	DescricaoTipoDeLogradouro        string        `json:"descricao_tipo_de_logradouro" bson:"descricao_tipo_de_logradouro"`
+	Logradouro                       string        `json:"logradouro" bson:"logradouro"`
+	Numero                           string        `json:"numero" bson:"numero"`
+	Complemento                      string        `json:"complemento" bson:"complemento"`
+	Bairro                           string        `json:"bairro" bson:"bairro"`
+	CEP                              string        `json:"cep" bson:"cep"`
+	UF                               string        `json:"uf" bson:"uf"`
+	CodigoMunicipio                  *int          `json:"codigo_municipio" bson:"codigo_municipio"`
+	CodigoMunicipioIBGE              *int          `json:"codigo_municipio_ibge" bson:"codigo_municipio_ibge"`
+	Municipio                        *string       `json:"municipio" bson:"municipio"`
+	Telefone1                        string        `json:"ddd_telefone_1" bson:"ddd_telefone_1"`
+	Telefone2                        string        `json:"ddd_telefone_2" bson:"ddd_telefone_2"`
+	Fax                              string        `json:"ddd_fax" bson:"ddd_fax"`
+	Email                            *string       `json:"email" bson:"email"`
+	SituacaoEspecial                 string        `json:"situacao_especial" bson:"situacao_especial"`
+	DataSituacaoEspecial             *date         `json:"data_situacao_especial" bson:"data_situacao_especial"`
+	OpcaoPeloSimples                 *bool         `json:"opcao_pelo_simples" bson:"opcao_pelo_simples"`
+	DataOpcaoPeloSimples             *date         `json:"data_opcao_pelo_simples" bson:"data_opcao_pelo_simples"`
+	DataExclusaoDoSimples            *date         `json:"data_exclusao_do_simples" bson:"data_exclusao_do_simples"`
+	OpcaoPeloMEI                     *bool         `json:"opcao_pelo_mei" bson:"opcao_pelo_mei"`
+	DataOpcaoPeloMEI                 *date         `json:"data_opcao_pelo_mei" bson:"data_opcao_pelo_mei"`
+	DataExclusaoDoMEI                *date         `json:"data_exclusao_do_mei" bson:"data_exclusao_do_mei"`
+	RazaoSocial                      string        `json:"razao_social" bson:"razao_social"`
+	CodigoNaturezaJuridica           *int          `json:"codigo_natureza_juridica" bson:"codigo_natureza_juridica"`
+	NaturezaJuridica                 *string       `json:"natureza_juridica" bson:"natureza_juridica"`
+	QualificacaoDoResponsavel        *int          `json:"qualificacao_do_responsavel" bson:"qualificacao_do_responsavel"`
+	CapitalSocial                    *float32      `json:"capital_social" bson:"capital_social"`
+	CodigoPorte                      *int          `json:"codigo_porte" bson:"codigo_porte"`
+	Porte                            *string       `json:"porte" bson:"porte"`
+	EnteFederativoResponsavel        string        `json:"ente_federativo_responsavel" bson:"ente_federativo_responsavel"`
+	DescricaoPorte                   string        `json:"descricao_porte" bson:"descricao_porte"`
+	QuadroSocietario                 []PartnerData `json:"qsa" bson:"qsa"`
+	CNAESecundarios                  []CNAE        `json:"cnaes_secundarios" bson:"cnaes_secundarios"`
+	RegimeTributario                 TaxRegimes    `json:"regime_tributario" bson:"regime_tributario"`
 }
 
 func (c *Company) situacaoCadastral(v string) error {
@@ -201,4 +202,42 @@ func (c *Company) JSON() (string, error) {
 		return "", fmt.Errorf("error while mashaling company JSON: %w", err)
 	}
 	return string(b), nil
+}
+
+func jsonFields(i interface{}) []string {
+	var fs []string
+	t := reflect.TypeOf(i)
+	for i := range t.NumField() {
+		f := t.Field(i)
+		fs = append(fs, f.Tag.Get("json"))
+	}
+	return fs
+}
+
+// JSONFields lists the field names/paths for the JSON of a company.
+func CompanyJSONFields() []string {
+	c := jsonFields(Company{})
+	t := reflect.TypeOf(Company{})
+	var fs []string
+	for i := range c {
+		f := t.Field(i)
+		t := f.Tag.Get("json")
+		switch t {
+		case "qsa":
+			for _, n := range jsonFields(PartnerData{}) {
+				fs = append(fs, fmt.Sprintf("%s.%s", t, n))
+			}
+		case "cnaes_secundarios":
+			for _, n := range jsonFields(CNAE{}) {
+				fs = append(fs, fmt.Sprintf("%s.%s", t, n))
+			}
+		case "regime_tributario":
+			for _, n := range jsonFields(TaxRegime{}) {
+				fs = append(fs, fmt.Sprintf("%s.%s", t, n))
+			}
+		default:
+			fs = append(fs, t)
+		}
+	}
+	return fs
 }

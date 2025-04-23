@@ -120,21 +120,21 @@ func (c *Company) municipio(l *lookups, v string) error {
 	return nil
 }
 
-type Cnae struct {
-	Codigo    int    `json:"codigo"`
-	Descricao string `json:"descricao"`
+type CNAE struct {
+	Codigo    int    `json:"codigo" bson:"codigo"`
+	Descricao string `json:"descricao" bson:"descricao"`
 }
 
-func newCnae(l *lookups, v string) (Cnae, error) {
+func newCnae(l *lookups, v string) (CNAE, error) {
 	i, err := toInt(v)
 	if err != nil {
-		return Cnae{}, fmt.Errorf("error trying to parse cnae %s: %w", v, err)
+		return CNAE{}, fmt.Errorf("error trying to parse cnae %s: %w", v, err)
 	}
 	if i == nil {
-		return Cnae{}, nil
+		return CNAE{}, nil
 	}
 	s := l.cnaes[*i]
-	return Cnae{Codigo: *i, Descricao: s}, nil
+	return CNAE{Codigo: *i, Descricao: s}, nil
 }
 
 func (c *Company) cnaes(l *lookups, p, s string) error {
