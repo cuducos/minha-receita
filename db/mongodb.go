@@ -244,6 +244,6 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-	log.Output(1, fmt.Sprintf("%d indexes successfully created in the collection %s", len(r), companyTableName))
+	log.Output(1, fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
 	return nil
 }
