@@ -78,7 +78,7 @@ func TestMongoDB(t *testing.T) {
 	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
-	if err := transform.ValidateIndexes([]string{"teste.index1"}); err == nil {
+	if err := db.ExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Errorf("error creating new index, got %s", err)
 	}
 
