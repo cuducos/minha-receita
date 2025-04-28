@@ -3,6 +3,8 @@ package db
 import (
 	"os"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestMongoDB(t *testing.T) {
@@ -77,9 +79,33 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
 	if err := db.ExtraIndexes([]string{"teste.index1"}); err == nil {
-		t.Error("expected that this index would not be created.")
+		t.Error("expected errors running extra indexes, got nil")
 	}
-	if err := db.ExtraIndexes([]string{"qsa.nome_socio"}); err != nil {
-		t.Errorf("expected the index to be created, got %s", err)
+	i := "qsa.nome_socio"
+	if err := db.ExtraIndexes([]string{i}); err != nil {
+		t.Errorf("expected no errors running extra indexes, got %s", err)
+	}
+	c := db.db.Collection(companyTableName)
+	cur, err := c.Indexes().List(db.ctx)
+	if err != nil {
+		t.Errorf("error checking index list: %s", err)
+	}
+	defer cur.Close(db.ctx)
+	idxs := make(map[string]bool)
+	for cur.Next(db.ctx) {
+		var idx bson.M
+		if err := cur.Decode(&idx); err != nil {
+			t.Errorf("error decoding index: %s", err) // mais uma ajuda
+		}
+		if n, ok := idx["name"].(string); ok {
+			idxs[n] = true
+		}
+	}
+	r := make(map[string]bool)
+	for _, index := range []string{i} {
+		r[index] = idxs[index]
+	}
+	if len(r) == 0 {
+		t.Errorf("index not found, got %s", err) // mais uma ajuda
 	}
 }
