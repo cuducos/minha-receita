@@ -3,8 +3,6 @@ package db
 import (
 	"os"
 	"testing"
-
-	"github.com/cuducos/minha-receita/transform"
 )
 
 func TestMongoDB(t *testing.T) {
