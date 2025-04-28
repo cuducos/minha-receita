@@ -79,5 +79,7 @@ func TestMongoDB(t *testing.T) {
 	if err := db.ExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Error("error creating new index")
 	}
-
+	if err := db.ExtraIndexes([]string{"qsa.nome_socio"}); err != nil {
+		t.Errorf("error creating new index, got %s", err)
+	}
 }
