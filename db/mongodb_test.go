@@ -77,9 +77,9 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
 	if err := db.ExtraIndexes([]string{"teste.index1"}); err == nil {
-		t.Error("error creating new index")
+		t.Error("expected that this index would not be created.")
 	}
 	if err := db.ExtraIndexes([]string{"qsa.nome_socio"}); err != nil {
-		t.Errorf("error creating new index, got %s", err)
+		t.Errorf("expected the index to be created, got %s", err)
 	}
 }
