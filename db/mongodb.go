@@ -235,9 +235,11 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	c := m.db.Collection(companyTableName)
 	var i []mongo.IndexModel
 	for _, v := range idxs {
-		v = fmt.Sprintf("json.%s", v)
+		fullKey := fmt.Sprintf("json.%s", v)
+		indexName := fmt.Sprintf("idx_json.%s", v)
 		i = append(i, mongo.IndexModel{
-			Keys: bson.D{{Key: v, Value: 1}},
+			Keys:    bson.D{{Key: fullKey, Value: 1}},
+			Options: options.Index().SetName(indexName),
 		})
 	}
 	r, err := c.Indexes().CreateMany(m.ctx, i)
