@@ -2,10 +2,35 @@ package db
 
 import (
 	"os"
+	"slices"
+	"strings"
 	"testing"
 
+	"github.com/cuducos/minha-receita/testutils"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+var mongoDefaultIndexes = []string{"_id_", "id_1"}
+
+func listIndexes(t *testing.T, db *MongoDB) []string {
+	c, err := db.db.Collection(companyTableName).Indexes().List(db.ctx)
+	if err != nil {
+		t.Errorf("expected no errors checking index list, got %s", err)
+	}
+	defer c.Close(db.ctx)
+	var i []string
+	for c.Next(db.ctx) {
+		var idx bson.M
+		if err := c.Decode(&idx); err != nil {
+			t.Errorf("expected no error decoding index, got %s", err)
+		}
+		n, ok := idx["name"].(string)
+		if ok && !slices.Contains(mongoDefaultIndexes, n) {
+			i = append(i, strings.TrimPrefix(n, "idx_json."))
+		}
+	}
+	return i
+}
 
 func TestMongoDB(t *testing.T) {
 	id := "33683111000280"
@@ -81,33 +106,9 @@ func TestMongoDB(t *testing.T) {
 	if err := db.ExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Error("expected errors running extra indexes, got nil")
 	}
-	i := "qsa.nome_socio"
-	if err := db.ExtraIndexes([]string{i}); err != nil {
+	i := []string{"qsa.nome_socio"}
+	if err := db.ExtraIndexes(i); err != nil {
 		t.Errorf("expected no errors running extra indexes, got %s", err)
 	}
-	c := db.db.Collection(companyTableName)
-	cur, err := c.Indexes().List(db.ctx)
-	if err != nil {
-		t.Errorf("expected no errors checking index list, got %s", err)
-	}
-	defer cur.Close(db.ctx)
-	idxs := []string{}
-	for cur.Next(db.ctx) {
-		var idx bson.M
-		if err := cur.Decode(&idx); err != nil {
-			t.Errorf("expected no error decoding index: %s", err)
-		}
-		if n, ok := idx["name"].(string); ok {
-			idxs = append(idxs, n)
-		}
-	}
-	check := false
-	for _, v := range idxs {
-		if v == i {
-			check = true
-		}
-	}
-	if check {
-		t.Errorf("expected no index not found, got %s", err) // mais uma ajuda
-	}
+	testutils.AssertArraysHaveSameItems(t, i, listIndexes(t, &db))
 }
