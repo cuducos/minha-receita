@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/avast/retry-go/v4 v4.6.1
-	github.com/aws/aws-sdk-go v1.55.6
+	github.com/aws/aws-sdk-go v1.55.7
 	github.com/cuducos/chunk v1.1.4
 	github.com/cuducos/go-cnpj v0.1.2
 	github.com/dgraph-io/badger/v4 v4.7.0
