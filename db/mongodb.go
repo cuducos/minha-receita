@@ -231,6 +231,19 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 	if err := transform.ValidateIndexes(idxs); err != nil {
 		return fmt.Errorf("index name error: %w", err)
 	}
-	log.Output(1, fmt.Sprintf("indexes: %s", strings.Join(idxs, ", ")))
-	return fmt.Errorf("extra-indexes not implemented (yet)")
+	log.Output(1, "Creating the indexes…")
+	c := m.db.Collection(companyTableName)
+	var i []mongo.IndexModel
+	for _, v := range idxs {
+		i = append(i, mongo.IndexModel{
+			Keys:    bson.D{{Key: fmt.Sprintf("json.%s", v), Value: 1}},
+			Options: options.Index().SetName(fmt.Sprintf("idx_json.%s", v)),
+		})
+	}
+	r, err := c.Indexes().CreateMany(m.ctx, i)
+	if err != nil {
+		return fmt.Errorf("error creating indexes: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
+	return nil
 }

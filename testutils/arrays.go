@@ -4,7 +4,6 @@ import "testing"
 
 func AssertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
 	if len(a1) != len(a2) {
-		t.Errorf("got %v", a1) // TODO: remove
 		t.Errorf("arrays lengths are different: %d != %d", len(a1), len(a2))
 		return
 	}
