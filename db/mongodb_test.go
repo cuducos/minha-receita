@@ -88,24 +88,26 @@ func TestMongoDB(t *testing.T) {
 	c := db.db.Collection(companyTableName)
 	cur, err := c.Indexes().List(db.ctx)
 	if err != nil {
-		t.Errorf("error checking index list: %s", err)
+		t.Errorf("expected no errors checking index list, got %s", err)
 	}
 	defer cur.Close(db.ctx)
-	idxs := make(map[string]bool)
+	idxs := []string{}
 	for cur.Next(db.ctx) {
 		var idx bson.M
 		if err := cur.Decode(&idx); err != nil {
-			t.Errorf("error decoding index: %s", err) // mais uma ajuda
+			t.Errorf("expected no error decoding index: %s", err)
 		}
 		if n, ok := idx["name"].(string); ok {
-			idxs[n] = true
+			idxs = append(idxs, n)
 		}
 	}
-	r := make(map[string]bool)
-	for _, index := range []string{i} {
-		r[index] = idxs[index]
+	check := false
+	for _, v := range idxs {
+		if v == i {
+			check = true
+		}
 	}
-	if len(r) == 0 {
-		t.Errorf("index not found, got %s", err) // mais uma ajuda
+	if check {
+		t.Errorf("expected no index not found, got %s", err) // mais uma ajuda
 	}
 }
