@@ -238,8 +238,8 @@ func (m *MongoDB) ExtraIndexes(idxs []string) error {
 		k := fmt.Sprintf("json.%s", v)
 		n := fmt.Sprintf("idx_json.%s", v)
 		i = append(i, mongo.IndexModel{
-			Keys:    bson.D{{Key: fullKey, Value: 1}},
-			Options: options.Index().SetName(indexName),
+			Keys:    bson.D{{Key: fmt.Sprintf("json.%s", v), Value: 1}},
+			Options: options.Index().SetName(fmt.Sprintf("idx_json.%s", v)),
 		})
 	}
 	r, err := c.Indexes().CreateMany(m.ctx, i)
