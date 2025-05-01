@@ -196,7 +196,7 @@ $ curl https://minhareceita.org/33683111000280
 A API web tenta manter o máximo de similaridade com o nome dos campos, significado e tipos de dados conforme os _layout_ divulgado pela Receita Federal, salvo em alguns casos:
 
 * Campos com código numérico: adicionamos o “significado” do código numérico (por exemplo, `codigo_pais` é um número e `pais` é adicionado com o nome do país como texto)
-* Campos _booleanos_: convertemos textos como `"S"` e `"N"` para valores `true`, `false` on `null` (em branco)
+* Campos _booleanos_: convertemos textos como `"S"` e `"N"` para valores `true`, `false` ou `null` (em branco)
 * Código do município do IBGE é adicionado em `codigo_municipio_ibge`
 * Dados em CSV relacionados são adicionados como _arrays_ (quadro societário, CNAEs secundários e regime tributário)
 
@@ -248,8 +248,8 @@ A API web tenta manter o máximo de similaridade com o nome dos campos, signific
 | `cnae_fiscal_descricao` | `string` | `Estabelecimentos*.zip` e `Cnaes.zip` | Conversão de acordo com arquivo `Cnaes.zip` |
 | `cnpj` | `string` |  `Empresas*.zip` e `Estabelecimentos*.zip` | Concatenação de CNPJ Básico, CNPJ ordem e CNPJ DV |
 | `codigo_municipio_ibge` | `number` | `Estabelecimentos*.zip` e `TABMUN.CSV` [do Tesouro Nacional](https://www.tesourotransparente.gov.br/ckan/dataset/abb968cb-3710-4f85-89cf-875c91b9c7f6/resource/eebb3bc6-9eea-4496-8bcf-304f33155282/) | Conversão de acordo com ambos os arquivos |
-| `ddd_fax` | `string` | `Estabelecimentos*.zip` | Concatenação de DDD do fax e Fax | | |
-| `ddd_telefone_1` | `string` | `Estabelecimentos*.zip` |Concatenação de DDD 1 e Telefone 1 |
+| `ddd_fax` | `string` | `Estabelecimentos*.zip` | Concatenação de DDD do fax e Fax |
+| `ddd_telefone_1` | `string` | `Estabelecimentos*.zip` | Concatenação de DDD 1 e Telefone 1 |
 | `ddd_telefone_2` | `string` | `Estabelecimentos*.zip` | Concatenação de DDD 2 e Telefone 2 |
 | `descricao_identificador_matriz_filial` | `string` | `Estabelecimentos*.zip` | Conversão do `identificador_matriz_filial` de acordo com o _layout_ |
 | `descricao_motivo_situacao_cadastral` | `string` | `Estabelecimentos*.zip` e `Motivos.zip` | Conversão de acordo com arquivo `Motivos.zip`  |
