@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,12 +15,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-const (
-	cacheExpiration = 12 * time.Hour
-)
+const cacheExpiration = 12 * time.Hour
 
 //go:embed index.html
 var home string
+
+type JSONResponse struct {
+	Data []Group `json:"data"`
+}
 
 type Cache struct {
 	settings  settings
@@ -33,13 +36,9 @@ func (c *Cache) isExpired() bool {
 	return time.Since(c.createdAt) > cacheExpiration
 }
 
-type JSONResponse struct {
-	Data []Group `json:"data"`
-}
-
 func (c *Cache) refresh() error {
 	var fs []File
-	sess, err := session.NewSession(&aws.Config{
+	s, err := session.NewSession(&aws.Config{
 		Region:           aws.String(c.settings.region),
 		Endpoint:         aws.String(c.settings.endpointURL),
 		S3ForcePathStyle: aws.Bool(true),
@@ -53,10 +52,10 @@ func (c *Cache) refresh() error {
 		return err
 	}
 
-	var token *string
+	var t *string
 	loadPage := func(t *string) ([]File, *string, error) {
 		var fs []File
-		sdk := s3.New(sess)
+		sdk := s3.New(s)
 		r, err := sdk.ListObjectsV2(&s3.ListObjectsV2Input{
 			Bucket:            aws.String(c.settings.bucket),
 			ContinuationToken: t,
@@ -74,7 +73,7 @@ func (c *Cache) refresh() error {
 		return fs, nil, nil
 	}
 	for {
-		r, nxt, err := loadPage(token)
+		r, nxt, err := loadPage(t)
 		if err != nil {
 			return err
 		}
@@ -82,20 +81,37 @@ func (c *Cache) refresh() error {
 		if nxt == nil {
 			break
 		}
-		token = nxt
+		t = nxt
 	}
 
-	data := newGroups(fs)
-	var h bytes.Buffer
-	c.template.Execute(&h, data)
-	c.HTML = h.Bytes()
-
-	var j bytes.Buffer
-	if err := json.NewEncoder(&j).Encode(JSONResponse{data}); err != nil {
-		return err
+	g := newGroups(fs)
+	errs := make(chan error,1)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		var b bytes.Buffer
+		c.template.Execute(&b, g)
+		c.HTML = b.Bytes()
+	}()
+	go func() {
+		defer wg.Done()
+		var j bytes.Buffer
+		if err := json.NewEncoder(&j).Encode(JSONResponse{g}); err != nil {
+			errs <- err
+			return
+		}
+		c.JSON = j.Bytes()
+	}()
+	go func() {
+		wg.Wait()
+		close(errs)
+	}()
+	for err := range errs {
+		if err != nil {
+			return err
+		}
 	}
-	c.JSON = j.Bytes()
-
 	c.createdAt = time.Now()
 	return nil
 }

@@ -24,7 +24,6 @@ func newSettings() (settings, error) {
 		}
 		return v
 	}
-
 	s := settings{
 		accessKey:       load("AWS_ACCESS_KEY_ID"),
 		secretAccessKey: load("AWS_SECRET_ACCESS_KEY"),
@@ -33,7 +32,6 @@ func newSettings() (settings, error) {
 		bucket:          load("BUCKET"),
 		publicDomain:    load("PUBLIC_DOMAIN"),
 	}
-
 	if len(m) > 0 {
 		return settings{}, fmt.Errorf("missing environment variable(s): %s", strings.Join(m, ", "))
 	}

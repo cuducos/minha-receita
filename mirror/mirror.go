@@ -20,7 +20,6 @@ func startServer(c *Cache, p string) {
 				return
 			}
 		}
-
 		if r.Header.Get("Accept") == "application/json" {
 			w.Write(c.JSON)
 		} else {
@@ -34,7 +33,6 @@ func startServer(c *Cache, p string) {
 		}
 		w.WriteHeader(http.StatusOK)
 	})
-
 	p = fmt.Sprintf(":%s", p)
 	log.Output(1, fmt.Sprintf("Server listening on http://0.0.0.0%s", p))
 	http.ListenAndServe(p, nil)

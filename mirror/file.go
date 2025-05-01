@@ -29,17 +29,18 @@ func (f *File) HumanReadableSize() string {
 }
 
 func (f *File) ShortName() string {
-	p := strings.Split(f.name, "/")
-	return p[len(p)-1]
+	p := strings.LastIndex(f.name, "/") + 1
+	return f.name[p:len(f.name)]
 }
 
 func (f *File) group() string {
-	p := strings.Split(f.name, "/")
-	if len(p) == 1 {
+	p := strings.Index(f.name,"/")
+	if p == -1 {
 		return "Binários"
 	}
-	return p[0]
+	return f.name[0:p]
 }
+
 
 type Group struct {
 	Name  string `json:"name"`
