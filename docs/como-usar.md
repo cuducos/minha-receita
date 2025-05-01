@@ -220,11 +220,11 @@ A API web tenta manter o máximo de similaridade com o nome dos campos, signific
 | `codigo_pais` | `number` | `Estabelecimentos*.zip` | País |
 | `codigo_porte` | `number` | `Empresas*.zip` |  Porte da empresa |
 | `complemento` | `string` | `Estabelecimentos*.zip` | Complemeto |
-| `data_exclusao_do_mei` | `boolean` | `Simples.zip` | Data de exclusão do MEI |
-| `data_exclusao_do_simples` | `boolean` | `Simples.zip` | Data de exclusão do Simples |
+| `data_exclusao_do_mei` | `string` | `Simples.zip` | Data de exclusão do MEI |
+| `data_exclusao_do_simples` | `string` | `Simples.zip` | Data de exclusão do Simples |
 | `data_inicio_atividade` | `string` | `Estabelecimentos*.zip` | Data de início atividade |
-| `data_opcao_pelo_mei` | `boolean` | `Simples.zip` | Data de opção pelo MEI |
-| `data_opcao_pelo_simples` | `boolean` | `Simples.zip` | Data de opção pelo Simples |
+| `data_opcao_pelo_mei` | `string` | `Simples.zip` | Data de opção pelo MEI |
+| `data_opcao_pelo_simples` | `string` | `Simples.zip` | Data de opção pelo Simples |
 | `data_situacao_cadastral` | `string` | `Estabelecimentos*.zip` | Data situação cadastral |
 | `data_situacao_especial` | `string` | `Estabelecimentos*.zip` | Data da situação especial |
 | `descricao_tipo_de_logradouro` | `string` | `Estabelecimentos*.zip` | Tipo de logradouro |
