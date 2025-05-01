@@ -352,7 +352,6 @@ func TestCompanyJSONFields(t *testing.T) {
 		"ddd_telefone_2",
 		"descricao_identificador_matriz_filial",
 		"descricao_motivo_situacao_cadastral",
-		"descricao_porte",
 		"descricao_situacao_cadastral",
 		"descricao_tipo_de_logradouro",
 		"email",

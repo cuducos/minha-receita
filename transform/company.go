@@ -62,7 +62,6 @@ type Company struct {
 	CodigoPorte                      *int          `json:"codigo_porte" bson:"codigo_porte"`
 	Porte                            *string       `json:"porte" bson:"porte"`
 	EnteFederativoResponsavel        string        `json:"ente_federativo_responsavel" bson:"ente_federativo_responsavel"`
-	DescricaoPorte                   string        `json:"descricao_porte" bson:"descricao_porte"`
 	QuadroSocietario                 []PartnerData `json:"qsa" bson:"qsa"`
 	CNAESecundarios                  []CNAE        `json:"cnaes_secundarios" bson:"cnaes_secundarios"`
 	RegimeTributario                 TaxRegimes    `json:"regime_tributario" bson:"regime_tributario"`
