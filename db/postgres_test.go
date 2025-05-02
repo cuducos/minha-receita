@@ -1,9 +1,43 @@
 package db
 
 import (
+	"context"
 	"os"
+	"slices"
+	"strings"
 	"testing"
+
+	"github.com/cuducos/minha-receita/testutils"
 )
+
+var postgresDefaultIndexes = []string{"cnpj_pk"}
+
+func listIndexesPostgres(t *testing.T, pg *PostgreSQL) []string {
+	q := `
+		SELECT indexname
+		FROM pg_indexes
+		WHERE tablename = $1 AND schemaname = 'public'
+	`
+	c := context.Background()
+	r, err := pg.pool.Query(c, q, "cnpj")
+	if err != nil {
+		t.Errorf("expected no errors checking index list, got %s", err)
+		return nil
+	}
+	defer r.Close()
+	var i []string
+	for r.Next() {
+		var iname string
+		if err := r.Scan(&iname); err != nil {
+			t.Errorf("expected no error scanning index name, got %s", err)
+			continue
+		}
+		if !slices.Contains(postgresDefaultIndexes, iname) {
+			i = append(i, strings.TrimPrefix(iname, "idx_json."))
+		}
+	}
+	return i
+}
 
 func TestPostgresDB(t *testing.T) {
 	id := "33683111000280"
@@ -78,4 +112,12 @@ func TestPostgresDB(t *testing.T) {
 	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
+	if err := pg.ExtraIndexes([]string{"teste.index1"}); err == nil {
+		t.Error("expected errors running extra indexes, got nil")
+	}
+	i := []string{"qsa.nome_socio"}
+	if err := pg.ExtraIndexes(i); err != nil {
+		t.Errorf("expected no errors running extra indexes, got %s", err)
+	}
+	testutils.AssertArraysHaveSameItems(t, i, listIndexesPostgres(t, &pg))
 }
