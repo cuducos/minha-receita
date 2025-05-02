@@ -34,13 +34,12 @@ func (f *File) ShortName() string {
 }
 
 func (f *File) group() string {
-	p := strings.Index(f.name,"/")
+	p := strings.Index(f.name, "/")
 	if p == -1 {
 		return "Binários"
 	}
 	return f.name[0:p]
 }
-
 
 type Group struct {
 	Name  string `json:"name"`

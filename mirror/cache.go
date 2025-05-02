@@ -85,7 +85,7 @@ func (c *Cache) refresh() error {
 	}
 
 	g := newGroups(fs)
-	errs := make(chan error,1)
+	errs := make(chan error, 1)
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
