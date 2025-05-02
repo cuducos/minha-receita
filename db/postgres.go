@@ -240,10 +240,9 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		p.ExtraIndexesFields.Name = nameIdx
 		p.ExtraIndexesFields.Value = valueIdx
 		p.loadTemplates()
-		log.Output(1, fmt.Sprintf("Opa %s %s %s", p.ExtraIndexesFields.Type, p.ExtraIndexesFields.Name, p.ExtraIndexesFields.Value))
 		_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
 		if err != nil {
-			return fmt.Errorf("error to create indexe %s: %w", v, err)
+			return fmt.Errorf("expected the error to create indexe %s: %w", v, err)
 		}
 
 	}
