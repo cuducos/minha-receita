@@ -2,12 +2,17 @@ package db
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestPostgresDB(t *testing.T) {
 	id := "33683111000280"
-	json := `{"qsa": [{"name": 42}, {"name": "forty-two"}], "answer": 42}`
+	b, err := os.ReadFile(filepath.Join("..", "testdata", "response.json"))
+	if err != nil {
+		t.Error("error reading company JSON file")
+	}
+	c := string(b)
 
 	u := os.Getenv("TEST_POSTGRES_URL")
 	if u == "" {
@@ -35,10 +40,10 @@ func TestPostgresDB(t *testing.T) {
 	if err := pg.PreLoad(); err != nil {
 		t.Errorf("expected no error pre load, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]string{{id, c}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := pg.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := pg.CreateCompanies([][]string{{id, c}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	if err := pg.PostLoad(); err != nil {
@@ -48,16 +53,7 @@ func TestPostgresDB(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error getting a company, got %s", err)
 	}
-	if got != json {
-		t.Errorf("expected json to be %s, got %s", json, got)
-	}
-	got, err = pg.GetCompany("33683111000280")
-	if err != nil {
-		t.Errorf("expected no error getting a company, got %s", err)
-	}
-	if got != json {
-		t.Errorf("expected json to be %s, got %s", json, got)
-	}
+	assertCompaniesAreEqual(t, got, c)
 	if err := pg.MetaSave("answer", "42"); err != nil {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}

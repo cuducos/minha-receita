@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type company struct {
+type record struct {
 	Id   string            `json:"id"`
 	Json transform.Company `json:"json"`
 }
@@ -93,17 +93,17 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	}
 	coll := m.db.Collection(companyTableName)
 	var cs []interface{} // required by MongoDb pkg
-	for _, r := range batch {
-		if len(r) < 2 {
-			return fmt.Errorf("line skipped due to insufficient length: %s", r)
+	for _, c := range batch {
+		if len(c) < 2 {
+			return fmt.Errorf("line skipped due to insufficient length: %s", c)
 		}
-		var c company
-		c.Id = r[0]
-		err := json.Unmarshal([]byte(r[1]), &c.Json)
+		var r record
+		r.Id = c[0]
+		err := json.Unmarshal([]byte(c[1]), &r.Json)
 		if err != nil {
-			return fmt.Errorf("error deserializing JSON: %s\nerror: %w", r[1], err)
+			return fmt.Errorf("error deserializing JSON: %s\nerror: %w", c[1], err)
 		}
-		cs = append(cs, c)
+		cs = append(cs, r)
 	}
 	if len(cs) == 0 {
 		return nil
@@ -212,15 +212,15 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	coll := m.db.Collection(companyTableName)
-	var c company
-	err := coll.FindOne(ctx, bson.M{idFieldName: id}).Decode(&c)
+	var r record
+	err := coll.FindOne(ctx, bson.M{idFieldName: id}).Decode(&r)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", fmt.Errorf("no document found for CNPJ %s", id)
 		}
 		return "", fmt.Errorf("error querying CNPJ %s: %w", id, err)
 	}
-	b, err := json.Marshal(c.Json)
+	b, err := json.Marshal(r.Json)
 	if err != nil {
 		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", id, err)
 	}
