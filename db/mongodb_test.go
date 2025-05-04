@@ -12,7 +12,7 @@ import (
 
 var mongoDefaultIndexes = []string{"_id_", "id_1"}
 
-func listIndexes(t *testing.T, db *MongoDB) []string {
+func listIndexesMongo(t *testing.T, db *MongoDB) []string {
 	c, err := db.db.Collection(companyTableName).Indexes().List(db.ctx)
 	if err != nil {
 		t.Errorf("expected no errors checking index list, got %s", err)
@@ -110,5 +110,5 @@ func TestMongoDB(t *testing.T) {
 	if err := db.ExtraIndexes(i); err != nil {
 		t.Errorf("expected no errors running extra indexes, got %s", err)
 	}
-	testutils.AssertArraysHaveSameItems(t, i, listIndexes(t, &db))
+	testutils.AssertArraysHaveSameItems(t, i, listIndexesMongo(t, &db))
 }

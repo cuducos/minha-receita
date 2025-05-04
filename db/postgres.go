@@ -30,10 +30,10 @@ const (
 //go:embed postgres
 var sql embed.FS
 
-type ExtraIndexes struct {
-	Type  string
-	Name  string
-	Value string
+type ExtraIndex struct {
+	IsRoot bool
+	Name   string
+	Value  string
 }
 
 // PostgreSQL database interface.
@@ -50,7 +50,7 @@ type PostgreSQL struct {
 	KeyFieldName          string
 	ValueFieldName        string
 	PartnersJSONFieldName string
-	ExtraIndexesFields    ExtraIndexes
+	ExtraIndexesFields    []ExtraIndex
 }
 
 func (p *PostgreSQL) loadTemplates() error {
@@ -226,25 +226,17 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 		return fmt.Errorf("index name error: %w", err)
 	}
 	for _, idx := range idxs {
-		v := idx
-		name := "json."
-		typeIdx := "root"
-		nameIdx := fmt.Sprintf("%s%s", name, v)
-		valueIdx := idx
-		if strings.Contains(idx, ".") {
-			typeIdx = "no_root"
-			nameIdx = fmt.Sprintf("%s%s", name, v)
-			valueIdx = v
+		i := ExtraIndex{
+			IsRoot: !strings.Contains(idx, "."),
+			Name:   fmt.Sprintf("json.%s", idx),
+			Value:  idx,
 		}
-		p.ExtraIndexesFields.Type = typeIdx
-		p.ExtraIndexesFields.Name = nameIdx
-		p.ExtraIndexesFields.Value = valueIdx
-		p.loadTemplates()
-		_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
-		if err != nil {
-			return fmt.Errorf("expected the error to create indexe %s: %w", v, err)
-		}
-
+		p.ExtraIndexesFields = append(p.ExtraIndexesFields, i)
+	}
+	p.loadTemplates()
+	_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
+	if err != nil {
+		return fmt.Errorf("expected the error to create indexe: %w", err)
 	}
 	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", len(idxs), p.CompanyTableName))
 	return nil
