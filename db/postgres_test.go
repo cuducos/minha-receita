@@ -19,7 +19,7 @@ func listIndexesPostgres(t *testing.T, pg *PostgreSQL) []string {
 		WHERE tablename = $1 AND schemaname = 'public'
 	`
 	c := context.Background()
-	r, err := pg.pool.Query(c, q, "cnpj")
+	r, err := pg.pool.Query(c, q, pg.CompanyTableName)
 	if err != nil {
 		t.Errorf("expected no errors checking index list, got %s", err)
 		return nil

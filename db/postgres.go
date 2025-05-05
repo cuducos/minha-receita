@@ -185,6 +185,30 @@ func (p *PostgreSQL) MetaRead(k string) (string, error) {
 	return v, nil
 }
 
+// CreateExtraIndexes responsible for creating additional indexes in the database
+func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
+	if err := transform.ValidateIndexes(idxs); err != nil {
+		return fmt.Errorf("index name error: %w", err)
+	}
+	for _, idx := range idxs {
+		i := ExtraIndex{
+			IsRoot: !strings.Contains(idx, "."),
+			Name:   fmt.Sprintf("json.%s", idx),
+			Value:  idx,
+		}
+		p.ExtraIndexes = append(p.ExtraIndexes, i)
+	}
+	if err := p.loadTemplates(); err != nil {
+		return fmt.Errorf("expected the error to create template: %w", err)
+	}
+	_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
+	if err != nil {
+		return fmt.Errorf("expected the error to create indexe: %w", err)
+	}
+	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", len(idxs), p.CompanyTableName))
+	return nil
+}
+
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
 func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	cfg, err := pgxpool.ParseConfig(uri)
@@ -219,27 +243,4 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		return PostgreSQL{}, fmt.Errorf("could not connect to postgres: %w", err)
 	}
 	return p, nil
-}
-
-func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
-	if err := transform.ValidateIndexes(idxs); err != nil {
-		return fmt.Errorf("index name error: %w", err)
-	}
-	for _, idx := range idxs {
-		i := ExtraIndex{
-			IsRoot: !strings.Contains(idx, "."),
-			Name:   fmt.Sprintf("json.%s", idx),
-			Value:  idx,
-		}
-		p.ExtraIndexes = append(p.ExtraIndexes, i)
-	}
-	if err := p.loadTemplates(); err != nil {
-		return fmt.Errorf("expected the error to create template: %w", err)
-	}
-	_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
-	if err != nil {
-		return fmt.Errorf("expected the error to create indexe: %w", err)
-	}
-	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", len(idxs), p.CompanyTableName))
-	return nil
 }
