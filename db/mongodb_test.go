@@ -13,7 +13,7 @@ import (
 
 var mongoDefaultIndexes = []string{"_id_", "id_1"}
 
-func listIndexes(t *testing.T, db *MongoDB) []string {
+func listIndexesMongo(t *testing.T, db *MongoDB) []string {
 	c, err := db.db.Collection(companyTableName).Indexes().List(db.ctx)
 	if err != nil {
 		t.Errorf("expected no errors checking index list, got %s", err)
@@ -103,12 +103,12 @@ func TestMongoDB(t *testing.T) {
 	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
-	if err := db.ExtraIndexes([]string{"teste.index1"}); err == nil {
+	if err := db.CreateExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Error("expected errors running extra indexes, got nil")
 	}
 	i := []string{"qsa.nome_socio"}
-	if err := db.ExtraIndexes(i); err != nil {
+	if err := db.CreateExtraIndexes(i); err != nil {
 		t.Errorf("expected no errors running extra indexes, got %s", err)
 	}
-	testutils.AssertArraysHaveSameItems(t, i, listIndexes(t, &db))
+	testutils.AssertArraysHaveSameItems(t, i, listIndexesMongo(t, &db))
 }
