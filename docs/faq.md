@@ -22,12 +22,17 @@ WHERE json->>'cnae_fiscal' = '6204000'
    OR json->'cnaes_secundarios' @> '[{"codigo":6204000}]
 ```
 
-Você pode ainda criar índices para essas buscas ficarem mais rápidas, como por exemplo `CREATE INDEX cnpj_uf_idx ON cnpj((json->'uf'))`.
+Você pode ainda criar índices para essas buscas ficarem mais rápidas com o comando `extra-indexes`. O comando aceita um ou mais índices, e o nome dos índices é composto pelas chaves do JSON separadas por `.`. Por exemplo, para criar um índice para a UF e para os códigos dos CNAEs secundários:
 
-Para referência:
+```console
+$ minha-receita extra-indexes uf cnaes_secundarios.codigo
+```
 
-* um índice criado apenas com o código do CNAE fiscal (`CREATE INDEX cnpj_cnae_fiscal_idx ON cnpj((json->'cnae_fiscal'))`) ocupou certa de 2Gb em disco
-* um índice composto com UF e código do município (`CREATE INDEX cnpj_uf_municipio_idx ON cnpj((json->'uf'), (json->>'codigo_municipio'))`) ocupou cerca de 1,5Gb em disco.
+
+Para referência, no PostgreSQL:
+
+* um índice criado apenas com o código do CNAE fiscal ocupou certa de 2Gb em disco
+* um índice composto com UF e código do município ocupou cerca de 1,5Gb em disco.
 
 ## Como consigo um CSV único dos dados?
 
@@ -47,6 +52,7 @@ COPY (
 )
 TO 'nome-do-arquivo.csv' DELIMITER ',' CSV HEADER;
 ```
+
 ## Com qual periodicidade a API é atualizada?
 
 A atualização é manual e normalmente ocorre alguns dias depois de a Receita Federal liberar uma nova versão dos dados — salvo quando a Receita Federal divulga dados absurdos, como empresas abertas no ano [202](https://twitter.com/cuducos/status/1646684441979281410) ou [4100](https://twitter.com/cuducos/status/1479078346248097793).
