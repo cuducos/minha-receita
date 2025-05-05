@@ -50,7 +50,7 @@ type PostgreSQL struct {
 	KeyFieldName          string
 	ValueFieldName        string
 	PartnersJSONFieldName string
-	ExtraIndexesFields    []ExtraIndex
+	ExtraIndexes          []ExtraIndex
 }
 
 func (p *PostgreSQL) loadTemplates() error {
@@ -221,7 +221,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	return p, nil
 }
 
-func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
+func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
 	if err := transform.ValidateIndexes(idxs); err != nil {
 		return fmt.Errorf("index name error: %w", err)
 	}
@@ -231,9 +231,11 @@ func (p *PostgreSQL) ExtraIndexes(idxs []string) error {
 			Name:   fmt.Sprintf("json.%s", idx),
 			Value:  idx,
 		}
-		p.ExtraIndexesFields = append(p.ExtraIndexesFields, i)
+		p.ExtraIndexes = append(p.ExtraIndexes, i)
 	}
-	p.loadTemplates()
+	if err := p.loadTemplates(); err != nil {
+		return fmt.Errorf("expected the error to create template: %w", err)
+	}
 	_, err := p.pool.Exec(context.Background(), p.sql["extra_indexes"])
 	if err != nil {
 		return fmt.Errorf("expected the error to create indexe: %w", err)

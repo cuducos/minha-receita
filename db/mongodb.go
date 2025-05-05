@@ -227,7 +227,7 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	return string(b), nil
 }
 
-func (m *MongoDB) ExtraIndexes(idxs []string) error {
+func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	if err := transform.ValidateIndexes(idxs); err != nil {
 		return fmt.Errorf("index name error: %w", err)
 	}

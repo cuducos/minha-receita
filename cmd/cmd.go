@@ -78,7 +78,7 @@ func addDatabase(c *cobra.Command) *cobra.Command {
 	return c
 }
 
-var extraIndexesCmd = &cobra.Command{
+var createExtraIndexesCmd = &cobra.Command{
 	Use:   "extra-indexes <index1> [index2 …]",
 	Short: "Creates extra indexes in the company fields",
 	Args:  cobra.MinimumNArgs(1),
@@ -88,7 +88,7 @@ var extraIndexesCmd = &cobra.Command{
 			return fmt.Errorf("could not find database: %w", err)
 		}
 		defer db.Close()
-		return db.ExtraIndexes(idxs)
+		return db.CreateExtraIndexes(idxs)
 	},
 }
 
@@ -104,7 +104,7 @@ func CLI() *cobra.Command {
 		checkCLI(),
 		createCmd,
 		dropCmd,
-		extraIndexesCmd,
+		createExtraIndexesCmd,
 		transformCLI(),
 		sampleCLI(),
 		mirrorCLI(),

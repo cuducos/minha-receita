@@ -112,11 +112,11 @@ func TestPostgresDB(t *testing.T) {
 	if metadata2 != "forty-two" {
 		t.Errorf("expected foruty-two as the answer, got %s", metadata2)
 	}
-	if err := pg.ExtraIndexes([]string{"teste.index1"}); err == nil {
+	if err := pg.CreateExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Error("expected errors running extra indexes, got nil")
 	}
 	i := []string{"qsa.nome_socio"}
-	if err := pg.ExtraIndexes(i); err != nil {
+	if err := pg.CreateExtraIndexes(i); err != nil {
 		t.Errorf("expected no errors running extra indexes, got %s", err)
 	}
 	testutils.AssertArraysHaveSameItems(t, i, listIndexesPostgres(t, &pg))
