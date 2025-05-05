@@ -2,6 +2,7 @@ package db
 
 import (
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -33,8 +34,16 @@ func listIndexesMongo(t *testing.T, db *MongoDB) []string {
 }
 
 func TestMongoDB(t *testing.T) {
-	id := "33683111000280"
-	json := `{"cnpj":"33683111000280","identificador_matriz_filial":null,"descricao_identificador_matriz_filial":null,"nome_fantasia":"Minh","situacao_cadastral":null,"descricao_situacao_cadastral":null,"data_situacao_cadastral":null,"motivo_situacao_cadastral":null,"descricao_motivo_situacao_cadastral":null,"nome_cidade_no_exterior":"","codigo_pais":null,"pais":null,"data_inicio_atividade":null,"cnae_fiscal":null,"cnae_fiscal_descricao":null,"descricao_tipo_de_logradouro":"","logradouro":"","numero":"","complemento":"","bairro":"","cep":"","uf":"","codigo_municipio":null,"codigo_municipio_ibge":null,"municipio":null,"ddd_telefone_1":"","ddd_telefone_2":"","ddd_fax":"","email":null,"situacao_especial":"","data_situacao_especial":null,"opcao_pelo_simples":null,"data_opcao_pelo_simples":null,"data_exclusao_do_simples":null,"opcao_pelo_mei":null,"data_opcao_pelo_mei":null,"data_exclusao_do_mei":null,"razao_social":"","codigo_natureza_juridica":null,"natureza_juridica":null,"qualificacao_do_responsavel":null,"capital_social":null,"codigo_porte":null,"porte":null,"ente_federativo_responsavel":"","qsa":[{"identificador_de_socio":null,"nome_socio":"OSMAR QUIRINO DA SILVA","cnpj_cpf_do_socio":"","codigo_qualificacao_socio":null,"qualificacao_socio":"Diretor","data_entrada_sociedade":null,"codigo_pais":null,"pais":null,"cpf_representante_legal":"","nome_representante_legal":"","codigo_qualificacao_representante_legal":null,"qualificacao_representante_legal":null,"codigo_faixa_etaria":null,"faixa_etaria":"Entre 61 a 70 anos"},{"identificador_de_socio":null,"nome_socio":"ALEXANDRE GONCALVES DE AMORIM","cnpj_cpf_do_socio":"","codigo_qualificacao_socio":null,"qualificacao_socio":"Presidente","data_entrada_sociedade":null,"codigo_pais":null,"pais":null,"cpf_representante_legal":"","nome_representante_legal":"","codigo_qualificacao_representante_legal":null,"qualificacao_representante_legal":null,"codigo_faixa_etaria":null,"faixa_etaria":"Entre 51 a 60 anos"}],"cnaes_secundarios":null,"regime_tributario":null}`
+	id := "19131243000197"
+	b, err := os.ReadFile(filepath.Join("..", "testdata", "response.json"))
+	if err != nil {
+		t.Error("error reading company JSON file")
+	}
+	c := string(b)
+
+	// ignore date conversions form string to date when writing to the database
+	c = strings.ReplaceAll(c, "2013-10-03", "0001-01-01")
+	c = strings.ReplaceAll(c, "2024-02-27", "0001-01-01")
 
 	u := os.Getenv("TEST_MONGODB_URL")
 	if u == "" {
@@ -60,29 +69,20 @@ func TestMongoDB(t *testing.T) {
 		t.Errorf("expected no error creating the table, got %s", err)
 	}
 
-	if err := db.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := db.CreateCompanies([][]string{{id, c}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
 	}
-	if err := db.CreateCompanies([][]string{{id, json}}); err != nil {
+	if err := db.CreateCompanies([][]string{{id, c}}); err != nil {
 		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	if err := db.PostLoad(); err != nil {
 		t.Errorf("expected no error post load, got %s", err)
 	}
-	got, err := db.GetCompany("33683111000280")
+	got, err := db.GetCompany("19131243000197")
 	if err != nil {
 		t.Errorf("expected no error getting a company, got %s", err)
 	}
-	if got != json {
-		t.Errorf("expected json to be %s, got %s", json, got)
-	}
-	got, err = db.GetCompany("33683111000280")
-	if err != nil {
-		t.Errorf("expected no error getting a company, got %s", err)
-	}
-	if got != json {
-		t.Errorf("expected json to be %s, got %s", json, got)
-	}
+	assertCompaniesAreEqual(t, got, c)
 	if err := db.MetaSave("answer", "42"); err != nil {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}
