@@ -1,0 +1,94 @@
+name: Erro no comando `transform`
+title: "Erro no comando `transform`: "
+description: Tentou rodar o `minha-receita transform` e deu erro? Compartilhe detalhes para nos ajudar a te ajudar!
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### O comando
+        Não cole capturas de tela, copie e cole a saída do terminal, pois isso [nos ajuda a te ajudar](https://cuducos.me/2025/03/18/nao-compartilha-captura-de-tela-para-pedir-ajuda.html).
+
+  - type: textarea
+    attributes:
+      label: "Saída completa no terminal, incluindo o comando executado"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "O binário está atualizado, quando foi baixado?"
+      description: "Se executando a partir do código fonte, qual o _commit_ mais recente da _branch?"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Os dados
+        Utilize a [verificação dos downloads](https://docs.minhareceita.org/servidor/#verificacao-dos-downloads).
+
+  - type: textarea
+    attributes:
+      label: "O comando `minha-receita check` aponta algum erro?"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Qual a data de divulgação pela Receita Federal dos dados que você está processando (arquivo `updated_at.txt`)?"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: "### A máquina onde o binário é executado"
+
+  - type: dropdown
+    attributes:
+      label: "O ambiente rodando o Minha Receita é um container (por exemplo, Docker)?"
+      multiple: false
+      options:
+        - Não
+        - Sim
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "Quanto espaço livre em disco na máquina rodando o Minha Receita?"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Quais as configurações (CPU, memória e armazenamento) da máquina rodando o Minha Receita?"
+
+  - type: markdown
+    attributes:
+      value: "### O banco de dados"
+
+  - type: input
+    attributes:
+      label: "Qual banco de dados está utilizando, Postgres ou Mongo?"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: "O ambiente do banco de dados é um container (por exemplo, Docker)?"
+      multiple: false
+      options:
+        - Não
+        - Sim
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "Quanto espaço livre em disco na máquina rodando o banco de dados?"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Quais as configurações (CPU, memória e armazenamento) da máquina rodando o banco de dados?"
