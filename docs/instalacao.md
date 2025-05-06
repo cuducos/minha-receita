@@ -14,10 +14,16 @@ $ git clone https://github.com/cuducos/minha-receita.git
 
 ## Requisitos e instalação
 
-É necessário cerca de 160Gb disponíveis de espaço em disco para armazenar os dados:
+É necessário cerca de 160Gb disponíveis de espaço em disco para armazenar os dados. Caso o banco de dados esteja em uma máquina separada, a divisão é mais ou menos 140Gb para o banco de dados, e 20Gb para a máquina que vai fazer o download dos dados e transformá-los para carregar no banco de dados.
+
+### Banco de dados
+
+* O banco de dados gerado utiliza cerca de 140Gb
+* Rodar o banco de dados localmente com Docker só é recomendado para desenvolvimento (não recomendado para o banco de dados completo)
+
+#### Download e transformação dos dados
 
 * Os arquivos da Receita federal tem cerca de 7Gb
-* O banco de dados gerado utiliza cerca de 140Gb
 * O processo de importação utiliza uma estrutura temporária de cerca de 10Gb
 
 ### Imagem Docker
