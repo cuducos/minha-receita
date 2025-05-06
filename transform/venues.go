@@ -6,13 +6,60 @@ import (
 	"io"
 	"log"
 	"sync"
-	"sync/atomic"
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/schollz/progressbar/v3"
 )
 
-func saveBatch(db database, b []Company) (int, error) {
+type venuesTask struct {
+	source    *source
+	lookups   *lookups
+	kv        kvStorage
+	privacy   bool
+	dir       string
+	db        database
+	batchSize int
+	rows      chan []string
+	saved     chan int
+	errors    chan error
+	producers sync.WaitGroup
+	consumers sync.WaitGroup
+	bar       *progressbar.ProgressBar
+}
+
+func (t *venuesTask) produceRows(ctx context.Context) {
+	for _, r := range t.source.readers {
+		t.producers.Add(1)
+		go func(a *archivedCSVs) {
+			ch := make(chan []string)
+			errs := make(chan error, 1)
+			defer func() {
+				defer close(errs)
+				t.producers.Done()
+			}()
+			go func() {
+				if err := a.sendTo(ctx, ch); err != nil {
+					errs <- err
+				}
+			}()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case r := <-ch:
+					t.rows <- r
+				case err := <-errs:
+					if err != nil && err != io.EOF {
+						t.errors <- err
+					}
+					return
+				}
+			}
+		}(r)
+	}
+}
+
+func (t *venuesTask) saveBatch(b []Company) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
@@ -24,100 +71,69 @@ func saveBatch(db database, b []Company) (int, error) {
 		}
 		s[i] = []string{c.CNPJ, j}
 	}
-	if err := db.CreateCompanies(s); err != nil {
+	if err := t.db.CreateCompanies(s); err != nil {
 		return 0, fmt.Errorf("error saving companies: %w", err)
 	}
 	return len(s), nil
 }
 
-type venuesTask struct {
-	source            *source
-	lookups           *lookups
-	kv                kvStorage
-	privacy           bool
-	dir               string
-	db                database
-	batchSize         int
-	sentToBatches     int32
-	rows              chan []string
-	saved             chan int
-	errors            chan error
-	bar               *progressbar.ProgressBar
-	shutdown          int32
-	shutdownWaitGroup sync.WaitGroup
-}
-
-func (t *venuesTask) produceRows() {
-	for _, r := range t.source.readers {
-		t.shutdownWaitGroup.Add(1)
-		go func(t *venuesTask, a *archivedCSVs) {
-			defer t.shutdownWaitGroup.Done()
-			for {
-				if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
-					return
-				}
-				r, err := a.read()
-				if err == io.EOF {
-					break
-				}
-				if err != nil { // initiate graceful shutdown.
-					t.errors <- err
-					atomic.StoreInt32(&t.shutdown, 1)
-					return
-				}
-				if atomic.LoadInt32(&t.shutdown) == 1 {
-					return
-				}
-				t.rows <- r
-			}
-		}(t, r)
-	}
-}
-
-func (t *venuesTask) consumeRows() {
-	defer t.shutdownWaitGroup.Done()
-	var b []Company
-	for r := range t.rows {
-		if len(r) != 30 {
-			log.Output(1, fmt.Sprintf("Skipping row with %d columns (expected 30): %v", len(r), r))
-			t.saved <- 1
-			continue
-		}
-		if atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
-			return
-		}
-		if int(atomic.AddInt32(&t.sentToBatches, 1)) == t.source.total {
-			close(t.rows)
-		}
-		c, err := newCompany(r, t.lookups, t.kv, t.privacy)
-		if err != nil { // initiate graceful shutdown.
-			t.errors <- fmt.Errorf("error parsing company from %q: %w", r, err)
-			atomic.StoreInt32(&t.shutdown, 1)
-			return
-		}
-		b = append(b, c)
-		if len(b) >= t.batchSize {
-			n, err := saveBatch(t.db, b)
-			if err != nil { // initiate graceful shutdown.
-				t.errors <- fmt.Errorf("error saving companies: %w", err)
-				atomic.StoreInt32(&t.shutdown, 1)
+func (t *venuesTask) consumeRows(ctx context.Context) error {
+	ch := make(chan int)
+	errs := make(chan error, 1)
+	defer func() {
+		t.consumers.Done()
+		close(errs)
+	}()
+	go func() {
+		var b []Company
+		for {
+			select {
+			case <-ctx.Done():
 				return
+			case r, ok := <-t.rows:
+				if !ok {
+					n, err := t.saveBatch(b)
+					if err != nil {
+						errs <- err
+						return
+					}
+					ch <- n
+					return
+				}
+				c, err := newCompany(r, t.lookups, t.kv, t.privacy)
+				if err != nil {
+					errs <- fmt.Errorf("error parsing company from %q: %w", r, err)
+					return
+				}
+				b = append(b, c)
+				if len(b) < t.batchSize {
+					continue
+				}
+				n, err := t.saveBatch(b)
+				if err != nil {
+					errs <- err
+					return
+				}
+				ch <- n
+				b = []Company{}
+			}
+		}
+	}()
+	for {
+		select {
+		case <-ctx.Done():
+			close(ch)
+			return nil
+		case n, ok := <-ch:
+			if !ok {
+				return nil
 			}
 			t.saved <- n
-			b = []Company{}
+		case err := <-errs:
+			close(ch)
+			return err
 		}
 	}
-	if len(b) == 0 || atomic.LoadInt32(&t.shutdown) == 1 { // check if must continue.
-		return
-	}
-	// send the remaining items in the batch
-	n, err := saveBatch(t.db, b)
-	if err != nil { // initiate graceful shutdown.
-		t.errors <- fmt.Errorf("error saving companies: %w", err)
-		atomic.StoreInt32(&t.shutdown, 1)
-		return
-	}
-	t.saved <- n
 }
 
 func (t *venuesTask) run(m int) error {
@@ -128,28 +144,30 @@ func (t *venuesTask) run(m int) error {
 	if err := t.db.PreLoad(); err != nil {
 		return fmt.Errorf("error preparing the database: %w", err)
 	}
-	t.produceRows()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.produceRows(ctx)
 	for range m {
-		t.shutdownWaitGroup.Add(1)
-		go t.consumeRows()
+		t.consumers.Add(1)
+		go t.consumeRows(ctx)
 	}
+	go func() {
+		t.producers.Wait()
+		close(t.rows)
+	}()
 	defer func() {
-		if t.source.total != int(t.sentToBatches) {
-			close(t.rows)
-		}
-		if atomic.LoadInt32(&t.shutdown) == 1 {
-			t.shutdownWaitGroup.Wait()
-		}
+		t.consumers.Wait()
 		close(t.saved)
 		close(t.errors)
 	}()
 	for {
 		select {
 		case err := <-t.errors:
+			cancel()
 			return err
 		case n := <-t.saved:
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
+				cancel()
 				log.Output(1, "Consolidating the database…")
 				return t.db.PostLoad()
 			}
@@ -158,24 +176,22 @@ func (t *venuesTask) run(m int) error {
 }
 
 func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b int, p bool) (*venuesTask, error) {
-	ctx := context.Background() // TODO: implement cancel
-	v, err := newSource(ctx, venues, dir)
+	v, err := newSource(context.Background(), venues, dir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating a source for venues from %s: %w", dir, err)
 	}
 	t := venuesTask{
-		source:        v,
-		lookups:       l,
-		kv:            kv,
-		privacy:       p,
-		dir:           dir,
-		db:            db,
-		batchSize:     b,
-		sentToBatches: 0,
-		rows:          make(chan []string),
-		saved:         make(chan int),
-		errors:        make(chan error),
-		bar:           progressbar.Default(int64(v.total)),
+		source:    v,
+		lookups:   l,
+		kv:        kv,
+		privacy:   p,
+		dir:       dir,
+		db:        db,
+		batchSize: b,
+		rows:      make(chan []string),
+		saved:     make(chan int),
+		errors:    make(chan error, 1),
+		bar:       progressbar.Default(int64(v.total)),
 	}
 	t.bar.Describe("Creating the JSON data for each CNPJ")
 	return &t, nil
