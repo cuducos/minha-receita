@@ -3,7 +3,6 @@ package transform
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"sync"
 
@@ -22,41 +21,8 @@ type venuesTask struct {
 	rows      chan []string
 	saved     chan int
 	errors    chan error
-	producers sync.WaitGroup
 	consumers sync.WaitGroup
 	bar       *progressbar.ProgressBar
-}
-
-func (t *venuesTask) produceRows(ctx context.Context) {
-	for _, r := range t.source.readers {
-		t.producers.Add(1)
-		go func(a *archivedCSVs) {
-			ch := make(chan []string)
-			errs := make(chan error, 1)
-			defer func() {
-				defer close(errs)
-				t.producers.Done()
-			}()
-			go func() {
-				if err := a.sendTo(ctx, ch); err != nil {
-					errs <- err
-				}
-			}()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case r := <-ch:
-					t.rows <- r
-				case err := <-errs:
-					if err != nil && err != io.EOF {
-						t.errors <- err
-					}
-					return
-				}
-			}
-		}(r)
-	}
 }
 
 func (t *venuesTask) saveBatch(b []Company) (int, error) {
@@ -145,15 +111,16 @@ func (t *venuesTask) run(m int) error {
 		return fmt.Errorf("error preparing the database: %w", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	t.produceRows(ctx)
+	go func() {
+		if err := t.source.sendTo(ctx, t.rows); err != nil {
+			t.errors <- fmt.Errorf("error reading %s: %w", t.source.kind, err)
+		}
+		close(t.rows)
+	}()
 	for range m {
 		t.consumers.Add(1)
 		go t.consumeRows(ctx)
 	}
-	go func() {
-		t.producers.Wait()
-		close(t.rows)
-	}()
 	defer func() {
 		t.consumers.Wait()
 		close(t.saved)
