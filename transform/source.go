@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func pathsForSource(t sourceType, dir string) ([]string, error) {
@@ -150,6 +152,20 @@ func (s *source) countLines() error {
 			}
 		}
 	}
+}
+
+func (s *source) sendTo(ctx context.Context, ch chan<- []string) error {
+	g, ctx := errgroup.WithContext(ctx)
+	for _, r := range s.readers {
+		a := r
+		g.Go(func() error {
+			if err := a.sendTo(ctx, ch); err != io.EOF {
+				return err
+			}
+			return nil
+		})
+	}
+	return g.Wait()
 }
 
 func newSource(ctx context.Context, t sourceType, d string) (*source, error) {
