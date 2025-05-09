@@ -14,6 +14,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/spf13/cobra v1.9.1
 	go.mongodb.org/mongo-driver v1.17.3
+	golang.org/x/sync v0.14.0
 	golang.org/x/text v0.25.0
 )
 
@@ -46,7 +47,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect

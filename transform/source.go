@@ -52,12 +52,18 @@ const (
 	noTaxes          sourceType = "Imunes e Isentas"
 )
 
+// being accumulative means a 1-to-many relationship: one company “accumulates”
+// more than one association with records from this source
+func (s sourceType) isAccumulative() bool {
+	return s == partners || s == realProfit || s == presumedProfit || s == arbitratedProfit || s == noTaxes
+}
+
 type source struct {
 	kind     sourceType
 	dir      string
 	files    []string
 	readers  []*archivedCSVs
-	total    int
+	total    int64
 	shutdown int32
 }
 
@@ -111,8 +117,8 @@ func (s *source) resetReaders() error {
 	return nil
 }
 
-func (s *source) countCSVRows(a *archivedCSVs, count chan<- int, errs chan<- error) {
-	var t int
+func (s *source) countCSVRows(a *archivedCSVs, count chan<- int64, errs chan<- error) {
+	var t int64
 	for {
 		_, err := a.read()
 		if err == io.EOF {
@@ -129,7 +135,7 @@ func (s *source) countCSVRows(a *archivedCSVs, count chan<- int, errs chan<- err
 }
 
 func (s *source) countLines() error {
-	count := make(chan int)
+	count := make(chan int64)
 	errs := make(chan error)
 	for _, r := range s.readers {
 		go s.countCSVRows(r, count, errs)
@@ -202,7 +208,7 @@ func newSource(ctx context.Context, t sourceType, d string) (*source, error) {
 	}
 }
 
-func newSources(dir string, kinds []sourceType) ([]*source, error) {
+func newSources(dir string, kinds []sourceType) ([]*source, int64, error) {
 	srcs := []*source{}
 	ok := make(chan *source)
 	errs := make(chan error, 1)
@@ -227,16 +233,18 @@ func newSources(dir string, kinds []sourceType) ([]*source, error) {
 			}
 		}(s)
 	}
+	var t int64
 	for {
 		select {
 		case err := <-errs:
 			done.Store(true)
-			return nil, fmt.Errorf("error loading sources: %w", err)
+			return nil, 0, fmt.Errorf("error loading sources: %w", err)
 		case src := <-ok:
+			t += src.total
 			srcs = append(srcs, src)
 			log.Output(1, fmt.Sprintf("[%d/%d] %s loaded!", len(srcs), len(kinds), src.kind))
 			if len(srcs) == len(kinds) {
-				return srcs, nil
+				return srcs, t, nil
 			}
 		}
 	}

@@ -14,17 +14,15 @@ func newTestTaxes() simpleTaxesData {
 	return simpleTaxesData{&simples, &dtSimples, nil, &mei, &inMEI, &outMEI}
 }
 
-var (
-	simpleTaxesCSVRow = []string{
-		"BASE DO CNPJ",
-		"S",        // OpcaoPeloSimples
-		"20221217", // DataOpcaoPeloSimples
-		"",         // DataExclusaoDoSimples
-		"N",        // OpcaoPeloMEI
-		"20221118", // DataOpcaoPeloMEI
-		"20221201", // DataExclusaoDoMEI
-	}
-)
+var simpleTaxesCSVRow = []string{
+	"BASE DO CNPJ",
+	"S",        // OpcaoPeloSimples
+	"20221217", // DataOpcaoPeloSimples
+	"",         // DataExclusaoDoSimples
+	"N",        // OpcaoPeloMEI
+	"20221118", // DataOpcaoPeloMEI
+	"20221201", // DataExclusaoDoMEI
+}
 
 func TestNewTaxes(t *testing.T) {
 	d, err := newSimpleTaxesData(simpleTaxesCSVRow)
