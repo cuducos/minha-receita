@@ -52,6 +52,12 @@ const (
 	noTaxes          sourceType = "Imunes e Isentas"
 )
 
+// being accumulative means a 1-to-many relationship: one company “accumulates”
+// more than one association with records from this source
+func (s sourceType) isAccumulative() bool {
+	return s == partners || s == realProfit || s == presumedProfit || s == arbitratedProfit || s == noTaxes
+}
+
 type source struct {
 	kind     sourceType
 	dir      string
