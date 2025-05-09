@@ -1,16 +1,16 @@
 package transform
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"sync/atomic"
 	"time"
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
 )
 
 type item struct {
@@ -74,6 +74,53 @@ func (kv *badgerStorage) garbageCollect() {
 	}
 }
 
+func (kv *badgerStorage) loadRow(r []string, s sourceType, l *lookups) error {
+	i, err := newKVItem(s, l, r)
+	if err != nil {
+		return fmt.Errorf("error creating an %s item: %w", s, err)
+	}
+	if err := saveItem(kv.db, i.kind, i.key, i.value); err != nil {
+		return fmt.Errorf("could not save key-value: %w", err)
+	}
+	return nil
+}
+
+func (kv *badgerStorage) loadSource(ctx context.Context, s *source, l *lookups, bar *progressbar.ProgressBar) error {
+	ch := make(chan []string)
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		defer close(ch)
+		return s.sendTo(ctx, ch)
+	})
+	g.Go(func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case r, ok := <-ch:
+				if !ok {
+					return nil
+				}
+				if s.kind.isAccumulative() { // avoid concurrency
+					if err := kv.loadRow(r, s.kind, l); err != nil {
+						return err
+					}
+					bar.Add(1)
+				} else {
+					g.Go(func() error {
+						if err := kv.loadRow(r, s.kind, l); err != nil {
+							return err
+						}
+						bar.Add(1)
+						return nil
+					})
+				}
+			}
+		}
+	})
+	return g.Wait()
+}
+
 func (kv *badgerStorage) load(dir string, l *lookups) error {
 	srcs, err := newSources(dir, []sourceType{
 		base,
@@ -87,69 +134,25 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	if err != nil {
 		return fmt.Errorf("could not load sources: %w", err)
 	}
-	items := make(chan struct{})
-	errs := make(chan error)
-	var shutdown int32
 	tic := time.NewTicker(3 * time.Minute)
-	defer func() {
-		tic.Stop()
-		close(items)
-		close(errs)
-	}()
+	defer tic.Stop()
 	go func() {
 		for range tic.C {
 			kv.garbageCollect()
 		}
 	}()
-	var t int
-	for _, src := range srcs {
-		t += src.total
-		for _, a := range src.readers {
-			go func(s sourceType, a *archivedCSVs) {
-				for {
-					r, err := a.read()
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("error reading %s: %w", a.path, err)
-						}
-						return
-					}
-					i, err := newKVItem(s, l, r)
-					if err != nil {
-						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("error creating an %s item: %w", string(s), err)
-						}
-						return
-					}
-					if err := saveItem(kv.db, i.kind, i.key, i.value); err != nil {
-						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("could not save key-value: %w", err)
-						}
-						return
-					}
-					if atomic.LoadInt32(&shutdown) == 0 {
-						items <- struct{}{}
-					}
-				}
-			}(src.kind, a)
-		}
-	}
-	bar := progressbar.Default(int64(t), "Processing base CNPJ, partners and taxes")
+	bar := progressbar.Default(0, "Processing base CNPJ, partners and taxes")
 	defer bar.Close()
-	for {
-		select {
-		case <-items:
-			bar.Add(1)
-			if bar.IsFinished() {
-				return nil
-			}
-		case err := <-errs:
-			return fmt.Errorf("error creating key-value storage: %w", err)
-		}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+	for _, src := range srcs {
+		bar.AddMax(src.total)
+		g.Go(func() error {
+			return kv.loadSource(ctx, src, l, bar)
+		})
 	}
+	return g.Wait()
 }
 
 func (kv *badgerStorage) enrichCompany(c *Company) error {

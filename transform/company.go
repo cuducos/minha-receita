@@ -117,6 +117,9 @@ func (c *Company) identificadorMatrizFilial(v string) error {
 
 func newCompany(row []string, l *lookups, kv kvStorage, privacy bool) (Company, error) {
 	var c Company
+	if len(row) != 30 {
+		return c, fmt.Errorf("invalid row with %d columns (expected 30): %v", len(row), row)
+	}
 	c.CNPJ = row[0] + row[1] + row[2]
 	c.NomeFantasia = row[4]
 	c.NomeCidadeNoExterior = row[8]

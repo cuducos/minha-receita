@@ -2,6 +2,7 @@ package transform
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -75,6 +76,27 @@ func (a *archivedCSVs) read() ([]string, error) {
 		ls[i] = multipleSpaces.ReplaceAllString(strings.Map(removeNulChar, ls[i]), " ")
 	}
 	return ls, nil
+}
+
+func (a *archivedCSVs) sendTo(ctx context.Context, ch chan<- []string) error {
+	e := make(chan error, 1)
+	defer close(e)
+	go func() {
+		for {
+			row, err := a.read()
+			if err != nil {
+				e <- err
+				return
+			}
+			ch <- row
+		}
+	}()
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-e:
+		return err
+	}
 }
 
 func (a *archivedCSVs) close() error {
