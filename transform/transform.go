@@ -15,6 +15,10 @@ const (
 	// queries sent to the database
 	MaxParallelDBQueries = 8
 
+	// MaxParallelKVWrites is the default for maximum number of parallels
+	// writes on the key-value storage (Badger)
+	MaxParallelKVWrites = 1024
+
 	// BatchSize determines the size of the batches used to create the initial JSON
 	// data in the database.
 	BatchSize = 8192
@@ -28,7 +32,7 @@ type database interface {
 }
 
 type kvStorage interface {
-	load(string, *lookups) error
+	load(string, *lookups, int) error
 	enrichCompany(*Company) error
 	close() error
 }
@@ -44,19 +48,19 @@ func saveUpdatedAt(db database, dir string) error {
 	return db.MetaSave("updated-at", string(v))
 }
 
-func createKeyValueStorage(dir string, pth string, l lookups) error {
+func createKeyValueStorage(dir string, pth string, l lookups, maxKV int) error {
 	kv, err := newBadgerStorage(pth, false)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
 	defer kv.close()
-	if err := kv.load(dir, &l); err != nil {
+	if err := kv.load(dir, &l, maxKV); err != nil {
 		return fmt.Errorf("error loading data to badger: %w", err)
 	}
 	return nil
 }
 
-func createJSONs(dir string, pth string, db database, l lookups, maxParallelDBQueries, batchSize int, privacy bool) error {
+func createJSONs(dir string, pth string, db database, l lookups, maxDB, batchSize int, privacy bool) error {
 	kv, err := newBadgerStorage(pth, true)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
@@ -66,7 +70,7 @@ func createJSONs(dir string, pth string, db database, l lookups, maxParallelDBQu
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
 	}
-	if err := j.run(maxParallelDBQueries); err != nil {
+	if err := j.run(maxDB); err != nil {
 		return fmt.Errorf("error writing venues to database: %w", err)
 	}
 	return saveUpdatedAt(db, dir)
@@ -74,7 +78,7 @@ func createJSONs(dir string, pth string, db database, l lookups, maxParallelDBQu
 
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
-func Transform(dir string, db database, max, s int, p bool) error {
+func Transform(dir string, db database, maxDB, maxKV, s int, p bool) error {
 	pth, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
 		return fmt.Errorf("error creating temporary key-value storage: %w", err)
@@ -84,8 +88,8 @@ func Transform(dir string, db database, max, s int, p bool) error {
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
 	}
-	if err := createKeyValueStorage(dir, pth, l); err != nil {
+	if err := createKeyValueStorage(dir, pth, l, 1024); err != nil {
 		return err
 	}
-	return createJSONs(dir, pth, db, l, max, s, p)
+	return createJSONs(dir, pth, db, l, maxDB, s, p)
 }

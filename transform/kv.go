@@ -1,16 +1,20 @@
 package transform
 
 import (
+	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"sync/atomic"
+	"strings"
 	"time"
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
 )
 
 type item struct {
@@ -18,33 +22,44 @@ type item struct {
 	kind       sourceType
 }
 
+func checksumFor(r []string) string {
+	b := []byte(strings.Join(r, ""))
+	h := md5.New()
+	return hex.EncodeToString(h.Sum(b))
+}
+
 func newKVItem(s sourceType, l *lookups, r []string) (i item, err error) {
+	var k string
 	var h func(l *lookups, r []string) ([]byte, error)
 	switch s {
 	case partners:
-		i.key = []byte(keyForPartners(r[0]))
+		k = keyForPartners(r[0])
 		h = loadPartnerRow
 	case base:
-		i.key = []byte(keyForBase(r[0]))
+		k = keyForBase(r[0])
 		h = loadBaseRow
 	case simpleTaxes:
-		i.key = []byte(keyForSimpleTaxes(r[0]))
+		k = keyForSimpleTaxes(r[0])
 		h = loadSimpleTaxesRow
 	case realProfit:
-		i.key = []byte(keyForTaxRegime(r[1]))
+		k = keyForTaxRegime(r[1])
 		h = loadTaxRow
 	case presumedProfit:
-		i.key = []byte(keyForTaxRegime(r[1]))
+		k = keyForTaxRegime(r[1])
 		h = loadTaxRow
 	case arbitratedProfit:
-		i.key = []byte(keyForTaxRegime(r[1]))
+		k = keyForTaxRegime(r[1])
 		h = loadTaxRow
 	case noTaxes:
-		i.key = []byte(keyForTaxRegime(r[1]))
+		k = keyForTaxRegime(r[1])
 		h = loadTaxRow
 	default:
 		return item{}, fmt.Errorf("unknown source type %s", string(s))
 	}
+	if s.isAccumulative() {
+		k = k + ":" + checksumFor(r)
+	}
+	i.key = []byte(k)
 	i.value, err = h(l, r)
 	if err != nil {
 		return item{}, fmt.Errorf("error loading value from source: %w", err)
@@ -74,8 +89,54 @@ func (kv *badgerStorage) garbageCollect() {
 	}
 }
 
-func (kv *badgerStorage) load(dir string, l *lookups) error {
-	srcs, err := newSources(dir, []sourceType{
+func (kv *badgerStorage) loadRow(r []string, s sourceType, l *lookups) error {
+	i, err := newKVItem(s, l, r)
+	if err != nil {
+		return fmt.Errorf("error creating an %s item: %w", s, err)
+	}
+	if err := kv.db.Update(func(tx *badger.Txn) error { return tx.Set(i.key, i.value) }); err != nil {
+		return fmt.Errorf("could not save key-value: %w", err)
+	}
+	return nil
+}
+
+func (kv *badgerStorage) loadSource(ctx context.Context, s *source, l *lookups, bar *progressbar.ProgressBar, m int) error {
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(m)
+	ch := make(chan []string)
+	g.Go(func() error {
+		defer close(ch)
+		err := s.sendTo(ctx, ch)
+		if err == io.EOF {
+			return nil
+		}
+		return err
+	})
+	g.Go(func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case r, ok := <-ch:
+				if !ok {
+					return nil
+				}
+				g.Go(func() error {
+					if err := kv.loadRow(r, s.kind, l); err != nil {
+						return err
+					}
+					bar.Add(1)
+					return nil
+				})
+			}
+
+		}
+	})
+	return g.Wait()
+}
+
+func (kv *badgerStorage) load(dir string, l *lookups, m int) error {
+	srcs, t, err := newSources(dir, []sourceType{
 		base,
 		partners,
 		simpleTaxes,
@@ -87,69 +148,24 @@ func (kv *badgerStorage) load(dir string, l *lookups) error {
 	if err != nil {
 		return fmt.Errorf("could not load sources: %w", err)
 	}
-	items := make(chan struct{})
-	errs := make(chan error)
-	var shutdown int32
 	tic := time.NewTicker(3 * time.Minute)
-	defer func() {
-		tic.Stop()
-		close(items)
-		close(errs)
-	}()
+	defer tic.Stop()
 	go func() {
 		for range tic.C {
 			kv.garbageCollect()
 		}
 	}()
-	var t int
-	for _, src := range srcs {
-		t += src.total
-		for _, a := range src.readers {
-			go func(s sourceType, a *archivedCSVs) {
-				for {
-					r, err := a.read()
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("error reading %s: %w", a.path, err)
-						}
-						return
-					}
-					i, err := newKVItem(s, l, r)
-					if err != nil {
-						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("error creating an %s item: %w", string(s), err)
-						}
-						return
-					}
-					if err := saveItem(kv.db, i.kind, i.key, i.value); err != nil {
-						if atomic.CompareAndSwapInt32(&shutdown, 0, 1) {
-							errs <- fmt.Errorf("could not save key-value: %w", err)
-						}
-						return
-					}
-					if atomic.LoadInt32(&shutdown) == 0 {
-						items <- struct{}{}
-					}
-				}
-			}(src.kind, a)
-		}
-	}
-	bar := progressbar.Default(int64(t), "Processing base CNPJ, partners and taxes")
+	bar := progressbar.Default(t, "Processing base CNPJ, partners and taxes")
 	defer bar.Close()
-	for {
-		select {
-		case <-items:
-			bar.Add(1)
-			if bar.IsFinished() {
-				return nil
-			}
-		case err := <-errs:
-			return fmt.Errorf("error creating key-value storage: %w", err)
-		}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+	for _, src := range srcs {
+		g.Go(func() error {
+			return kv.loadSource(ctx, src, l, bar, m)
+		})
 	}
+	return g.Wait()
 }
 
 func (kv *badgerStorage) enrichCompany(c *Company) error {

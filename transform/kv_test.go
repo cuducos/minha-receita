@@ -1,12 +1,20 @@
 package transform
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/cuducos/minha-receita/testutils"
 	"github.com/dgraph-io/badger/v4"
+)
+
+var (
+	taxRegimeRow      = []string{"2022", "BASE DO CNPJ", "CNPJ DA SCP", "FORMA DE TRIBUTAÇÃO", "42"}
+	expectedTaxregime = []byte(`{"ano":2022,"cnpj_da_scp":"CNPJ DA SCP","forma_de_tributacao":"FORMA DE TRIBUTAÇÃO","quantidade_de_escrituracoes":42}`)
 )
 
 func TestBadgerStorageClose(t *testing.T) {
@@ -30,22 +38,26 @@ func TestNewItem(t *testing.T) {
 		t.Fatalf("could not create lookus: %s", err)
 	}
 	for _, tc := range []struct {
-		kind  sourceType
-		row   []string
-		key   []byte
-		value []byte
+		kind      sourceType
+		row       []string
+		keyPrefix []byte
+		value     []byte
 	}{
 		{partners, partnerCSVRow, []byte("p-BASE DO CNPJ"), toBytes(t, newTestPartner())},
 		{base, baseCSVRow, []byte("b-BASE DO CNPJ"), toBytes(t, newTestBaseCNPJ())},
 		{simpleTaxes, simpleTaxesCSVRow, []byte("st-BASE DO CNPJ"), toBytes(t, newTestTaxes())},
+		{realProfit, taxRegimeRow, []byte("tr-BASEDOCNPJ"), expectedTaxregime},
+		{presumedProfit, taxRegimeRow, []byte("tr-BASEDOCNPJ"), expectedTaxregime},
+		{arbitratedProfit, taxRegimeRow, []byte("tr-BASEDOCNPJ"), expectedTaxregime},
+		{noTaxes, taxRegimeRow, []byte("tr-BASEDOCNPJ"), expectedTaxregime},
 	} {
 		t.Run(string(tc.kind), func(t *testing.T) {
 			got, err := newKVItem(tc.kind, &l, tc.row)
 			if err != nil {
 				t.Errorf("could not create key-value item: %s", err)
 			}
-			if string(got.key) != string(tc.key) {
-				t.Errorf("expected item's key to be %s, got %s", string(tc.key), string(got.key))
+			if !strings.HasPrefix(string(got.key), string(tc.keyPrefix)) {
+				t.Errorf("expected item's key to start with %s, got %s", string(tc.keyPrefix), string(got.key))
 			}
 			if string(got.value) != string(tc.value) {
 				t.Errorf("expected item's value to be %s, got %s", string(tc.value), string(got.value))
@@ -58,32 +70,68 @@ func TestNewItem(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	l, err := newLookups(testdata)
-	if err != nil {
-		t.Fatalf("could not create lookups: %s", err)
-	}
-	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
-	if err != nil {
-		t.Fatal("error creating temporary key-value storage: %w", err)
-	}
-	defer os.RemoveAll(tmp)
-	kv, err := newBadgerStorage(tmp, false)
-	if err != nil {
-		t.Fatalf("could not create badger storage: %s", err)
-	}
-	defer kv.close()
-	if err := kv.load(testdata, &l); err != nil {
-		t.Errorf("expected no error loading data, got %s", err)
-	}
-	for _, tc := range []struct{ key, value string }{
-		{"b-19131243", `{"codigo_porte":5,"porte":"DEMAIS","razao_social":"OPEN KNOWLEDGE BRASIL","codigo_natureza_juridica":3999,"natureza_juridica":null,"qualificacao_do_responsavel":16,"capital_social":0,"ente_federativo_responsavel":""}`},
-		{"b-33683111", `{"codigo_porte":5,"porte":"DEMAIS","razao_social":"SERVICO FEDERAL DE PROCESSAMENTO DE DADOS (SERPRO)","codigo_natureza_juridica":2011,"natureza_juridica":"Empresa Pública","qualificacao_do_responsavel":16,"capital_social":1061004800,"ente_federativo_responsavel":""}`},
-		{"p-19131243", `[{"identificador_de_socio":2,"nome_socio":"FERNANDA CAMPAGNUCCI PEREIRA","cnpj_cpf_do_socio":"***690948**","codigo_qualificacao_socio":16,"qualificacao_socio":"Presidente","data_entrada_sociedade":"2019-10-25","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":4,"faixa_etaria":"Entre 31 a 40 anos"}]`},
-		{"p-33683111", `[{"identificador_de_socio":2,"nome_socio":"ANDRE DE CESERO","cnpj_cpf_do_socio":"***220050**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2016-06-16","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":6,"faixa_etaria":"Entre 51 a 60 anos"},{"identificador_de_socio":2,"nome_socio":"ANTONIO DE PADUA FERREIRA PASSOS","cnpj_cpf_do_socio":"***595901**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2016-12-08","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":7,"faixa_etaria":"Entre 61 a 70 anos"},{"identificador_de_socio":2,"nome_socio":"WILSON BIANCARDI COURY","cnpj_cpf_do_socio":"***414127**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2019-06-18","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":8,"faixa_etaria":"Entre 71 a 80 anos"},{"identificador_de_socio":2,"nome_socio":"GILENO GURJAO BARRETO","cnpj_cpf_do_socio":"***099595**","codigo_qualificacao_socio":16,"qualificacao_socio":"Presidente","data_entrada_sociedade":"2020-02-03","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":5,"faixa_etaria":"Entre 41 a 50 anos"},{"identificador_de_socio":2,"nome_socio":"RICARDO CEZAR DE MOURA JUCA","cnpj_cpf_do_socio":"***989951**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2020-05-12","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":5,"faixa_etaria":"Entre 41 a 50 anos"},{"identificador_de_socio":2,"nome_socio":"ANTONINO DOS SANTOS GUERRA NETO","cnpj_cpf_do_socio":"***073447**","codigo_qualificacao_socio":5,"qualificacao_socio":"Administrador","data_entrada_sociedade":"2019-02-11","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":7,"faixa_etaria":"Entre 61 a 70 anos"}]`},
-		{"st-33683111", `{"opcao_pelo_simples":true,"data_opcao_pelo_simples":"2014-01-01","data_exclusao_do_simples":null,"opcao_pelo_mei":false,"data_opcao_pelo_mei":null,"data_exclusao_do_mei":null}`},
-	} {
-		assertKeyValue(t, kv, []byte(tc.key), []byte(tc.value))
-	}
+	t.Run("single values", func(t *testing.T) {
+		l, err := newLookups(testdata)
+		if err != nil {
+			t.Fatalf("could not create lookups: %s", err)
+		}
+		tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+		if err != nil {
+			t.Fatal("error creating temporary key-value storage: %w", err)
+		}
+		defer os.RemoveAll(tmp)
+		kv, err := newBadgerStorage(tmp, false)
+		if err != nil {
+			t.Fatalf("could not create badger storage: %s", err)
+		}
+		defer kv.close()
+		if err := kv.load(testdata, &l, 1024); err != nil {
+			t.Errorf("expected no error loading data, got %s", err)
+		}
+		for _, tc := range []struct{ key, value string }{
+			{"b-19131243", `{"codigo_porte":5,"porte":"DEMAIS","razao_social":"OPEN KNOWLEDGE BRASIL","codigo_natureza_juridica":3999,"natureza_juridica":null,"qualificacao_do_responsavel":16,"capital_social":0,"ente_federativo_responsavel":""}`},
+			{"b-33683111", `{"codigo_porte":5,"porte":"DEMAIS","razao_social":"SERVICO FEDERAL DE PROCESSAMENTO DE DADOS (SERPRO)","codigo_natureza_juridica":2011,"natureza_juridica":"Empresa Pública","qualificacao_do_responsavel":16,"capital_social":1061004800,"ente_federativo_responsavel":""}`},
+			{"st-33683111", `{"opcao_pelo_simples":true,"data_opcao_pelo_simples":"2014-01-01","data_exclusao_do_simples":null,"opcao_pelo_mei":false,"data_opcao_pelo_mei":null,"data_exclusao_do_mei":null}`},
+		} {
+			assertKeyValue(t, kv, tc.key, tc.value)
+		}
+	})
+
+	t.Run("accumulative values", func(t *testing.T) {
+		l, err := newLookups(testdata)
+		if err != nil {
+			t.Fatalf("could not create lookups: %s", err)
+		}
+		tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+		if err != nil {
+			t.Fatal("error creating temporary key-value storage: %w", err)
+		}
+		defer os.RemoveAll(tmp)
+		kv, err := newBadgerStorage(tmp, false)
+		if err != nil {
+			t.Fatalf("could not create badger storage: %s", err)
+		}
+		defer kv.close()
+		if err := kv.load(testdata, &l, 1024); err != nil {
+			t.Errorf("expected no error loading data, got %s", err)
+		}
+		for _, tc := range []struct {
+			prefix string
+			value  []string
+		}{
+			{"p-19131243", []string{`{"identificador_de_socio":2,"nome_socio":"FERNANDA CAMPAGNUCCI PEREIRA","cnpj_cpf_do_socio":"***690948**","codigo_qualificacao_socio":16,"qualificacao_socio":"Presidente","data_entrada_sociedade":"2019-10-25","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":4,"faixa_etaria":"Entre 31 a 40 anos"}`}},
+			{"p-33683111", []string{
+				`{"identificador_de_socio":2,"nome_socio":"ANDRE DE CESERO","cnpj_cpf_do_socio":"***220050**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2016-06-16","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":6,"faixa_etaria":"Entre 51 a 60 anos"}`,
+				`{"identificador_de_socio":2,"nome_socio":"ANTONIO DE PADUA FERREIRA PASSOS","cnpj_cpf_do_socio":"***595901**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2016-12-08","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":7,"faixa_etaria":"Entre 61 a 70 anos"}`,
+				`{"identificador_de_socio":2,"nome_socio":"WILSON BIANCARDI COURY","cnpj_cpf_do_socio":"***414127**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2019-06-18","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":8,"faixa_etaria":"Entre 71 a 80 anos"}`,
+				`{"identificador_de_socio":2,"nome_socio":"GILENO GURJAO BARRETO","cnpj_cpf_do_socio":"***099595**","codigo_qualificacao_socio":16,"qualificacao_socio":"Presidente","data_entrada_sociedade":"2020-02-03","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":5,"faixa_etaria":"Entre 41 a 50 anos"}`,
+				`{"identificador_de_socio":2,"nome_socio":"RICARDO CEZAR DE MOURA JUCA","cnpj_cpf_do_socio":"***989951**","codigo_qualificacao_socio":10,"qualificacao_socio":"Diretor","data_entrada_sociedade":"2020-05-12","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":5,"faixa_etaria":"Entre 41 a 50 anos"}`,
+				`{"identificador_de_socio":2,"nome_socio":"ANTONINO DOS SANTOS GUERRA NETO","cnpj_cpf_do_socio":"***073447**","codigo_qualificacao_socio":5,"qualificacao_socio":"Administrador","data_entrada_sociedade":"2019-02-11","codigo_pais":null,"pais":null,"cpf_representante_legal":"***000000**","nome_representante_legal":"","codigo_qualificacao_representante_legal":0,"qualificacao_representante_legal":null,"codigo_faixa_etaria":7,"faixa_etaria":"Entre 61 a 70 anos"}`,
+			}},
+		} {
+			assertKeyValues(t, kv, tc.prefix, tc.value)
+		}
+	})
 }
 
 func TestEnrichCompany(t *testing.T) {
@@ -101,7 +149,7 @@ func TestEnrichCompany(t *testing.T) {
 		t.Fatalf("could not create badger storage: %s", err)
 	}
 	defer kv.close()
-	if err := kv.load(testdata, &l); err != nil {
+	if err := kv.load(testdata, &l, 1024); err != nil {
 		t.Errorf("expected no error loading data, got %s", err)
 	}
 	c := Company{CNPJ: "33683111000280"}
@@ -165,9 +213,9 @@ func TestEnrichCompany(t *testing.T) {
 	}
 }
 
-func assertKeyValue(t *testing.T, kv *badgerStorage, key, value []byte) {
+func assertKeyValue(t *testing.T, kv *badgerStorage, key, value string) {
 	err := kv.db.View(func(tx *badger.Txn) error {
-		i, err := tx.Get(key)
+		i, err := tx.Get([]byte(key))
 		if err != nil {
 			return err
 		}
@@ -175,12 +223,32 @@ func assertKeyValue(t *testing.T, kv *badgerStorage, key, value []byte) {
 		if err != nil {
 			return err
 		}
-		if string(got) != string(value) {
-			t.Errorf("expected %s to be %s, got %s", string(key), string(value), string(got))
+		if string(got) != value {
+			t.Errorf("expected %s to be %s, got %s", string(key), value, string(got))
 		}
 		return nil
 	})
 	if err != nil {
 		t.Fatalf("could not read %s: %s", string(key), err)
+	}
+}
+
+func assertKeyValues(t *testing.T, kv *badgerStorage, prefix string, value []string) {
+	err := kv.db.View(func(tx *badger.Txn) error {
+		var got []string
+		it := tx.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		for it.Seek([]byte(prefix)); it.Valid() && bytes.HasPrefix(it.Item().Key(), []byte(prefix)); it.Next() {
+			v, err := it.Item().ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+			got = append(got, string(v))
+		}
+		testutils.AssertArraysHaveSameItems(t, value, got)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("expected no error searchinmg key-value storage for %s, got %s", string(prefix), err)
 	}
 }
