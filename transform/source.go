@@ -59,12 +59,11 @@ func (s sourceType) isAccumulative() bool {
 }
 
 type source struct {
-	kind     sourceType
-	dir      string
-	files    []string
-	readers  []*archivedCSVs
-	total    int64
-	shutdown int32
+	kind    sourceType
+	dir     string
+	files   []string
+	readers []*archivedCSVs
+	total   int64
 }
 
 func (s *source) createReaders() error {
@@ -125,9 +124,7 @@ func (s *source) countCSVRows(a *archivedCSVs, count chan<- int64, errs chan<- e
 			break
 		}
 		if err != nil {
-			if atomic.CompareAndSwapInt32(&s.shutdown, 0, 1) {
-				errs <- err
-			}
+			errs <- err
 		}
 		t++
 	}
