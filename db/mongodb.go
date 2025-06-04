@@ -92,7 +92,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		return fmt.Errorf("mongodb connection not initialized")
 	}
 	coll := m.db.Collection(companyTableName)
-	var cs []interface{} // required by MongoDb pkg
+	var cs interface{} // required by MongoDb pkg
 	for _, c := range batch {
 		if len(c) < 2 {
 			return fmt.Errorf("line skipped due to insufficient length: %s", c)
@@ -103,15 +103,12 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		if err != nil {
 			return fmt.Errorf("error deserializing JSON: %s\nerror: %w", c[1], err)
 		}
-		cs = append(cs, r)
-	}
-	if len(cs) == 0 {
-		return nil
-	}
-	ctx := context.Background()
-	_, err := coll.InsertMany(ctx, cs)
-	if err != nil {
-		return fmt.Errorf("error inserting companies into MongoDB: %w", err)
+		cs = r
+		ctx := context.Background()
+		_, err = coll.InsertOne(ctx, cs)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	return nil
 }

@@ -18,6 +18,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 const (
@@ -80,6 +84,23 @@ func (d *date) UnmarshalJSON(b []byte) error {
 func (d *date) MarshalJSON() ([]byte, error) {
 	t := time.Time(*d)
 	return []byte(`"` + t.Format(dateOutputFormat) + `"`), nil
+}
+
+// MarshalBSONValue implementa a serialização para o MongoDB
+func (d date) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	t := time.Time(d)
+	return bson.TypeString, bsoncore.AppendString(nil, t.Format(dateOutputFormat)), nil
+}
+
+// UnmarshalBSONValue implementa a desserialização para o MongoDB
+func (d *date) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+	var tm time.Time
+	err := bson.UnmarshalValue(t, data, &tm)
+	if err != nil {
+		return err
+	}
+	*d = date(tm)
+	return nil
 }
 
 // toDate expects a date as string in the format YYYYMMDD (that is the format
