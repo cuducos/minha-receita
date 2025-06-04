@@ -86,13 +86,11 @@ func (d *date) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + t.Format(dateOutputFormat) + `"`), nil
 }
 
-// MarshalBSONValue implementa a serialização para o MongoDB
 func (d date) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	t := time.Time(d)
 	return bson.TypeString, bsoncore.AppendString(nil, t.Format(dateOutputFormat)), nil
 }
 
-// UnmarshalBSONValue implementa a desserialização para o MongoDB
 func (d *date) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	var tm time.Time
 	err := bson.UnmarshalValue(t, data, &tm)
