@@ -91,31 +91,31 @@ func (d date) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bson.TypeString, bsoncore.AppendString(nil, t.Format(dateOutputFormat)), nil
 }
 
-func (d *date) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+func (d *date) UnmarshalBSONValue(t bsontype.Type, v []byte) error {
 	switch t {
 	case bson.TypeString:
-		str, _, ok := bsoncore.ReadString(data)
+		s, _, ok := bsoncore.ReadString(v)
 		if !ok {
-			return fmt.Errorf("invalid BSON string")
+			return fmt.Errorf("invalid bson string")
 		}
-		if str == "" {
+		if s == "" {
 			return nil
 		}
-		p, err := time.Parse(dateOutputFormat, str)
+		p, err := time.Parse(dateOutputFormat, s)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid date parse: %s", err)
 		}
 		*d = date(p)
 		return nil
 	case bson.TypeDateTime:
-		ms, _, ok := bsoncore.ReadDateTime(data)
+		i, _, ok := bsoncore.ReadDateTime(v)
 		if !ok {
-			return fmt.Errorf("invalid BSON datetime")
+			return fmt.Errorf("invalid bson datetime")
 		}
-		*d = date(time.UnixMilli(ms))
+		*d = date(time.UnixMilli(i))
 		return nil
 	default:
-		return fmt.Errorf("unsupported BSON type for date: %v", t)
+		return fmt.Errorf("unsupported bson type for date: %v", t)
 	}
 }
 
