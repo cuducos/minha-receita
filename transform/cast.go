@@ -92,13 +92,31 @@ func (d date) MarshalBSONValue() (bsontype.Type, []byte, error) {
 }
 
 func (d *date) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
-	var tm time.Time
-	err := bson.UnmarshalValue(t, data, &tm)
-	if err != nil {
-		return err
+	switch t {
+	case bson.TypeString:
+		str, _, ok := bsoncore.ReadString(data)
+		if !ok {
+			return fmt.Errorf("invalid BSON string")
+		}
+		if str == "" {
+			return nil
+		}
+		p, err := time.Parse(dateOutputFormat, str)
+		if err != nil {
+			return err
+		}
+		*d = date(p)
+		return nil
+	case bson.TypeDateTime:
+		ms, _, ok := bsoncore.ReadDateTime(data)
+		if !ok {
+			return fmt.Errorf("invalid BSON datetime")
+		}
+		*d = date(time.UnixMilli(ms))
+		return nil
+	default:
+		return fmt.Errorf("unsupported BSON type for date: %v", t)
 	}
-	*d = date(tm)
-	return nil
 }
 
 // toDate expects a date as string in the format YYYYMMDD (that is the format
