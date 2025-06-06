@@ -18,6 +18,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 const (
@@ -80,6 +84,39 @@ func (d *date) UnmarshalJSON(b []byte) error {
 func (d *date) MarshalJSON() ([]byte, error) {
 	t := time.Time(*d)
 	return []byte(`"` + t.Format(dateOutputFormat) + `"`), nil
+}
+
+func (d date) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	t := time.Time(d)
+	return bson.TypeString, bsoncore.AppendString(nil, t.Format(dateOutputFormat)), nil
+}
+
+func (d *date) UnmarshalBSONValue(t bsontype.Type, v []byte) error {
+	switch t {
+	case bson.TypeString:
+		s, _, ok := bsoncore.ReadString(v)
+		if !ok {
+			return fmt.Errorf("invalid bson string")
+		}
+		if s == "" {
+			return nil
+		}
+		p, err := time.Parse(dateOutputFormat, s)
+		if err != nil {
+			return fmt.Errorf("invalid date parse: %s", err)
+		}
+		*d = date(p)
+		return nil
+	case bson.TypeDateTime:
+		i, _, ok := bsoncore.ReadDateTime(v)
+		if !ok {
+			return fmt.Errorf("invalid bson datetime")
+		}
+		*d = date(time.UnixMilli(i))
+		return nil
+	default:
+		return fmt.Errorf("unsupported bson type for date: %v", t)
+	}
 }
 
 // toDate expects a date as string in the format YYYYMMDD (that is the format
