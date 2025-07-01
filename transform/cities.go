@@ -2,22 +2,34 @@ package transform
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // NationalTreasureFileName is the name of the CSV containing city names and
 // their codes.
-const NationalTreasureFileName = "TABMUN.CSV"
+const NationalTreasureFileName = "tabmun.csv"
 
 func citiesLookup(dir string) (lookup, error) {
-	pth := filepath.Join(dir, NationalTreasureFileName)
-	f, err := os.Open(pth)
-	if err != nil {
-		return nil, fmt.Errorf("error opening %s: %w", pth, err)
+	var f io.ReadCloser
+	var err error
+	var pth string
+	// backward compatibility: until May/2025 the file was named TABMUN.CSV
+	for _, n := range []string{NationalTreasureFileName, strings.ToUpper(NationalTreasureFileName)} {
+		pth := filepath.Join(dir, n)
+		f, err = os.Open(pth)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error opening %s: %w", pth, err)
+		}
+		break
 	}
 	defer f.Close()
 	r := csv.NewReader(f)
