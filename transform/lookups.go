@@ -147,7 +147,7 @@ func (c *Company) cnaes(l *lookups, p, s string) error {
 		c.CNAEFiscalDescricao = &a.Descricao
 	}
 
-	for _, n := range strings.Split(s, ",") {
+	for n := range strings.SplitSeq(s, ",") {
 		a, err := newCnae(l, n)
 		if err != nil {
 			return fmt.Errorf("error trying to parse CNAESecundarios %s: %w", n, err)

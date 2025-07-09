@@ -64,7 +64,7 @@ func checkZipFiles(dir string) (map[string]error, error) {
 			checks <- check{pth, err}
 		}(pth)
 	}
-	for i := 0; i < len(ls); i++ {
+	for range ls {
 		c := <-checks
 		if c.err != nil {
 			r[c.path] = c.err

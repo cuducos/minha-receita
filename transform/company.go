@@ -206,7 +206,7 @@ func (c *Company) JSON() (string, error) {
 	return string(b), nil
 }
 
-func jsonFields(i interface{}) []string {
+func jsonFields(i any) []string {
 	var fs []string
 	t := reflect.TypeOf(i)
 	for i := range t.NumField() {
