@@ -17,7 +17,7 @@ var (
 
 func checksumTestFiles(t *testing.T) string {
 	tmp := t.TempDir()
-	for n := 0; n < numTestFiles; n++ {
+	for n := range numTestFiles {
 		f := filepath.Join(tmp, fmt.Sprintf("file%d", n))
 		if err := os.WriteFile(f, []byte(contents[n]), 0755); err != nil {
 			t.Fatalf("failed to write file %s: %s", f, err)
@@ -69,7 +69,7 @@ func TestCheck(t *testing.T) {
 	t.Run("missing source files", func(t *testing.T) {
 		src := checksumTestFiles(t)
 		out := checksumTestFiles(t)
-		for n := 0; n < numTestFiles; n++ {
+		for n := range numTestFiles {
 			if err := os.Remove(filepath.Join(src, fmt.Sprintf("file%d.md5", n))); err != nil {
 				t.Fatalf("expected no error removing file from testdata, got %s", err)
 			}

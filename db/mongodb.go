@@ -92,7 +92,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		return fmt.Errorf("mongodb connection not initialized")
 	}
 	coll := m.db.Collection(companyTableName)
-	var cs []interface{} // required by MongoDb pkg
+	var cs []any // required by MongoDb pkg
 	for _, c := range batch {
 		if len(c) < 2 {
 			return fmt.Errorf("line skipped due to insufficient length: %s", c)
