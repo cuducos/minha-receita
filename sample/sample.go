@@ -15,6 +15,7 @@ import (
 	"github.com/cuducos/minha-receita/download"
 	"github.com/cuducos/minha-receita/transform"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -179,11 +180,13 @@ func Sample(src, target string, m int, updatedAt string) error {
 	if len(ls) == 0 {
 		return errors.New("source directory %s has no zip files")
 	}
-	for _, p := range []string{
-		transform.NationalTreasureFileName,
-		download.FederalRevenueUpdatedAt,
-	} {
-		ls = append(ls, filepath.Join(src, p))
+	ls = append(ls, filepath.Join(src, download.FederalRevenueUpdatedAt))
+	nt, f, _ := transform.NationalTreasureFile(src)
+	if err == nil {
+		f.Close() // we just need the path
+	}
+	if nt != "" {
+		ls = append(ls, nt)
 	}
 	bar := progressbar.Default(int64(len(ls)))
 	defer bar.Close()
@@ -191,20 +194,15 @@ func Sample(src, target string, m int, updatedAt string) error {
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
-	q := make(chan error)
-	defer close(q)
-	for _, p := range ls {
-		go func(p string) { q <- makeSample(p, target, m, updatedAt) }(p)
+	var g errgroup.Group
+	for _, pth := range ls {
+		g.Go(func() error {
+			defer bar.Add(1)
+			return makeSample(pth, target, m, updatedAt)
+		})
 	}
-	for i := 0; i < len(ls); i++ {
-		err := <-q
-		bar.Add(1)
-		if err != nil {
-			return fmt.Errorf("error creating samples: %w", err)
-		}
-		if bar.IsFinished() {
-			break
-		}
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("error creating samples: %w", err)
 	}
 	return nil
 }

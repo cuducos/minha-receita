@@ -11,25 +11,30 @@ import (
 	"strings"
 )
 
-// NationalTreasureFileName is the name of the CSV containing city names and
-// their codes.
-const NationalTreasureFileName = "tabmun.csv"
+const nationalTreasureFileName = "tabmun.csv"
 
-func citiesLookup(dir string) (lookup, error) {
-	var f io.ReadCloser
-	var err error
-	var pth string
-	// backward compatibility: until May/2025 the file was named TABMUN.CSV
-	for _, n := range []string{NationalTreasureFileName, strings.ToUpper(NationalTreasureFileName)} {
+// NationalTreasureFilePath deals with backward compatibility: until May/2025
+// the file was named TABMUN.CSV. It returns the right file path testing if the
+// file exist in lower case or in upper case.
+func NationalTreasureFile(dir string) (string, *os.File, error) {
+	for _, n := range []string{nationalTreasureFileName, strings.ToUpper(nationalTreasureFileName)} {
 		pth := filepath.Join(dir, n)
-		f, err = os.Open(pth)
+		f, err := os.Open(pth)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
 		if err != nil {
-			return nil, fmt.Errorf("error opening %s: %w", pth, err)
+			return "", nil, fmt.Errorf("error opening %s: %w", pth, err)
 		}
-		break
+		return pth, f, nil
+	}
+	return "", nil, fmt.Errorf("could not find national treasure file in %s", dir)
+}
+
+func citiesLookup(dir string) (lookup, error) {
+	pth, f, err := NationalTreasureFile(dir)
+	if err != nil {
+		return nil, err
 	}
 	defer f.Close()
 	r := csv.NewReader(f)

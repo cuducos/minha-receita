@@ -87,7 +87,6 @@ func TestSample(t *testing.T) {
 			false,
 		},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			out := t.TempDir()
