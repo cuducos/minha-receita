@@ -3,7 +3,6 @@ package transform
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/cuducos/go-cnpj"
@@ -135,8 +134,7 @@ func (t *venuesTask) run(m int) error {
 			t.bar.Add(n)
 			if t.bar.IsFinished() {
 				cancel()
-				log.Output(1, "Consolidating the database…")
-				return t.db.PostLoad()
+				return nil
 			}
 		}
 	}

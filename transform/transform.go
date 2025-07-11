@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cuducos/minha-receita/download"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -24,10 +25,13 @@ const (
 	BatchSize = 8192
 )
 
+var extraIdexes = [...]string{"uf"}
+
 type database interface {
 	PreLoad() error
 	CreateCompanies([][]string) error
 	PostLoad() error
+	CreateExtraIndexes([]string) error
 	MetaSave(string, string) error
 }
 
@@ -76,6 +80,29 @@ func createJSONs(dir string, pth string, db database, l lookups, maxDB, batchSiz
 	return saveUpdatedAt(db, dir)
 }
 
+func postLoad(db database) error {
+	g := errgroup.Group{}
+	g.Go(func() error {
+		log.Output(1, "Consolidating the database…")
+		err := db.PostLoad()
+		if err != nil {
+			return err
+		}
+		log.Output(1, "Database consolidated!")
+		return nil
+	})
+	g.Go(func() error {
+		log.Output(1, "Creating indexes…")
+		err := db.CreateExtraIndexes(extraIdexes[:])
+		if err != nil {
+			return err
+		}
+		log.Output(1, "Indexes created!")
+		return nil
+	})
+	return g.Wait()
+}
+
 // Transform the downloaded files for company venues creating a database record
 // per CNPJ
 func Transform(dir string, db database, maxDB, maxKV, s int, p bool) error {
@@ -91,5 +118,8 @@ func Transform(dir string, db database, maxDB, maxKV, s int, p bool) error {
 	if err := createKeyValueStorage(dir, pth, l, 1024); err != nil {
 		return err
 	}
-	return createJSONs(dir, pth, db, l, maxDB, s, p)
+	if err := createJSONs(dir, pth, db, l, maxDB, s, p); err != nil {
+		return err
+	}
+	return postLoad(db)
 }

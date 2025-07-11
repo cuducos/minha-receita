@@ -29,8 +29,9 @@ type inMemoryDB struct {
 	meta *storage
 }
 
-func (i inMemoryDB) PreLoad() error  { return nil }
-func (i inMemoryDB) PostLoad() error { return nil }
+func (i inMemoryDB) PreLoad() error                    { return nil }
+func (i inMemoryDB) PostLoad() error                   { return nil }
+func (i inMemoryDB) CreateExtraIndexes([]string) error { return nil }
 
 func (i inMemoryDB) CreateCompanies(cs [][]string) error {
 	i.cnpj.lock.Lock()
