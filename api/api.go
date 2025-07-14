@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -170,7 +170,7 @@ func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) f
 	}
 	w := func(w http.ResponseWriter, r *http.Request) {
 		if v := r.Header.Get("Host"); v != app.host {
-			log.Output(1, fmt.Sprintf("Host %s not allowed", v))
+			slog.Error("Host not allowed", "host", v)
 			w.WriteHeader(http.StatusTeapot)
 			return
 		}
@@ -180,7 +180,7 @@ func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) f
 }
 
 // Serve spins up the HTTP server.
-func Serve(db database, p string, nr *newrelic.Application) {
+func Serve(db database, p string, nr *newrelic.Application) error {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
@@ -200,6 +200,6 @@ func Serve(db database, p string, nr *newrelic.Application) {
 	} {
 		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
-	log.Output(1, fmt.Sprintf("Serving at http://0.0.0.0%s", p))
-	log.Fatal(http.ListenAndServe(p, nil))
+	slog.Info(fmt.Sprintf("Serving at http://0.0.0.0%s", p))
+	return http.ListenAndServe(p, nil)
 }

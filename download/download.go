@@ -3,7 +3,7 @@ package download
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -56,11 +56,11 @@ func downloadNationalTreasure(dir string, skip bool) error {
 
 // Download all the files (might take hours).
 func Download(dir string, timeout time.Duration, skip, restart bool, parallel int, retries uint, chunkSize int64) error {
-	log.Output(1, "Downloading file(s) from the National Treasure…")
+	slog.Info("Downloading file(s) from the National Treasure…")
 	if err := downloadNationalTreasure(dir, skip); err != nil {
 		return fmt.Errorf("error downloading files from the national treasure: %w", err)
 	}
-	log.Output(1, "Downloading files from the Federal Revenue…")
+	slog.Info("Downloading files from the Federal Revenue…")
 	urls, err := getURLs(federalRevenueURL, federalRevenueGetURLs, dir, skip)
 	if err != nil {
 		return fmt.Errorf("error gathering resources for download: %w", err)

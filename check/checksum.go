@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -105,7 +105,7 @@ func CheckChecksum(src, target string) error {
 				return fmt.Errorf("got different checksum for file(s): %v", notEqual)
 			}
 
-			log.Output(1, "OK!")
+			slog.Info("OK!")
 			return nil
 		}
 	}

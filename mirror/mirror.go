@@ -7,7 +7,7 @@ package mirror
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ func startServer(c *Cache, p string) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if c.isExpired() {
 			if err := c.refresh(); err != nil {
-				log.Output(1, fmt.Sprintf("Error loading files: %s", err))
+				slog.Error("Error loading files", "error", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
@@ -34,7 +34,7 @@ func startServer(c *Cache, p string) {
 		w.WriteHeader(http.StatusOK)
 	})
 	p = fmt.Sprintf(":%s", p)
-	log.Output(1, fmt.Sprintf("Server listening on http://0.0.0.0%s", p))
+	slog.Info(fmt.Sprintf("Server listening on http://0.0.0.0%s", p))
 	http.ListenAndServe(p, nil)
 }
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/cuducos/minha-receita/transform"
@@ -54,10 +54,10 @@ func NewMongoDB(uri string) (MongoDB, error) {
 // Create creates the required collections.
 func (m *MongoDB) Create() error {
 	for _, c := range []string{companyTableName, metaTableName} {
+		slog.Info("Creating", "collection", c)
 		if err := m.db.CreateCollection(m.ctx, c); err != nil {
 			return fmt.Errorf("error creating collection %s: %w", c, err)
 		}
-		log.Output(1, fmt.Sprintf("Collection %s created successfully", c))
 	}
 	return nil
 }
@@ -83,11 +83,11 @@ func (m *MongoDB) createIndexes() error {
 // Drop deletes the collectiosn created by `Create`.
 func (m *MongoDB) Drop() error {
 	for _, n := range []string{companyTableName, metaTableName} {
+		slog.Info("Deleting", "collection", n)
 		c := m.db.Collection(n)
 		if err := c.Drop(m.ctx); err != nil {
 			return fmt.Errorf("error deleting collection %s: %w", n, err)
 		}
-		log.Output(1, fmt.Sprintf("Collection %s deleted successfully", n))
 	}
 	return nil
 }
@@ -160,7 +160,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 // Close terminates the connection to MongoDB.
 func (m *MongoDB) Close() {
 	if err := m.client.Disconnect(m.ctx); err != nil {
-		log.Output(1, fmt.Sprintf("error disconnecting from MongoDB: %s", err))
+		slog.Error("Error disconnecting from MongoDB", "error", err)
 	}
 }
 
@@ -237,7 +237,7 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	if err := transform.ValidateIndexes(idxs); err != nil {
 		return fmt.Errorf("index name error: %w", err)
 	}
-	log.Output(1, "Creating the indexes…")
+	slog.Info("Creating the indexes…")
 	c := m.db.Collection(companyTableName)
 	var i []mongo.IndexModel
 	for _, v := range idxs {
@@ -250,7 +250,7 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-	log.Output(1, fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
+	slog.Info(fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
 	return nil
 }
 func (m *MongoDB) Search(q Query) (string, error) {

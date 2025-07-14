@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -172,7 +172,7 @@ func (s *source) sendTo(ctx context.Context, ch chan<- []string) error {
 }
 
 func newSource(ctx context.Context, t sourceType, d string) (*source, error) {
-	log.Output(1, fmt.Sprintf("Loading %s files…", string(t)))
+	slog.Info(fmt.Sprintf("Loading %s files…", string(t)))
 	var s source
 	ch := make(chan error, 1)
 	done := atomic.Bool{}
@@ -239,7 +239,7 @@ func newSources(dir string, kinds []sourceType) ([]*source, int64, error) {
 		case src := <-ok:
 			t += src.total
 			srcs = append(srcs, src)
-			log.Output(1, fmt.Sprintf("[%d/%d] %s loaded!", len(srcs), len(kinds), src.kind))
+			slog.Info(fmt.Sprintf("[%d/%d] %s loaded!", len(srcs), len(kinds), src.kind))
 			if len(srcs) == len(kinds) {
 				return srcs, t, nil
 			}

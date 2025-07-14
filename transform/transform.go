@@ -2,7 +2,7 @@ package transform
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -42,7 +42,7 @@ type kvStorage interface {
 }
 
 func saveUpdatedAt(db database, dir string) error {
-	log.Output(1, "Saving the updated at date to the database…")
+	slog.Info("Saving the updated at date to the database…")
 	p := filepath.Join(dir, download.FederalRevenueUpdatedAt)
 	v, err := os.ReadFile(p)
 	if err != nil {
@@ -83,21 +83,21 @@ func createJSONs(dir string, pth string, db database, l lookups, maxDB, batchSiz
 func postLoad(db database) error {
 	g := errgroup.Group{}
 	g.Go(func() error {
-		log.Output(1, "Consolidating the database…")
+		slog.Info("Consolidating the database…")
 		err := db.PostLoad()
 		if err != nil {
 			return err
 		}
-		log.Output(1, "Database consolidated!")
+		slog.Info("Database consolidated!")
 		return nil
 	})
 	g.Go(func() error {
-		log.Output(1, "Creating indexes…")
+		slog.Info("Creating indexes…")
 		err := db.CreateExtraIndexes(extraIdexes[:])
 		if err != nil {
 			return err
 		}
-		log.Output(1, "Indexes created!")
+		slog.Info("Indexes created!")
 		return nil
 	})
 	return g.Wait()

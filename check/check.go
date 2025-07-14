@@ -5,7 +5,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -50,16 +50,13 @@ func checkZipFiles(dir string) (map[string]error, error) {
 	if len(ls) == 0 {
 		return r, fmt.Errorf("no zip files found")
 	}
-	err = log.Output(1, fmt.Sprintf("Checking %d files…\n", len(ls)))
-	if err != nil {
-		return r, fmt.Errorf("error logging: %w", err)
-	}
+	slog.Info(fmt.Sprintf("Checking %d files…\n", len(ls)))
 	checks := make(chan check)
 	for _, pth := range ls {
 		go func(pth string) {
 			err := checkZipFile(pth)
 			if err != nil {
-				log.Output(1, fmt.Sprintf("%s\tFAILED with\t%s", pth, err))
+				slog.Error("Failed checking", "path", pth, "error", err)
 			}
 			checks <- check{pth, err}
 		}(pth)
@@ -81,7 +78,7 @@ func Check(dir string, del bool) error {
 	if len(fails) != 0 {
 		if del {
 			for f := range fails {
-				log.Output(1, fmt.Sprintf("Deleting %s", f))
+				slog.Info("Deleting", "file", f)
 				os.Remove(f)
 			}
 			return nil

@@ -2,7 +2,7 @@ package transform
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 )
 
@@ -110,7 +110,7 @@ func (c *Company) municipio(l *lookups, v string) error {
 	c.Municipio = &s
 	ibge, ok := l.ibge[*i]
 	if !ok {
-		log.Output(1, fmt.Sprintf("Could not find IBGE city code for %s-%s (%d)", *c.Municipio, c.UF, *i))
+		slog.Info("Could not find city IBGE code", "city", *c.Municipio, "uf", c.UF, "code", *i)
 		return nil
 	}
 	c.CodigoMunicipioIBGE, err = toInt(ibge)
