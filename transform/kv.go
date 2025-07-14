@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -83,7 +83,7 @@ func (kv *badgerStorage) garbageCollect() {
 			return
 		}
 		if err != nil {
-			log.Output(1, fmt.Sprintf("Error running garbage collection: %v", err))
+			slog.Error("Error running garbage collection", "error", err)
 			return
 		}
 	}
@@ -245,9 +245,8 @@ func (*noLogger) Debugf(string, ...any)   {}
 
 func newBadgerStorage(dir string, ro bool) (*badgerStorage, error) {
 	opt := badger.DefaultOptions(dir).WithReadOnly(ro)
-	if os.Getenv("DEBUG") != "" {
-		log.Output(1, fmt.Sprintf("Creating temporary key-value storage at %s", dir))
-	} else {
+	slog.Debug("Creating temporary key-value storage", "path", dir)
+	if os.Getenv("DEBUG") == "" {
 		opt = opt.WithLogger(&noLogger{})
 	}
 	db, err := badger.Open(opt)

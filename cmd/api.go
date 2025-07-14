@@ -60,8 +60,7 @@ var apiCmd = &cobra.Command{
 			return fmt.Errorf("could not find database: %w", err)
 		}
 		defer db.Close()
-		api.Serve(db, port, nr)
-		return nil
+		return api.Serve(db, port, nr)
 	},
 }
 

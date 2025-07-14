@@ -6,7 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -112,7 +112,7 @@ func (p *PostgreSQL) MetaTableFullName() string {
 
 // Create creates the required database table.
 func (p *PostgreSQL) Create() error {
-	log.Output(1, fmt.Sprintf("Creating table %s…", p.CompanyTableFullName()))
+	slog.Info("Creating", "table", p.CompanyTableFullName())
 	s, err := p.renderTemplate("create")
 	if err != nil {
 		return fmt.Errorf("error rendering create template: %w", err)
@@ -125,7 +125,7 @@ func (p *PostgreSQL) Create() error {
 
 // Drop drops the database table created by `Create`.
 func (p *PostgreSQL) Drop() error {
-	log.Output(1, fmt.Sprintf("Dropping table %s…", p.CompanyTableFullName()))
+	slog.Info("Dropping", "table", p.CompanyTableFullName())
 	s, err := p.renderTemplate("drop")
 	if err != nil {
 		return fmt.Errorf("error rendering drop template: %w", err)
@@ -250,7 +250,7 @@ func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
 	if _, err := p.pool.Exec(context.Background(), s); err != nil {
 		return fmt.Errorf("expected the error to create indexe: %w", err)
 	}
-	log.Output(1, fmt.Sprintf("%d Indexes successfully created in the table %s", len(idxs), p.CompanyTableName))
+	slog.Info(fmt.Sprintf("%d Indexes successfully created in the table %s", len(idxs), p.CompanyTableName))
 	return nil
 }
 

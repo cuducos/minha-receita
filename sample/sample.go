@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -123,11 +123,11 @@ func createUpdateAt(src, dir string, dt string) error {
 	r, err := os.Open(src)
 	if os.IsNotExist(err) {
 		if dt == "" {
-			log.Output(1, fmt.Sprintf("%s not found", src))
+			slog.Warn("File not found", "path", src)
 			return nil
 		}
 		if _, err := time.Parse("2006-01-02", dt); err != nil {
-			log.Output(1, fmt.Sprintf("updated_at.txt will not be created, date %s is not YYYY-MM-DD", dt))
+			slog.Warn("updated_at.txt will not be created, date is not YYYY-MM-DD", "date", dt)
 			return nil
 		}
 		if err := os.WriteFile(out, []byte(dt), 0755); err != nil {
