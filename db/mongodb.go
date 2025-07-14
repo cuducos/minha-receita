@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cuducos/minha-receita/transform"
+	"github.com/cuducos/minha-receita/tools"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -252,7 +253,53 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	log.Output(1, fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
 	return nil
 }
-
-func (m *MongoDB) Search(q Query) (string,error) {
-	return "", fmt.Errorf("funcionalidade não implementada")
+func (m *MongoDB) Search(q Query) (string, error) {
+	uf, err := tools.ValidateUF(q.Uf)
+	if err != nil {
+		return "", fmt.Errorf("Erro: %s", err)
+	}
+	if strings.Contains(uf, ",") {
+		return "", fmt.Errorf("only 1 uf at a time.")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	coll := m.db.Collection(companyTableName)
+	f := bson.M{"json.uf": uf}
+	if q.Cursor != "" {
+		f["json.cnpj"] = bson.M{"$gt": q.Cursor}
+	}
+	opts := options.Find().
+		SetSort(bson.D{{Key: "json.cnpj", Value: 1}}).
+		SetLimit(1000)
+	c, err := coll.Find(ctx, f, opts)
+	if err != nil {
+		return "", fmt.Errorf("error searching for documents for UF %s: %w", uf, err)
+	}
+	defer c.Close(ctx)
+	var result []interface{}
+	var ultimoCNPJ string
+	for c.Next(ctx) {
+		var r record
+		if err := c.Decode(&r); err != nil {
+			return "", fmt.Errorf("error decoding result: %w", err)
+		}
+		result = append(result, r.Json)
+		ultimoCNPJ = r.Json.CNPJ
+	}
+	if err := c.Err(); err != nil {
+		return "", fmt.Errorf("cursor error: %w", err)
+	}
+	if len(result) == 0 {
+		return "", fmt.Errorf("no documents found for UF %s", uf)
+	}
+	response := map[string]interface{}{
+		"data":   result,
+		"cursor": ultimoCNPJ,
+	}
+	b, err := json.Marshal(response)
+	if err != nil {
+		return "", fmt.Errorf("error serializing the resultt: %w", err)
+	}
+	return string(b), nil
 }
+

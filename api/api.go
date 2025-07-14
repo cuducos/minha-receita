@@ -146,22 +146,19 @@ func (app *api) queryHandler(w http.ResponseWriter, r *http.Request) {
 		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
-
-	query := db.Query {
+	q := db.Query {
 		Uf: r.URL.Query().Get("uf"),
 		Cursor: r.URL.Query().Get("cursor"),
 	}
-
-	s, err := app.db.Search(query)
+	s, err := app.db.Search(q)
 	if err != nil {
-		app.messageResponse(w, http.StatusInternalServerError, "Erro ao buscar UF.")
+		app.messageResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if s == "" {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	io.WriteString(w, s)
