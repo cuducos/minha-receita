@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"slices"
@@ -105,6 +106,32 @@ func TestMongoDB(t *testing.T) {
 	}
 	if err := db.CreateExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Error("expected errors running extra indexes, got nil")
+	}
+	q := Query{Uf: "RJ", Limit: 1}
+	sr, err := db.Search(q)
+	if err != nil {
+		t.Errorf("expected no error querying %#v, got %s", q, err)
+	}
+	var r page
+	if err := json.Unmarshal([]byte(sr), &r); err != nil {
+		t.Errorf("expected error deserializing JSON, got %s", err)
+	}
+	if r.Data != nil {
+		t.Errorf("expected error no result, got %#v", r)
+	}
+	q = Query{Uf: "SP", Limit: 1}
+	sr, err = db.Search(q)
+	if err != nil {
+		t.Errorf("expected no error querying %#v, got %s", q, err)
+	}
+	if err := json.Unmarshal([]byte(sr), &r); err != nil {
+		t.Errorf("expected error deserializing JSON, got %s", err)
+	}
+	if len(r.Data) != 1 {
+		t.Errorf("expected one result, got %d", len(r.Data))
+	}
+	if r.Data[0].UF != q.Uf {
+		t.Errorf("expected query result to be from SP, got %s", r.Data[0].UF)
 	}
 	i := []string{"qsa.nome_socio"}
 	if err := db.CreateExtraIndexes(i); err != nil {

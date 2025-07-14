@@ -25,6 +25,26 @@ type MongoDB struct {
 	ctx    context.Context
 }
 
+type Query struct {
+	Uf     string
+	Cursor string
+	Limit  int64
+}
+
+type page struct {
+	Data   []transform.Company `json:"data"`
+	Cursor *string             `json:"cursor"`
+}
+
+func newPage(cs []transform.Company) page {
+	var p page
+	if len(cs) > 0 {
+		p.Data = cs
+		p.Cursor = &cs[len(cs)-1].CNPJ
+	}
+	return p
+}
+
 // NewMongoDB initializes a new MongoDB connection wrapped in a structure.
 func NewMongoDB(uri string) (MongoDB, error) {
 	opts := options.Client().ApplyURI(uri)
@@ -246,4 +266,36 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	}
 	slog.Info(fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
 	return nil
+}
+
+func (m *MongoDB) Search(q Query) (string, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	coll := m.db.Collection(companyTableName)
+	f := bson.M{"json.uf": q.Uf}
+	if q.Cursor != "" {
+		f["json.cnpj"] = bson.M{"$gt": q.Cursor}
+	}
+	opts := options.Find().
+		SetSort(bson.D{{Key: "json.cnpj", Value: 1}}).
+		SetLimit(q.Limit)
+	c, err := coll.Find(ctx, f, opts)
+	if err != nil {
+		return "", fmt.Errorf("error running query %#v: %w", q, err)
+	}
+	defer c.Close(ctx)
+	var r []record
+	if err := c.All(ctx, &r); err != nil {
+		return "", fmt.Errorf("error decoding results: %w", err)
+	}
+	var cs []transform.Company
+	for _, c := range r {
+		cs = append(cs, c.Json)
+	}
+	p := newPage(cs)
+	b, err := json.Marshal(p)
+	if err != nil {
+		return "", fmt.Errorf("error serializing the query result: %w", err)
+	}
+	return string(b), nil
 }
