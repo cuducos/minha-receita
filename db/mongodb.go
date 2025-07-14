@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/cuducos/minha-receita/transform"
 	"github.com/cuducos/minha-receita/tools"
+	"github.com/cuducos/minha-receita/transform"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,8 +26,8 @@ type MongoDB struct {
 	ctx    context.Context
 }
 
-type Query struct{
-	Uf string
+type Query struct {
+	Uf     string
 	Cursor string
 }
 
@@ -302,4 +302,3 @@ func (m *MongoDB) Search(q Query) (string, error) {
 	}
 	return string(b), nil
 }
-

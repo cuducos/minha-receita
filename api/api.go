@@ -27,7 +27,7 @@ var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 type database interface {
 	GetCompany(string) (string, error)
 	MetaRead(string) (string, error)
-	Search(db.Query) (string,error)
+	Search(db.Query) (string, error)
 }
 
 // errorMessage is a helper to serialize an error message to JSON.
@@ -146,8 +146,8 @@ func (app *api) queryHandler(w http.ResponseWriter, r *http.Request) {
 		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
-	q := db.Query {
-		Uf: r.URL.Query().Get("uf"),
+	q := db.Query{
+		Uf:     r.URL.Query().Get("uf"),
 		Cursor: r.URL.Query().Get("cursor"),
 	}
 	s, err := app.db.Search(q)

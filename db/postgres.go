@@ -254,7 +254,7 @@ func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
 	return nil
 }
 
-func (p *PostgreSQL) Search(q Query) (string,error) {
+func (p *PostgreSQL) Search(q Query) (string, error) {
 	return "", fmt.Errorf("funcionalidade não implementada")
 }
 
@@ -297,4 +297,3 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	}
 	return p, nil
 }
-
