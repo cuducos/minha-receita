@@ -23,9 +23,15 @@ const cacheMaxAge = time.Hour * 24
 
 var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 
+type Query struct{
+	Uf string
+	Cursor string
+}
+
 type database interface {
 	GetCompany(string) (string, error)
 	MetaRead(string) (string, error)
+	Search(Query) (string,error)
 }
 
 // errorMessage is a helper to serialize an error message to JSON.
@@ -128,6 +134,43 @@ func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (app *api) queryHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", cacheControl)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
+
+	switch r.Method {
+	case http.MethodGet:
+		break
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
+		return
+	default:
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		return
+	}
+
+	query := Query {
+		Uf: r.URL.Query().Get("uf"),
+		Cursor: r.URL.Query().Get("cursor"),
+	}
+
+	s, err := app.db.Search(query)
+	if err != nil {
+		app.messageResponse(w, http.StatusInternalServerError, "Erro ao buscar UF.")
+		return
+	}
+	if s == "" {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	io.WriteString(w, s)
+}
+
 func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	if app.host == "" {
 		return h
@@ -160,6 +203,7 @@ func Serve(db database, p string, nr *newrelic.Application) {
 		{"/", app.companyHandler},
 		{"/updated", app.updatedHandler},
 		{"/healthz", app.healthHandler},
+		{"/q", app.queryHandler},
 	} {
 		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
