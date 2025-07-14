@@ -26,7 +26,7 @@ type MongoDB struct {
 }
 
 type Query struct{
-	Query string
+	Uf string
 	Cursor string
 }
 

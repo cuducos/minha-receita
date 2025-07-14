@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/monitor"
 	"github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter"
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -23,15 +24,10 @@ const cacheMaxAge = time.Hour * 24
 
 var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 
-type Query struct{
-	Uf string
-	Cursor string
-}
-
 type database interface {
 	GetCompany(string) (string, error)
 	MetaRead(string) (string, error)
-	Search(Query) (string,error)
+	Search(db.Query) (string,error)
 }
 
 // errorMessage is a helper to serialize an error message to JSON.
@@ -151,7 +147,7 @@ func (app *api) queryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := Query {
+	query := db.Query {
 		Uf: r.URL.Query().Get("uf"),
 		Cursor: r.URL.Query().Get("cursor"),
 	}
