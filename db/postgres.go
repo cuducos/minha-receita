@@ -293,3 +293,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	}
 	return p, nil
 }
+
+func (p *PostgreSQL) Search(q Query) error {
+	fmt.Error(1, "funcionalidade não implementada")
+}

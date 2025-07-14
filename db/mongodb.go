@@ -25,6 +25,11 @@ type MongoDB struct {
 	ctx    context.Context
 }
 
+type Query struct{
+	Query string
+	Cursor string
+}
+
 // NewMongoDB initializes a new MongoDB connection wrapped in a structure.
 func NewMongoDB(uri string) (MongoDB, error) {
 	opts := options.Client().ApplyURI(uri)
@@ -246,4 +251,8 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	}
 	log.Output(1, fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
 	return nil
+}
+
+func (m *MongoDB) Search(q Query) error {
+	fmt.Error(1, "funcionalidade não implementada")
 }

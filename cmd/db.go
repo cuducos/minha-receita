@@ -13,6 +13,11 @@ var (
 	postgresSchema string
 )
 
+type Query struct{
+	Query string
+	Cursor string
+}
+
 type database interface {
 	Create() error
 	Drop() error
@@ -27,6 +32,7 @@ type database interface {
 	// api
 	GetCompany(string) (string, error)
 	MetaRead(string) (string, error)
+	Search(Query) (string, error)
 }
 
 func loadDatabase() (database, error) {
