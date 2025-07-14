@@ -254,6 +254,10 @@ func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
 	return nil
 }
 
+func (p *PostgreSQL) Search(q Query) (string,error) {
+	return "", fmt.Errorf("funcionalidade não implementada")
+}
+
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
 func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	cfg, err := pgxpool.ParseConfig(uri)
@@ -294,6 +298,3 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	return p, nil
 }
 
-func (p *PostgreSQL) Search(q Query) error {
-	fmt.Error(1, "funcionalidade não implementada")
-}

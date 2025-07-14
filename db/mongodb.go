@@ -253,6 +253,6 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	return nil
 }
 
-func (m *MongoDB) Search(q Query) error {
-	fmt.Error(1, "funcionalidade não implementada")
+func (m *MongoDB) Search(q Query) (string,error) {
+	return "", fmt.Errorf("funcionalidade não implementada")
 }
