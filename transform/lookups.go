@@ -110,7 +110,7 @@ func (c *Company) municipio(l *lookups, v string) error {
 	c.Municipio = &s
 	ibge, ok := l.ibge[*i]
 	if !ok {
-		slog.Info("Could not find city IBGE code", "city", *c.Municipio, "uf", c.UF, "code", *i)
+		slog.Warn("Could not find city IBGE code", "city", *c.Municipio, "uf", c.UF, "code", *i)
 		return nil
 	}
 	c.CodigoMunicipioIBGE, err = toInt(ibge)
