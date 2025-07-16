@@ -54,5 +54,7 @@ func citiesLookup(dir string) (lookup, error) {
 		}
 		l[code] = row[4]
 	}
+	// manually add Boa Esperança do Norte (MT): created in 2025 but still absent in tabmun.csv
+	l[1182] = "5101837"
 	return l, nil
 }
