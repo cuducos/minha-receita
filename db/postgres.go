@@ -19,13 +19,12 @@ import (
 )
 
 const (
-	companyTableName      = "cnpj"
-	metaTableName         = "meta"
-	idFieldName           = "id"
-	jsonFieldName         = "json"
-	keyFieldName          = "key"
-	valueFieldName        = "value"
-	partnersJSONFieldName = "qsa"
+	companyTableName = "cnpj"
+	metaTableName    = "meta"
+	idFieldName      = "id"
+	jsonFieldName    = "json"
+	keyFieldName     = "key"
+	valueFieldName   = "value"
 )
 
 //go:embed postgres
@@ -64,22 +63,34 @@ type ExtraIndex struct {
 	Value  string
 }
 
+func (e *ExtraIndex) NestedPath() string {
+	if e.IsRoot {
+		slog.Error("cannot not parse nested path for index at the root of the json", "index", e.Value)
+		return ""
+	}
+	p := strings.SplitN(e.Value, ".", 2)
+	if len(p) != 2 {
+		slog.Error("could not parse nested path", "index", e.Value)
+		return ""
+	}
+	return fmt.Sprintf("$.%s[*].%s", p[0], p[1])
+}
+
 // PostgreSQL database interface.
 type PostgreSQL struct {
-	pool                  *pgxpool.Pool
-	newRelic              *newrelic.Application
-	uri                   string
-	schema                string
-	getCompanyQuery       string
-	metaReadQuery         string
-	CompanyTableName      string
-	MetaTableName         string
-	IDFieldName           string
-	JSONFieldName         string
-	KeyFieldName          string
-	ValueFieldName        string
-	PartnersJSONFieldName string
-	ExtraIndexes          []ExtraIndex
+	pool             *pgxpool.Pool
+	newRelic         *newrelic.Application
+	uri              string
+	schema           string
+	getCompanyQuery  string
+	metaReadQuery    string
+	CompanyTableName string
+	MetaTableName    string
+	IDFieldName      string
+	JSONFieldName    string
+	KeyFieldName     string
+	ValueFieldName   string
+	ExtraIndexes     []ExtraIndex
 }
 
 func (p *PostgreSQL) renderTemplate(key string) (string, error) {
@@ -269,16 +280,15 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		return PostgreSQL{}, fmt.Errorf("could not connect to the database: %w", err)
 	}
 	p := PostgreSQL{
-		pool:                  conn,
-		uri:                   uri,
-		schema:                schema,
-		CompanyTableName:      companyTableName,
-		MetaTableName:         metaTableName,
-		IDFieldName:           idFieldName,
-		JSONFieldName:         jsonFieldName,
-		KeyFieldName:          keyFieldName,
-		ValueFieldName:        valueFieldName,
-		PartnersJSONFieldName: partnersJSONFieldName,
+		pool:             conn,
+		uri:              uri,
+		schema:           schema,
+		CompanyTableName: companyTableName,
+		MetaTableName:    metaTableName,
+		IDFieldName:      idFieldName,
+		JSONFieldName:    jsonFieldName,
+		KeyFieldName:     keyFieldName,
+		ValueFieldName:   valueFieldName,
 	}
 	p.getCompanyQuery, err = p.renderTemplate("get")
 	if err != nil {

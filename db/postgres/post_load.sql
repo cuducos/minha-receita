@@ -1,5 +1,5 @@
+-- deduplicate CNPJ
 CREATE INDEX idx_remove_duplicates ON {{ .CompanyTableFullName }} ({{ .IDFieldName }});
-
 DELETE FROM {{ .CompanyTableFullName }}
 WHERE ctid IN (
   SELECT ctid
@@ -14,9 +14,10 @@ WHERE ctid IN (
   ) t
   WHERE count > 1
 );
-
 DROP INDEX idx_remove_duplicates;
 ALTER TABLE {{ .CompanyTableFullName }} DROP COLUMN tmp_pk CASCADE;
+
+-- create primary key
 CREATE UNIQUE INDEX {{ .CompanyTableName }}_pk ON {{ .CompanyTableFullName }} ({{ .IDFieldName }});
 ALTER TABLE cnpj ADD PRIMARY KEY USING INDEX {{ .CompanyTableName }}_pk;
 ALTER TABLE {{ .CompanyTableFullName }} SET LOGGED;

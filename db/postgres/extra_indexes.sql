@@ -1,8 +1,11 @@
 {{ $tableName := .CompanyTableFullName }}
+{{ $jsonField := .JSONFieldName }}
 {{range .ExtraIndexes }}
     {{ if .IsRoot }}
-        CREATE INDEX IF NOT EXISTS "idx_{{ .Name }}" ON {{ $tableName }} USING BTREE ((json->'{{ .Value }}'));
+        CREATE INDEX IF NOT EXISTS "idx_{{ .Name }}" ON {{ $tableName }} USING BTREE (({{ $jsonField }}->'{{ .Value }}'));
     {{ else }}
-        CREATE INDEX IF NOT EXISTS "idx_{{ .Name }}" ON {{ $tableName }} USING BTREE (jsonb_extract_path(json,'{{ .Value }}') jsonb_ops);
+        CREATE INDEX IF NOT EXISTS "idx_{{ .Name }}" ON {{ $tableName }} USING GIN (
+            (jsonb_path_query_array({{ $jsonField }}, '{{ .NestedPath }}'))
+        );
     {{ end }}
 {{ end }}

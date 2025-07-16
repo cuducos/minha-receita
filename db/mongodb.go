@@ -244,6 +244,10 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
-	slog.Info(fmt.Sprintf("%d index(es) successfully created in the collection %s", len(r), companyTableName))
+	l := "index"
+	if len(i) > 1 {
+		l = "indexes"
+	}
+	slog.Info(fmt.Sprintf("%d %s successfully created in the collection %s", len(r), l, companyTableName))
 	return nil
 }
