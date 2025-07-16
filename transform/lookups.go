@@ -110,8 +110,12 @@ func (c *Company) municipio(l *lookups, v string) error {
 	c.Municipio = &s
 	ibge, ok := l.ibge[*i]
 	if !ok {
-		slog.Warn("Could not find city IBGE code", "city", *c.Municipio, "uf", c.UF, "code", *i)
-		return nil
+		// Boa Esperança do Norte (MT) created in 2025 but absent in tabmun.csv
+		if *i != 1182 {
+			slog.Warn("Could not find city IBGE code", "city", *c.Municipio, "uf", c.UF, "code", *i)
+			return nil
+		}
+		ibge = "5101837"
 	}
 	c.CodigoMunicipioIBGE, err = toInt(ibge)
 	if err != nil {
