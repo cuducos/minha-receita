@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cuducos/minha-receita/download"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -81,26 +80,17 @@ func createJSONs(dir string, pth string, db database, l lookups, maxDB, batchSiz
 }
 
 func postLoad(db database) error {
-	g := errgroup.Group{}
-	g.Go(func() error {
-		slog.Info("Consolidating the database…")
-		err := db.PostLoad()
-		if err != nil {
-			return err
-		}
-		slog.Info("Database consolidated!")
-		return nil
-	})
-	g.Go(func() error {
-		slog.Info("Creating indexes…")
-		err := db.CreateExtraIndexes(extraIdexes[:])
-		if err != nil {
-			return err
-		}
-		slog.Info("Indexes created!")
-		return nil
-	})
-	return g.Wait()
+	slog.Info("Consolidating the database…")
+	if err := db.PostLoad(); err != nil {
+		return err
+	}
+	slog.Info("Database consolidated!")
+	slog.Info("Creating indexes…")
+	if err := db.CreateExtraIndexes(extraIdexes[:]); err != nil {
+		return err
+	}
+	slog.Info("Indexes created!")
+	return nil
 }
 
 // Transform the downloaded files for company venues creating a database record
