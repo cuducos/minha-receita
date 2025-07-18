@@ -248,7 +248,19 @@ func (m *MongoDB) Search(q *Query) (string, error) {
 			f["json.cnae_fiscal"] = bson.M{"$in": q.UF}
 		}
 	}
-	// TODO: figure out how to search for CNAE & secondary CNAE
+	if len(q.CNAE) > 0 {
+		if len(q.CNAE) == 1 {
+			f["$or"] = []bson.M{
+				{"cnae_fiscal": q.CNAE[0]},
+				{"cnaes_secundarios.codigo": bson.M{"$in": q.CNAE}},
+			}
+		} else {
+			f["$or"] = []bson.M{
+				{"cnae_fiscal": bson.M{"$in": q.CNAE}},
+				{"cnaes_secundarios.codigo": bson.M{"$in": q.CNAE}},
+			}
+		}
+	}
 	if q.Cursor != nil {
 		f["json.cnpj"] = bson.M{"$gt": *q.Cursor}
 	}
