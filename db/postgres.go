@@ -187,6 +187,12 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return j, nil
 }
 
+// Search returns paginated results with JSON for companies bases on a search
+// query
+func (p *PostgreSQL) Search(q *Query) (string, error) {
+	return "", fmt.Errorf("not implemented") // TODO: implement
+}
+
 // PreLoad runs before starting to load data into the database. Currently it
 // disables autovacuum on PostgreSQL.
 func (p *PostgreSQL) PreLoad() error {
@@ -263,10 +269,6 @@ func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
 	}
 	slog.Info(fmt.Sprintf("%d Indexes successfully created in the table %s", len(idxs), p.CompanyTableName))
 	return nil
-}
-
-func (p *PostgreSQL) Search(q Query) (string, error) {
-	return "", fmt.Errorf("not implemented")
 }
 
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.

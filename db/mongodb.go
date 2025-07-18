@@ -25,26 +25,6 @@ type MongoDB struct {
 	ctx    context.Context
 }
 
-type Query struct {
-	Uf     string
-	Cursor string
-	Limit  int64
-}
-
-type page struct {
-	Data   []transform.Company `json:"data"`
-	Cursor *string             `json:"cursor"`
-}
-
-func newPage(cs []transform.Company) page {
-	var p page
-	if len(cs) > 0 {
-		p.Data = cs
-		p.Cursor = &cs[len(cs)-1].CNPJ
-	}
-	return p
-}
-
 // NewMongoDB initializes a new MongoDB connection wrapped in a structure.
 func NewMongoDB(uri string) (MongoDB, error) {
 	opts := options.Client().ApplyURI(uri)
@@ -247,6 +227,55 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	return string(b), nil
 }
 
+// Search returns paginated results with JSON for companies bases on a search
+// query
+func (m *MongoDB) Search(q *Query) (string, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	coll := m.db.Collection(companyTableName)
+	f := bson.M{}
+	if len(q.UF) > 0 {
+		if len(q.UF) == 1 {
+			f["json.uf"] = q.UF[0]
+		} else {
+			f["json.uf"] = bson.M{"$in": q.UF}
+		}
+	}
+	if len(q.CNAEFiscal) > 0 {
+		if len(q.CNAEFiscal) == 1 {
+			f["json.cnae_fiscal"] = q.CNAEFiscal[0]
+		} else {
+			f["json.cnae_fiscal"] = bson.M{"$in": q.UF}
+		}
+	}
+	// TODO: figure out how to search for CNAE & secondary CNAE
+	if q.Cursor != nil {
+		f["json.cnpj"] = bson.M{"$gt": *q.Cursor}
+	}
+	opts := options.Find().
+		SetSort(bson.D{{Key: "json.cnpj", Value: 1}}).
+		SetLimit(int64(q.Limit))
+	c, err := coll.Find(ctx, f, opts)
+	if err != nil {
+		return "", fmt.Errorf("error running query %#v: %w", q, err)
+	}
+	defer c.Close(ctx)
+	var r []record
+	if err := c.All(ctx, &r); err != nil {
+		return "", fmt.Errorf("error decoding results: %w", err)
+	}
+	var cs []transform.Company
+	for _, c := range r {
+		cs = append(cs, c.Json)
+	}
+	p := newPage(cs)
+	b, err := json.Marshal(p)
+	if err != nil {
+		return "", fmt.Errorf("error serializing the query result: %w", err)
+	}
+	return string(b), nil
+}
+
 func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	if err := transform.ValidateIndexes(idxs); err != nil {
 		return fmt.Errorf("index name error: %w", err)
@@ -270,36 +299,4 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	}
 	slog.Info(fmt.Sprintf("%d %s successfully created in the collection %s", len(r), l, companyTableName))
 	return nil
-}
-
-func (m *MongoDB) Search(q Query) (string, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	coll := m.db.Collection(companyTableName)
-	f := bson.M{"json.uf": q.Uf}
-	if q.Cursor != "" {
-		f["json.cnpj"] = bson.M{"$gt": q.Cursor}
-	}
-	opts := options.Find().
-		SetSort(bson.D{{Key: "json.cnpj", Value: 1}}).
-		SetLimit(q.Limit)
-	c, err := coll.Find(ctx, f, opts)
-	if err != nil {
-		return "", fmt.Errorf("error running query %#v: %w", q, err)
-	}
-	defer c.Close(ctx)
-	var r []record
-	if err := c.All(ctx, &r); err != nil {
-		return "", fmt.Errorf("error decoding results: %w", err)
-	}
-	var cs []transform.Company
-	for _, c := range r {
-		cs = append(cs, c.Json)
-	}
-	p := newPage(cs)
-	b, err := json.Marshal(p)
-	if err != nil {
-		return "", fmt.Errorf("error serializing the query result: %w", err)
-	}
-	return string(b), nil
 }
