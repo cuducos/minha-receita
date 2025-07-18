@@ -98,7 +98,7 @@ func TestMongoDB(t *testing.T) {
 	if err := json.Unmarshal([]byte(sr), &r); err != nil {
 		t.Errorf("expected error deserializing JSON, got %s", err)
 	}
-	if r.Data != nil {
+	if len(r.Data) != 0 {
 		t.Errorf("expected error no result, got %#v", r)
 	}
 	q.UF = []string{"SP"}

@@ -216,7 +216,7 @@ func (p *PostgreSQL) Search(q *Query) (string, error) {
 	}
 	r, err := pgx.CollectRows(rows, pgx.RowTo[[]byte])
 	if err != nil {
-		return "", fmt.Errorf("error reading search result for %#%: %w", q, err)
+		return "", fmt.Errorf("error reading search result for %#v: %w", q, err)
 	}
 	var cs []transform.Company
 	for _, b := range r {
