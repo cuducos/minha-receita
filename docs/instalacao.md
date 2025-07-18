@@ -14,7 +14,7 @@ $ git clone https://github.com/cuducos/minha-receita.git
 
 ## Requisitos e instalação
 
-É necessário cerca de 165Gb disponíveis de espaço em disco para armazenar os dados. Caso o banco de dados esteja em uma máquina separada, a divisão é mais ou menos 140Gb para o banco de dados, e 20Gb para a máquina que vai fazer o download dos dados e transformá-los para carregar no banco de dados.
+É necessário cerca de 170Gb disponíveis de espaço em disco para armazenar os dados. Caso o banco de dados esteja em uma máquina separada, a divisão é mais ou menos 140Gb para as tabelas no banco de dados, 10Gb para os índices no banco de dados, e 20Gb para a máquina que vai fazer o download dos dados e transformá-los para carregar no banco de dados.
 
 ### Banco de dados
 

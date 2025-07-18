@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"slices"
@@ -88,6 +89,34 @@ func TestPostgresDB(t *testing.T) {
 		t.Errorf("expected no error getting a company, got %s", err)
 	}
 	assertCompaniesAreEqual(t, got, c)
+	var q Query
+	q.Limit = 1
+	q.UF = []string{"RJ"}
+	sr, err := pg.Search(&q)
+	if err != nil {
+		t.Errorf("expected no error querying %#v, got %s", q, err)
+	}
+	var r page
+	if err := json.Unmarshal([]byte(sr), &r); err != nil {
+		t.Errorf("expected error deserializing JSON, got %s", err)
+	}
+	if len(r.Data) != 0 {
+		t.Errorf("expected error no result, got %#v", r)
+	}
+	q.UF = []string{"SP"}
+	sr, err = pg.Search(&q)
+	if err != nil {
+		t.Errorf("expected no error querying %#v, got %s", q, err)
+	}
+	if err := json.Unmarshal([]byte(sr), &r); err != nil {
+		t.Errorf("expected error deserializing JSON, got %s", err)
+	}
+	if len(r.Data) != 1 {
+		t.Errorf("expected one result, got %d", len(r.Data))
+	}
+	if r.Data[0].UF != "SP" {
+		t.Errorf("expected query result to be from SP, got %s", r.Data[0].UF)
+	}
 	if err := pg.MetaSave("answer", "42"); err != nil {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}
