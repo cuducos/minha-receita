@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -15,13 +16,13 @@ import (
 var mongoDefaultIndexes = []string{"_id_", "id_1"}
 
 func listIndexesMongo(t *testing.T, db *MongoDB) []string {
-	c, err := db.db.Collection(companyTableName).Indexes().List(db.ctx)
+	c, err := db.db.Collection(companyTableName).Indexes().List(context.Background())
 	if err != nil {
 		t.Errorf("expected no errors checking index list, got %s", err)
 	}
-	defer c.Close(db.ctx)
+	defer c.Close(context.Background())
 	var i []string
-	for c.Next(db.ctx) {
+	for c.Next(context.Background()) {
 		var idx bson.M
 		if err := c.Decode(&idx); err != nil {
 			t.Errorf("expected no error decoding index, got %s", err)
@@ -87,6 +88,34 @@ func TestMongoDB(t *testing.T) {
 	if err := db.MetaSave("answer", "42"); err != nil {
 		t.Errorf("expected no error writing to the metadata table, got %s", err)
 	}
+	var q Query
+	q.Limit = 1
+	q.UF = []string{"RJ"}
+	sr, err := db.Search(&q)
+	if err != nil {
+		t.Errorf("expected no error querying %#v, got %s", q, err)
+	}
+	var r page
+	if err := json.Unmarshal([]byte(sr), &r); err != nil {
+		t.Errorf("expected error deserializing JSON, got %s", err)
+	}
+	if len(r.Data) != 0 {
+		t.Errorf("expected error no result, got %#v", r)
+	}
+	q.UF = []string{"SP"}
+	sr, err = db.Search(&q)
+	if err != nil {
+		t.Errorf("expected no error querying %#v, got %s", q, err)
+	}
+	if err := json.Unmarshal([]byte(sr), &r); err != nil {
+		t.Errorf("expected error deserializing JSON, got %s", err)
+	}
+	if len(r.Data) != 1 {
+		t.Errorf("expected one result, got %d", len(r.Data))
+	}
+	if r.Data[0].UF != "SP" {
+		t.Errorf("expected query result to be from SP, got %s", r.Data[0].UF)
+	}
 	metadata, err := db.MetaRead("answer")
 	if err != nil {
 		t.Errorf("expected no error getting metadata, got %s", err)
@@ -106,32 +135,6 @@ func TestMongoDB(t *testing.T) {
 	}
 	if err := db.CreateExtraIndexes([]string{"teste.index1"}); err == nil {
 		t.Error("expected errors running extra indexes, got nil")
-	}
-	q := Query{Uf: "RJ", Limit: 1}
-	sr, err := db.Search(q)
-	if err != nil {
-		t.Errorf("expected no error querying %#v, got %s", q, err)
-	}
-	var r page
-	if err := json.Unmarshal([]byte(sr), &r); err != nil {
-		t.Errorf("expected error deserializing JSON, got %s", err)
-	}
-	if r.Data != nil {
-		t.Errorf("expected error no result, got %#v", r)
-	}
-	q = Query{Uf: "SP", Limit: 1}
-	sr, err = db.Search(q)
-	if err != nil {
-		t.Errorf("expected no error querying %#v, got %s", q, err)
-	}
-	if err := json.Unmarshal([]byte(sr), &r); err != nil {
-		t.Errorf("expected error deserializing JSON, got %s", err)
-	}
-	if len(r.Data) != 1 {
-		t.Errorf("expected one result, got %d", len(r.Data))
-	}
-	if r.Data[0].UF != q.Uf {
-		t.Errorf("expected query result to be from SP, got %s", r.Data[0].UF)
 	}
 	i := []string{"qsa.nome_socio"}
 	if err := db.CreateExtraIndexes(i); err != nil {

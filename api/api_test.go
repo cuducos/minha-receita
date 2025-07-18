@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/db"
 )
 
 type mockDatabase struct{}
@@ -27,6 +28,8 @@ func (mockDatabase) GetCompany(n string) (string, error) {
 	}
 	return string(b), nil
 }
+
+func (mockDatabase) Search(q *db.Query) (string, error) { return "", nil }
 
 func (mockDatabase) MetaRead(k string) (string, error) { return "42", nil }
 

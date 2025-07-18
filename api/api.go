@@ -14,17 +14,22 @@ import (
 	"time"
 
 	"github.com/cuducos/go-cnpj"
+	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/monitor"
 	"github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-const cacheMaxAge = time.Hour * 24
+const (
+	cacheMaxAge = time.Hour * 24
+	timeout     = time.Minute * 1
+)
 
 var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 
 type database interface {
 	GetCompany(string) (string, error)
+	Search(*db.Query) (string, error)
 	MetaRead(string) (string, error)
 }
 
@@ -65,6 +70,32 @@ func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
 		app.errorLogger.Write(b)
 	}
 }
+func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
+	if !cnpj.IsValid(pth) {
+		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(pth[1:])))
+		return
+	}
+	s, err := getCompany(app.db, pth)
+	if err != nil {
+		app.messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(pth)))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	io.WriteString(w, s)
+}
+
+func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
+	s, err := app.db.Search(q)
+	if err != nil {
+		slog.Error("paginated search error", "error", err, "query", q)
+		app.messageResponse(w, http.StatusNotFound, "Erro inesperado na busca.")
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	io.WriteString(w, s)
+}
 
 func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", cacheControl)
@@ -82,24 +113,17 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
 		return
 	}
-
-	v := r.URL.Path
-	if v == "/" {
-		http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
+	pth := r.URL.Path
+	if pth == "/" {
+		q := db.NewQuery(r.URL.Query())
+		if q == nil {
+			http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
+			return
+		}
+		app.paginatedSearch(q, w, r)
 		return
 	}
-	if !cnpj.IsValid(v) {
-		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(v[1:])))
-		return
-	}
-	s, err := getCompany(app.db, v)
-	if err != nil {
-		app.messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(v)))
-		return
-	}
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, s)
+	app.singleCompany(pth, w, r)
 }
 
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
@@ -163,6 +187,7 @@ func Serve(db database, p string, nr *newrelic.Application) error {
 	} {
 		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
+	s := &http.Server{Addr: p, ReadTimeout: timeout, WriteTimeout: timeout}
 	slog.Info(fmt.Sprintf("Serving at http://0.0.0.0%s", p))
-	return http.ListenAndServe(p, nil)
+	return s.ListenAndServe()
 }

@@ -14,35 +14,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type record struct {
-	Id   string            `json:"id"`
-	Json transform.Company `json:"json"`
+type mongoRecord struct {
+	Id   string            `json:"id" bson:"id"`
+	Json transform.Company `json:"json" bson:"json"`
 }
 
 type MongoDB struct {
 	client *mongo.Client
 	db     *mongo.Database
-	ctx    context.Context
-}
-
-type Query struct {
-	Uf     string
-	Cursor string
-	Limit  int64
-}
-
-type page struct {
-	Data   []transform.Company `json:"data"`
-	Cursor *string             `json:"cursor"`
-}
-
-func newPage(cs []transform.Company) page {
-	var p page
-	if len(cs) > 0 {
-		p.Data = cs
-		p.Cursor = &cs[len(cs)-1].CNPJ
-	}
-	return p
 }
 
 // NewMongoDB initializes a new MongoDB connection wrapped in a structure.
@@ -62,14 +41,14 @@ func NewMongoDB(uri string) (MongoDB, error) {
 	if n == "" || strings.Contains(n, "@") { // ensure the database name is valid
 		return MongoDB{}, fmt.Errorf("no database name found in the uri")
 	}
-	return MongoDB{client: c, db: c.Database(n), ctx: ctx}, nil
+	return MongoDB{client: c, db: c.Database(n)}, nil
 }
 
 // Create creates the required collections.
 func (m *MongoDB) Create() error {
 	for _, c := range []string{companyTableName, metaTableName} {
 		slog.Info("Creating", "collection", c)
-		if err := m.db.CreateCollection(m.ctx, c); err != nil {
+		if err := m.db.CreateCollection(context.Background(), c); err != nil {
 			return fmt.Errorf("error creating collection %s: %w", c, err)
 		}
 	}
@@ -86,7 +65,7 @@ func (m *MongoDB) createIndexes() error {
 			k = idFieldName
 		}
 		i := []mongo.IndexModel{{Keys: bson.D{{Key: k, Value: 1}}}}
-		_, err := c.Indexes().CreateMany(m.ctx, i)
+		_, err := c.Indexes().CreateMany(context.Background(), i)
 		if err != nil {
 			return fmt.Errorf("error creating index for %s in %s: %w", k, n, err)
 		}
@@ -99,7 +78,7 @@ func (m *MongoDB) Drop() error {
 	for _, n := range []string{companyTableName, metaTableName} {
 		slog.Info("Deleting", "collection", n)
 		c := m.db.Collection(n)
-		if err := c.Drop(m.ctx); err != nil {
+		if err := c.Drop(context.Background()); err != nil {
 			return fmt.Errorf("error deleting collection %s: %w", n, err)
 		}
 	}
@@ -117,7 +96,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		if len(c) < 2 {
 			return fmt.Errorf("line skipped due to insufficient length: %s", c)
 		}
-		var r record
+		var r mongoRecord
 		r.Id = c[0]
 		err := json.Unmarshal([]byte(c[1]), &r.Json)
 		if err != nil {
@@ -128,8 +107,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 	if len(cs) == 0 {
 		return nil
 	}
-	ctx := context.Background()
-	_, err := coll.InsertMany(ctx, cs)
+	_, err := coll.InsertMany(context.Background(), cs)
 	if err != nil {
 		return fmt.Errorf("error inserting companies into MongoDB: %w", err)
 	}
@@ -138,7 +116,6 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 
 // MetaSave inserts if the key doesn't exist, or updates the value if it does.
 func (m *MongoDB) MetaSave(k, v string) error {
-	ctx := context.Background()
 	c := m.db.Collection(metaTableName)
 	if len(k) > 16 {
 		return fmt.Errorf("the key can have a maximum of 16 characters")
@@ -146,7 +123,7 @@ func (m *MongoDB) MetaSave(k, v string) error {
 	f := bson.M{"key": k}
 	o := options.Update().SetUpsert(true) // if it does not exist, creates it
 	upd := bson.M{"$set": bson.M{"key": k, "value": v}}
-	_, err := c.UpdateOne(ctx, f, upd, o)
+	_, err := c.UpdateOne(context.Background(), f, upd, o)
 	if err != nil {
 		return fmt.Errorf("error saving %s in the meta collection: %w", k, err)
 	}
@@ -155,13 +132,11 @@ func (m *MongoDB) MetaSave(k, v string) error {
 
 // MetaRead reads a key/value pair from the metadata collection.
 func (m *MongoDB) MetaRead(k string) (string, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	var result struct {
 		Value string `bson:"value"`
 	}
 	c := m.db.Collection(metaTableName)
-	err := c.FindOne(ctx, bson.M{"key": k}).Decode(&result)
+	err := c.FindOne(context.Background(), bson.M{"key": k}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", fmt.Errorf("metadata key %s not found", k)
@@ -173,7 +148,7 @@ func (m *MongoDB) MetaRead(k string) (string, error) {
 
 // Close terminates the connection to MongoDB.
 func (m *MongoDB) Close() {
-	if err := m.client.Disconnect(m.ctx); err != nil {
+	if err := m.client.Disconnect(context.Background()); err != nil {
 		slog.Error("Error disconnecting from MongoDB", "error", err)
 	}
 }
@@ -186,8 +161,7 @@ func (m *MongoDB) PreLoad() error {
 // PostLoad runs after loading data into the database. Removes duplicates and
 // creates indexes.
 func (m *MongoDB) PostLoad() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 	coll := m.db.Collection(companyTableName)
 	p := mongo.Pipeline{
 		{{"$group", bson.D{
@@ -229,11 +203,9 @@ func (m *MongoDB) PostLoad() error {
 }
 
 func (m *MongoDB) GetCompany(id string) (string, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	coll := m.db.Collection(companyTableName)
-	var r record
-	err := coll.FindOne(ctx, bson.M{idFieldName: id}).Decode(&r)
+	var r mongoRecord
+	err := coll.FindOne(context.Background(), bson.M{idFieldName: id}).Decode(&r)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", fmt.Errorf("no document found for CNPJ %s", id)
@@ -243,6 +215,69 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	b, err := json.Marshal(r.Json)
 	if err != nil {
 		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", id, err)
+	}
+	return string(b), nil
+}
+
+// Search returns paginated results with JSON for companies bases on a search
+// query
+func (m *MongoDB) Search(q *Query) (string, error) {
+	coll := m.db.Collection(companyTableName)
+	f := bson.M{}
+	if len(q.UF) > 0 {
+		if len(q.UF) == 1 {
+			f["json.uf"] = q.UF[0]
+		} else {
+			f["json.uf"] = bson.M{"$in": q.UF}
+		}
+	}
+	if len(q.CNAEFiscal) > 0 {
+		if len(q.CNAEFiscal) == 1 {
+			f["json.cnae_fiscal"] = q.CNAEFiscal[0]
+		} else {
+			f["json.cnae_fiscal"] = bson.M{"$in": q.UF}
+		}
+	}
+	if len(q.CNAE) > 0 {
+		if len(q.CNAE) == 1 {
+			f["$or"] = []bson.M{
+				{"cnae_fiscal": q.CNAE[0]},
+				{"cnaes_secundarios.codigo": bson.M{"$in": q.CNAE}},
+			}
+		} else {
+			f["$or"] = []bson.M{
+				{"cnae_fiscal": bson.M{"$in": q.CNAE}},
+				{"cnaes_secundarios.codigo": bson.M{"$in": q.CNAE}},
+			}
+		}
+	}
+	if q.Cursor != nil {
+		f["id"] = bson.M{"$gt": *q.Cursor}
+	}
+	opts := options.Find().SetSort(bson.D{{Key: "id", Value: 1}}).SetLimit(int64(q.Limit))
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	c, err := coll.Find(ctx, f, opts)
+	if err != nil {
+		return "", fmt.Errorf("error running query %#v: %w", q, err)
+	}
+	defer c.Close(ctx)
+	var r []mongoRecord
+	if err := c.All(ctx, &r); err != nil {
+		return "", fmt.Errorf("error decoding results: %w", err)
+	}
+	var cs []transform.Company
+	var cur string
+	for i, c := range r {
+		cs = append(cs, c.Json)
+		if i == len(r)-1 {
+			cur = c.Id
+		}
+	}
+	p := newPage(cs, cur)
+	b, err := json.Marshal(p)
+	if err != nil {
+		return "", fmt.Errorf("error serializing the query result: %w", err)
 	}
 	return string(b), nil
 }
@@ -260,7 +295,7 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 			Options: options.Index().SetName(fmt.Sprintf("idx_json.%s", v)),
 		})
 	}
-	r, err := c.Indexes().CreateMany(m.ctx, i)
+	r, err := c.Indexes().CreateMany(context.Background(), i)
 	if err != nil {
 		return fmt.Errorf("error creating indexes: %w", err)
 	}
@@ -270,36 +305,4 @@ func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
 	}
 	slog.Info(fmt.Sprintf("%d %s successfully created in the collection %s", len(r), l, companyTableName))
 	return nil
-}
-
-func (m *MongoDB) Search(q Query) (string, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	coll := m.db.Collection(companyTableName)
-	f := bson.M{"json.uf": q.Uf}
-	if q.Cursor != "" {
-		f["json.cnpj"] = bson.M{"$gt": q.Cursor}
-	}
-	opts := options.Find().
-		SetSort(bson.D{{Key: "json.cnpj", Value: 1}}).
-		SetLimit(q.Limit)
-	c, err := coll.Find(ctx, f, opts)
-	if err != nil {
-		return "", fmt.Errorf("error running query %#v: %w", q, err)
-	}
-	defer c.Close(ctx)
-	var r []record
-	if err := c.All(ctx, &r); err != nil {
-		return "", fmt.Errorf("error decoding results: %w", err)
-	}
-	var cs []transform.Company
-	for _, c := range r {
-		cs = append(cs, c.Json)
-	}
-	p := newPage(cs)
-	b, err := json.Marshal(p)
-	if err != nil {
-		return "", fmt.Errorf("error serializing the query result: %w", err)
-	}
-	return string(b), nil
 }
