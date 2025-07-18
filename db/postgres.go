@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -29,6 +31,8 @@ const (
 
 //go:embed postgres
 var sql embed.FS
+
+var spaces = regexp.MustCompile(`\s+`)
 
 type sqlTemplate struct {
 	path         fs.DirEntry
@@ -187,10 +191,48 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return j, nil
 }
 
+type userQuery struct {
+	Query                *Query
+	CompanyTableFullName string
+	JSONFieldName        string
+}
+
 // Search returns paginated results with JSON for companies bases on a search
 // query
 func (p *PostgreSQL) Search(q *Query) (string, error) {
-	return "", fmt.Errorf("not implemented") // TODO: implement
+	u := userQuery{q, p.CompanyTableFullName(), p.JSONFieldName}
+	t, err := template.ParseFS(sql, "postgres/search.sql")
+	if err != nil {
+		return "", fmt.Errorf("error getting search template: %w", err)
+	}
+	var b bytes.Buffer
+	if err = t.Execute(&b, u); err != nil {
+		return "", fmt.Errorf("error rendering searching template: %w", err)
+	}
+	s := strings.TrimSpace(spaces.ReplaceAllString(b.String(), " "))
+	rows, err := p.pool.Query(context.Background(), s)
+	if err != nil {
+		return "", fmt.Errorf("error searching for %#v: %w", q, err)
+	}
+	r, err := pgx.CollectRows(rows, pgx.RowTo[[]byte])
+	if err != nil {
+		return "", fmt.Errorf("error reading search result for %#%: %w", q, err)
+	}
+	var cs []transform.Company
+	for _, b := range r {
+		var c transform.Company
+		if err := json.Unmarshal(b, &c); err != nil {
+			return "", fmt.Errorf("error deserializing company: %w", err)
+		}
+		cs = append(cs, c)
+	}
+	d := newPage(cs)
+	j, err := json.Marshal(d)
+	if err != nil {
+		return "", fmt.Errorf("error serializing the query result: %w", err)
+	}
+	return string(j), nil
+
 }
 
 // PreLoad runs before starting to load data into the database. Currently it
