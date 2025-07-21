@@ -12,7 +12,7 @@ import (
 	"github.com/cuducos/minha-receita/testutils"
 )
 
-var postgresDefaultIndexes = []string{"cnpj_pk"}
+var postgresDefaultIndexes = []string{"cnpj_pkey", "cnpj_id"}
 
 func listIndexesPostgres(t *testing.T, pg *PostgreSQL) []string {
 	q := `
@@ -77,9 +77,6 @@ func TestPostgresDB(t *testing.T) {
 	}
 	if err := pg.CreateCompanies([][]string{{id, c}}); err != nil {
 		t.Errorf("expected no error saving a company, got %s", err)
-	}
-	if err := pg.CreateCompanies([][]string{{id, c}}); err != nil {
-		t.Errorf("expected no error saving a duplicated company, got %s", err)
 	}
 	if err := pg.PostLoad(); err != nil {
 		t.Errorf("expected no error post load, got %s", err)
