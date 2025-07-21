@@ -1,5 +1,5 @@
-SELECT {{ .JSONFieldName }}
-FROM {{ .CursorFieldName }}, {{ .CompanyTableFullName }}
+SELECT {{ .CursorFieldName }}, {{ .JSONFieldName }}
+FROM {{ .CompanyTableFullName }}
 WHERE
   {{ if .Query.Cursor -}}
   cursor > {{ .Query.CursorAsInt }} AND

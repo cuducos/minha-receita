@@ -229,20 +229,16 @@ func (p *PostgreSQL) Search(q *Query) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error searching for %#v: %w", q, err)
 	}
-	r, err := pgx.CollectRows(rows, pgx.RowTo[[]byte])
+	rs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[postgresRecord])
 	if err != nil {
 		return "", fmt.Errorf("error reading search result for %#v: %w", q, err)
 	}
 	var cs []transform.Company
 	var cur string
-	for i, b := range r {
-		var p postgresRecord
-		if err := json.Unmarshal(b, &p); err != nil {
-			return "", fmt.Errorf("error deserializing search result: %w", err)
-		}
-		cs = append(cs, p.Company)
-		if i == len(r)-1 {
-			cur = fmt.Sprintf("%d", p.Cursor)
+	for i, r := range rs {
+		cs = append(cs, r.Company)
+		if i == len(rs)-1 {
+			cur = fmt.Sprintf("%d", r.Cursor)
 		}
 	}
 	d := newPage(cs, cur)
