@@ -23,6 +23,7 @@ import (
 const (
 	companyTableName = "cnpj"
 	metaTableName    = "meta"
+	cursorFieldName  = "cursor"
 	idFieldName      = "id"
 	jsonFieldName    = "json"
 	keyFieldName     = "key"
@@ -90,6 +91,7 @@ type PostgreSQL struct {
 	metaReadQuery    string
 	CompanyTableName string
 	MetaTableName    string
+	CursorFieldName  string
 	IDFieldName      string
 	JSONFieldName    string
 	KeyFieldName     string
@@ -194,22 +196,35 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 type userQuery struct {
 	Query                *Query
 	CompanyTableFullName string
+	CursorFieldName      string
+	IDFieldName          string
 	JSONFieldName        string
+}
+
+type postgresRecord struct {
+	Cursor  int
+	Company transform.Company
 }
 
 // Search returns paginated results with JSON for companies bases on a search
 // query
 func (p *PostgreSQL) Search(q *Query) (string, error) {
-	u := userQuery{q, p.CompanyTableFullName(), p.JSONFieldName}
 	t, err := template.ParseFS(sql, "postgres/search.sql")
 	if err != nil {
 		return "", fmt.Errorf("error getting search template: %w", err)
 	}
 	var b bytes.Buffer
-	if err = t.Execute(&b, u); err != nil {
+	if err = t.Execute(&b, userQuery{
+		q,
+		p.CompanyTableFullName(),
+		p.CursorFieldName,
+		p.IDFieldName,
+		p.JSONFieldName,
+	}); err != nil {
 		return "", fmt.Errorf("error rendering searching template: %w", err)
 	}
 	s := strings.TrimSpace(spaces.ReplaceAllString(b.String(), " "))
+	slog.Debug("search", "query", s)
 	rows, err := p.pool.Query(context.Background(), s)
 	if err != nil {
 		return "", fmt.Errorf("error searching for %#v: %w", q, err)
@@ -219,14 +234,18 @@ func (p *PostgreSQL) Search(q *Query) (string, error) {
 		return "", fmt.Errorf("error reading search result for %#v: %w", q, err)
 	}
 	var cs []transform.Company
-	for _, b := range r {
-		var c transform.Company
-		if err := json.Unmarshal(b, &c); err != nil {
-			return "", fmt.Errorf("error deserializing company: %w", err)
+	var cur string
+	for i, b := range r {
+		var p postgresRecord
+		if err := json.Unmarshal(b, &p); err != nil {
+			return "", fmt.Errorf("error deserializing search result: %w", err)
 		}
-		cs = append(cs, c)
+		cs = append(cs, p.Company)
+		if i == len(r)-1 {
+			cur = fmt.Sprintf("%d", p.Cursor)
+		}
 	}
-	d := newPage(cs)
+	d := newPage(cs, cur)
 	j, err := json.Marshal(d)
 	if err != nil {
 		return "", fmt.Errorf("error serializing the query result: %w", err)
@@ -333,6 +352,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		schema:           schema,
 		CompanyTableName: companyTableName,
 		MetaTableName:    metaTableName,
+		CursorFieldName:  cursorFieldName,
 		IDFieldName:      idFieldName,
 		JSONFieldName:    jsonFieldName,
 		KeyFieldName:     keyFieldName,

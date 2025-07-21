@@ -1,8 +1,8 @@
 SELECT {{ .JSONFieldName }}
-FROM {{ .CompanyTableFullName }}
+FROM {{ .CursorFieldName }}, {{ .CompanyTableFullName }}
 WHERE
   {{ if .Query.Cursor -}}
-  id > '{{ .Query.Cursor }}' AND
+  cursor > {{ .Query.CursorAsInt }} AND
   {{- end }}
   {{ if .Query.UF -}}
   ({{ range $i, $uf := .Query.UF }}{{ if $i }} OR {{ end }}json -> 'uf' = '"{{ $uf }}"'::jsonb{{ end }})
@@ -20,4 +20,5 @@ WHERE
     {{ end -}}
   )
   {{- end }}
+ORDER BY {{ .CursorFieldName }}
 LIMIT {{ .Query.Limit }}

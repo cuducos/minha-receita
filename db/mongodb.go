@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type record struct {
+type mongoRecord struct {
 	Id   string            `json:"id"`
 	Json transform.Company `json:"json"`
 }
@@ -97,7 +97,7 @@ func (m *MongoDB) CreateCompanies(batch [][]string) error {
 		if len(c) < 2 {
 			return fmt.Errorf("line skipped due to insufficient length: %s", c)
 		}
-		var r record
+		var r mongoRecord
 		r.Id = c[0]
 		err := json.Unmarshal([]byte(c[1]), &r.Json)
 		if err != nil {
@@ -212,7 +212,7 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	coll := m.db.Collection(companyTableName)
-	var r record
+	var r mongoRecord
 	err := coll.FindOne(ctx, bson.M{idFieldName: id}).Decode(&r)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -272,15 +272,19 @@ func (m *MongoDB) Search(q *Query) (string, error) {
 		return "", fmt.Errorf("error running query %#v: %w", q, err)
 	}
 	defer c.Close(ctx)
-	var r []record
+	var r []mongoRecord
 	if err := c.All(ctx, &r); err != nil {
 		return "", fmt.Errorf("error decoding results: %w", err)
 	}
 	var cs []transform.Company
-	for _, c := range r {
+	var cur string
+	for i, c := range r {
 		cs = append(cs, c.Json)
+		if i == len(r)-1 {
+			cur = c.Id
+		}
 	}
-	p := newPage(cs)
+	p := newPage(cs, cur)
 	b, err := json.Marshal(p)
 	if err != nil {
 		return "", fmt.Errorf("error serializing the query result: %w", err)

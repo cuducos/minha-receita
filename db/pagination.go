@@ -2,6 +2,7 @@ package db
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/cuducos/minha-receita/transform"
@@ -31,6 +32,16 @@ type Query struct {
 func (q *Query) Empty() bool {
 	return len(q.UF) == 0 && len(q.CNAE) == 0 && len(q.CNAEFiscal) == 0
 }
+func (q *Query) CursorAsInt() (int, error) {
+	if q.Cursor == nil {
+		return 0, nil
+	}
+	c := *q.Cursor
+	if c == "" {
+		return 0, nil
+	}
+	return strconv.Atoi(c)
+}
 
 func NewQuery(v url.Values, limit uint16) *Query {
 	q := Query{
@@ -54,13 +65,15 @@ type page struct {
 	Cursor *string             `json:"cursor"`
 }
 
-func newPage(cs []transform.Company) page {
+func newPage(cs []transform.Company, c string) page {
 	var p page
 	if len(cs) > 0 {
 		p.Data = cs
-		p.Cursor = &cs[len(cs)-1].CNPJ
 	} else {
 		p.Data = []transform.Company{}
+	}
+	if c != "" {
+		p.Cursor = &c
 	}
 	return p
 }
