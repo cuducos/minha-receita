@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/cuducos/minha-receita/transform"
@@ -15,14 +16,26 @@ import (
 )
 
 type mongoRecord struct {
-	Id   string            `json:"id"`
-	Json transform.Company `json:"json"`
+	Id   string            `json:"id" bson:"id"`
+	Json transform.Company `json:"json" bson:"json"`
 }
 
 type MongoDB struct {
 	client *mongo.Client
 	db     *mongo.Database
 	ctx    context.Context
+}
+
+func convertToInts(strs []string) ([]int, error) {
+	ints := make([]int, 0, len(strs))
+	for _, str := range strs {
+		num, err := strconv.Atoi(str)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao converter %s para int: %w", str, err)
+		}
+		ints = append(ints, num)
+	}
+	return ints, nil
 }
 
 // NewMongoDB initializes a new MongoDB connection wrapped in a structure.
@@ -242,22 +255,31 @@ func (m *MongoDB) Search(q *Query) (string, error) {
 		}
 	}
 	if len(q.CNAEFiscal) > 0 {
-		if len(q.CNAEFiscal) == 1 {
-			f["json.cnae_fiscal"] = q.CNAEFiscal[0]
+		ci, err := convertToInts(q.CNAEFiscal)
+		if err != nil {
+			return "", err
+		}
+		if len(ci) == 1 {
+			f["json.cnae_fiscal"] = ci[0]
 		} else {
-			f["json.cnae_fiscal"] = bson.M{"$in": q.UF}
+			f["json.cnae_fiscal"] = bson.M{"$in": ci}
 		}
 	}
+
 	if len(q.CNAE) > 0 {
-		if len(q.CNAE) == 1 {
+		ci, err := convertToInts(q.CNAE)
+		if err != nil {
+			return "", err
+		}
+		if len(ci) == 1 {
 			f["$or"] = []bson.M{
-				{"cnae_fiscal": q.CNAE[0]},
-				{"cnaes_secundarios.codigo": bson.M{"$in": q.CNAE}},
+				{"json.cnae_fiscal": ci[0]},
+				{"json.cnaes_secundarios.codigo": ci[0]},
 			}
 		} else {
 			f["$or"] = []bson.M{
-				{"cnae_fiscal": bson.M{"$in": q.CNAE}},
-				{"cnaes_secundarios.codigo": bson.M{"$in": q.CNAE}},
+				{"json.cnae_fiscal": bson.M{"$in": ci}},
+				{"json.cnaes_secundarios.codigo": bson.M{"$in": ci}},
 			}
 		}
 	}

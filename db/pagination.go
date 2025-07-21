@@ -61,8 +61,8 @@ func NewQuery(v url.Values, limit uint16) *Query {
 }
 
 type page struct {
-	Data   []transform.Company `json:"data"`
-	Cursor *string             `json:"cursor"`
+	Data   []transform.Company `json:"data" bson:"data"`
+	Cursor *string             `json:"cursor" bson:"cursor"`
 }
 
 func newPage(cs []transform.Company, c string) page {
