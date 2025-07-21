@@ -7,10 +7,10 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/cuducos/chunk v1.1.4
 	github.com/cuducos/go-cnpj v0.1.2
-	github.com/dgraph-io/badger/v4 v4.7.0
+	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/newrelic/go-agent/v3 v3.40.1
-	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.1
+	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.2
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/spf13/cobra v1.9.1
 	go.mongodb.org/mongo-driver v1.17.4
@@ -34,9 +34,9 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
-	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrwriter v1.0.0 // indirect
+	github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrwriter v1.0.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
@@ -49,7 +49,7 @@ require (
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/term v0.33.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
