@@ -72,6 +72,10 @@ func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
 }
 func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
+	txn := newrelic.FromContext(r.Context())
+	if txn != nil {
+		txn.AddAttribute("handler", "singleCompany")
+	}
 	if !cnpj.IsValid(pth) {
 		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(pth[1:])))
 		return
@@ -87,6 +91,10 @@ func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request
 
 func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
+	txn := newrelic.FromContext(r.Context())
+	if txn != nil {
+		txn.AddAttribute("handler", "paginatedSearch")
+	}
 	s, err := app.db.Search(q)
 	if err != nil {
 		slog.Error("paginated search error", "error", err, "query", q)
