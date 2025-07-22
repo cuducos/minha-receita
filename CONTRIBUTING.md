@@ -105,7 +105,7 @@ A partir daí, cada linha dos `Estabelecimentos*` é lida, enriquecida com esses
 
 ## Amostra dos arquivos para testes
 
-Como o processo todo de ETL (o comando `transform`) demora demais, caso queira testar manualmente com uma **amostra** dos dados, utilize o comando `sample` para gera arquivos limitados a 10 mil linhas (assim o processo todo roda em cerca de 1 minuto, por exemplo). Após fazer o download dos dados:
+Como o processo todo de ETL (o comando `transform`) demora demais, caso queira testar manualmente com uma **amostra** dos dados, utilize o comando `sample` para gera arquivos limitados a 10 mil linhas (assim o processo todo roda em cerca de 1 minuto, por exemplo). Após [fazer o download dos dados](https://docs.minhareceita.org/servidor/#download-dos-dados):
 
 ```console
 $ ./minha-receita sample
