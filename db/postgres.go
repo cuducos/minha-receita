@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -21,6 +23,7 @@ import (
 const (
 	companyTableName = "cnpj"
 	metaTableName    = "meta"
+	cursorFieldName  = "cursor"
 	idFieldName      = "id"
 	jsonFieldName    = "json"
 	keyFieldName     = "key"
@@ -29,6 +32,8 @@ const (
 
 //go:embed postgres
 var sql embed.FS
+
+var spaces = regexp.MustCompile(`\s+`)
 
 type sqlTemplate struct {
 	path         fs.DirEntry
@@ -86,6 +91,7 @@ type PostgreSQL struct {
 	metaReadQuery    string
 	CompanyTableName string
 	MetaTableName    string
+	CursorFieldName  string
 	IDFieldName      string
 	JSONFieldName    string
 	KeyFieldName     string
@@ -187,6 +193,65 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return j, nil
 }
 
+type userQuery struct {
+	Query                *Query
+	CompanyTableFullName string
+	CursorFieldName      string
+	IDFieldName          string
+	JSONFieldName        string
+}
+
+type postgresRecord struct {
+	Cursor  int
+	Company transform.Company
+}
+
+// Search returns paginated results with JSON for companies bases on a search
+// query
+func (p *PostgreSQL) Search(q *Query) (string, error) {
+	t, err := template.ParseFS(sql, "postgres/search.sql")
+	if err != nil {
+		return "", fmt.Errorf("error getting search template: %w", err)
+	}
+	var b bytes.Buffer
+	if err = t.Execute(&b, userQuery{
+		q,
+		p.CompanyTableFullName(),
+		p.CursorFieldName,
+		p.IDFieldName,
+		p.JSONFieldName,
+	}); err != nil {
+		return "", fmt.Errorf("error rendering searching template: %w", err)
+	}
+	s := strings.TrimSpace(spaces.ReplaceAllString(b.String(), " "))
+	slog.Debug("search", "query", s)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	rows, err := p.pool.Query(ctx, s)
+	if err != nil {
+		return "", fmt.Errorf("error searching for %#v: %w", q, err)
+	}
+	rs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[postgresRecord])
+	if err != nil {
+		return "", fmt.Errorf("error reading search result for %#v: %w", q, err)
+	}
+	var cs []transform.Company
+	var cur string
+	for i, r := range rs {
+		cs = append(cs, r.Company)
+		if i == len(rs)-1 {
+			cur = fmt.Sprintf("%d", r.Cursor)
+		}
+	}
+	d := newPage(cs, cur)
+	j, err := json.Marshal(d)
+	if err != nil {
+		return "", fmt.Errorf("error serializing the query result: %w", err)
+	}
+	return string(j), nil
+
+}
+
 // PreLoad runs before starting to load data into the database. Currently it
 // disables autovacuum on PostgreSQL.
 func (p *PostgreSQL) PreLoad() error {
@@ -265,10 +330,6 @@ func (p *PostgreSQL) CreateExtraIndexes(idxs []string) error {
 	return nil
 }
 
-func (p *PostgreSQL) Search(q Query) (string, error) {
-	return "", fmt.Errorf("not implemented")
-}
-
 // NewPostgreSQL creates a new PostgreSQL connection and ping it to make sure it works.
 func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 	cfg, err := pgxpool.ParseConfig(uri)
@@ -289,6 +350,7 @@ func NewPostgreSQL(uri, schema string) (PostgreSQL, error) {
 		schema:           schema,
 		CompanyTableName: companyTableName,
 		MetaTableName:    metaTableName,
+		CursorFieldName:  cursorFieldName,
 		IDFieldName:      idFieldName,
 		JSONFieldName:    jsonFieldName,
 		KeyFieldName:     keyFieldName,

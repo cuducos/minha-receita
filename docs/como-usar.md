@@ -12,6 +12,7 @@ A API web tem apenas um _endpoints_ principal: `/<número do CNPJ>`. Nos exemplo
 | `/00.000.000/0000-00` | `GET` | 404 | `{"message": "CNPJ 00.000.000/0000-00 não encontrado."}`  |
 | `/33683111000280` | `GET` | 200 | _Ver JSON de exemplo abaixo._ |
 | `/33.683.111/0002-80` | `GET` | 200 | _Ver JSON de exemplo abaixo._ |
+| `/?uf=SP` | `GET` | 200 | _Busca paginada, ver detalhes abaixo._ |
 
 ## Exemplo de requisição usando o `curl`
 
@@ -190,6 +191,45 @@ $ curl https://minhareceita.org/33683111000280
     ]
 }
 ```
+
+## Busca paginada
+
+A busca paginada aceita um ou mais desses parâmetros na URL:
+
+| Parâmetro | Descrição |
+|---|---|
+| `uf` | Sigla da UF com duas letras |
+| `cnae_fiscal` | Código do CNAE fiscal |
+| `cnae` | Busca o código tanto no CNAE fiscal como nos CNAES secundários |
+| `limit` | Número máximo de CNPJ por página (o máximo é 1.000) |
+| `cursor` | Valor a ser passado para requisitar a próxima página da busca |
+
+Por exemplo, a empresa do JSON anterior pode ser encontrada (bem como outras semelhantes) com: `GET /?uf=DF&cnae=6209100`.
+
+Mais de um valor pode ser passado, seja repetindo o parâmetro, seja separando os valores por vírgulas. Por exemplo, para buscas no Rio Grande do Norte, Paraíba e Pernambuco, todas essas são opções válidas:
+
+* `GET /?uf=rn&uf=pb&uf=pe`
+* `GET /?uf=rn,pb,pe`
+* `GET /?uf=rn,pb&uf=pe`
+
+O mesmo vale para `cnae` e `cnae_fiscal`.
+
+### Exemplo de JSON de resposta:
+
+```json
+{
+    "data": [],
+    "cursor": "33683111000280"
+}
+```
+
+`data` contém uma sequência de JSON como o do exemplo para uma única empresa.
+
+#### Cursor
+
+Com uma resposta dessas do exemplo, para requisitar a próxima página, basta adicionar `&cursor=33683111000280` ao final da URL.
+
+Quando a resposta estievr sem `cursor`, isso significa que é a última página da busca.
 
 ## Dicionário de dados
 

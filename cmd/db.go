@@ -26,6 +26,7 @@ type database interface {
 	CreateExtraIndexes(idxs []string) error
 	// api
 	GetCompany(string) (string, error)
+	Search(*db.Query) (string, error)
 	MetaRead(string) (string, error)
 }
 

@@ -1,25 +1,23 @@
 # Perguntas frequentes
 
-## Como buscar por CNAE, UF, etc.?
+## Como buscar por outros campos que não CNAE ou UF?
 
 Isso encarece computacionalmente o _Minha Receita_ (consultas mais pesadas ao banco de dados, paginação, etc.), ou seja:
 
 * ou aumentaria os custos para manter a API no ar (e as doações não cobrem nem os custos atuais)
 * ou comprometeria a disponibilidade da API.
 
-Para evitar isso, a API não tem qualquer forma de filtro ou paginação.
+Para evitar isso, a API limita os filtros disponíveis.
 
 No entanto, [criando o seu banco de dados localmente](servidor.md), é possível utilizar consultas diratemente no PostgreSQL, como por exemplo:
 
-* busca por UF com `SELECT * FROM cnpj WHERE json->>'uf' = 'PR'`
-* busca por CNAE (apenas o primário, fiscal) com `SELECT * FROM cnpj WHERE json->>'cnae_fiscal' = '6204000'`
-* busca por CNAE (incluindo secundários) com
+* busca por situação cadastral com `SELECT * FROM cnpj WHERE json -> 'descricao_situacao_cadastral' = '"ATIVA"' :: jsonb`
+* busca por código da faixa etária dos quadro societário:
 
 ```sql
 SELECT *
 FROM cnpj
-WHERE json->>'cnae_fiscal' = '6204000'
-   OR json->'cnaes_secundarios' @> '[{"codigo":6204000}]
+WHERE jsonb_path_query_array(json, '$.qsa[*].codigo_faixa_etaria') @> '[5]'
 ```
 
 Você pode ainda criar índices para essas buscas ficarem mais rápidas com o comando `extra-indexes`. O comando aceita um ou mais índices, e o nome dos índices é composto pelas chaves do JSON separadas por `.`. Por exemplo, para criar um índice para a UF e para os códigos dos CNAEs secundários:
@@ -28,6 +26,7 @@ Você pode ainda criar índices para essas buscas ficarem mais rápidas com o co
 $ minha-receita extra-indexes uf cnaes_secundarios.codigo
 ```
 
+Os índices para `uf`, `cnae_fiscal` e `codigo` dos `cnaes_secundarios` já são criados por padrão.
 
 Para referência, no PostgreSQL:
 
