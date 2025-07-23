@@ -52,7 +52,7 @@ type Query struct {
 }
 
 func (q *Query) Empty() bool {
-	return len(q.UF) == 0 && len(q.CNAE) == 0 && len(q.CNAEFiscal) == 0
+	return len(q.UF) == 0 && len(q.CNAE) == 0 && len(q.CNAEFiscal) == 0 && len(q.CNPF) == 0
 }
 
 func (q *Query) CursorAsInt() (int, error) {
