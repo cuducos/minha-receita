@@ -20,6 +20,7 @@ WHERE
     {{ end -}}
   )
   {{- end }}
+  {{ if and (or .Query.UF .Query.CNAEFiscal .Query.CNAE) .Query.CNPF }} AND {{ end }}
   {{ if .Query.CNPF -}}
   (
     jsonb_path_query_array(json, '$.qsa[*].cnpj_cpf_do_socio') @> '[{{ range $i, $cnpf := .Query.CNPF }}{{ if $i }},{{ end }}"{{ $cnpf }}"{{ end }}]'
