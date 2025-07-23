@@ -20,5 +20,10 @@ WHERE
     {{ end -}}
   )
   {{- end }}
+  {{ if .Query.CNPF -}}
+  (
+    jsonb_path_query_array(json, '$.qsa[*].cnpj_cpf_do_socio') @> '[{{ range $i, $cnpf := .Query.CNPF }}{{ if $i }},{{ end }}"{{ $cnpf }}"{{ end }}]'
+  )
+  {{- end }}
 ORDER BY {{ .CursorFieldName }}
 LIMIT {{ .Query.Limit }}

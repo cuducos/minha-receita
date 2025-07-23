@@ -201,6 +201,7 @@ A busca paginada aceita um ou mais desses parâmetros na URL:
 | `uf` | Sigla da UF com duas letras |
 | `cnae_fiscal` | Código do CNAE fiscal |
 | `cnae` | Busca o código tanto no CNAE fiscal como nos CNAES secundários |
+| `cnpf` | Busca por CPF ou CNPJ da pessoa no quadro societário |
 | `limit` | Número máximo de CNPJ por página (o máximo é 1.000) |
 | `cursor` | Valor a ser passado para requisitar a próxima página da busca |
 
@@ -213,6 +214,12 @@ Mais de um valor pode ser passado, seja repetindo o parâmetro, seja separando o
 * `GET /?uf=rn,pb&uf=pe`
 
 O mesmo vale para `cnae` e `cnae_fiscal`.
+
+### Busca por CPF ou CNPJ da pessoa no quadro societário
+
+Não utilizar pontuação ou barras nesses valores.
+
+Para buscar por CPF, utilizar `*` como os três primeiros caracteres e como os dois últimos. Por exemplo, para buscar pelo CPF 123.456.789-01, utilizar `***456789**` — é assim que o CPF dos sócios aparece no banco de dados original.
 
 ### Exemplo de JSON de resposta:
 

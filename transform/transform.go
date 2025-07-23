@@ -24,7 +24,12 @@ const (
 	BatchSize = 8192
 )
 
-var extraIdexes = [...]string{"uf", "cnae_fiscal", "cnaes_secundarios.codigo"}
+var extraIdexes = [...]string{
+	"uf",
+	"cnae_fiscal",
+	"cnaes_secundarios.codigo",
+	"qsa.cnpj_cpf_do_socio",
+}
 
 type database interface {
 	PreLoad() error

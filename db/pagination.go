@@ -44,6 +44,7 @@ func parseURLParamsToUInt(q []string) []uint16 {
 
 type Query struct {
 	UF         []string
+	CNPF       []string // CNPJ or CPF in the QSA
 	CNAE       []uint16
 	CNAEFiscal []uint16
 	Cursor     *string
@@ -53,6 +54,7 @@ type Query struct {
 func (q *Query) Empty() bool {
 	return len(q.UF) == 0 && len(q.CNAE) == 0 && len(q.CNAEFiscal) == 0
 }
+
 func (q *Query) CursorAsInt() (int, error) {
 	if q.Cursor == nil {
 		return 0, nil
@@ -67,6 +69,7 @@ func (q *Query) CursorAsInt() (int, error) {
 func NewQuery(v url.Values) *Query {
 	q := Query{
 		UF:         parseURLParams(v["uf"]),
+		CNPF:       parseURLParams(v["cnpf"]),
 		CNAE:       parseURLParamsToUInt(v["cnae"]),
 		CNAEFiscal: parseURLParamsToUInt(v["cnae_fiscal"]),
 		Limit:      0,
