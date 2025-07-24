@@ -7,8 +7,8 @@ github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/chengxilo/virtualterm v1.0.4 h1:Z6IpERbRVlfB8WkOmtbHiDbBANU7cimRIof7mk9/PwM=
 github.com/chengxilo/virtualterm v1.0.4/go.mod h1:DyxxBZz/x1iqJjFxTFcr6/x+jSpqN0iwWCOK1q10rlY=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
-github.com/cuducos/chunk v1.1.4 h1:sJYLHMZP4+dQfgM7Mqo2cjPhCGYKkxLJUJHrbVgJWVg=
-github.com/cuducos/chunk v1.1.4/go.mod h1:MieiCPvKtGwJWcSoHb4HIzC8VtQ2LeH0xzt7d6rYQz0=
+github.com/cuducos/chunk v1.1.5 h1:6gf/0EsO6/tORZkrojQEbWNszn6ANuNcW1Sbi8sS9Cc=
+github.com/cuducos/chunk v1.1.5/go.mod h1:OJAnAC5uUWmEiboElttU79SiXyKRQEaGHwxkIPvJfBg=
 github.com/cuducos/go-cnpj v0.1.2 h1:EKfO9AJPjxBh/Pc8S+SMSeXvQ7kLwhDoF6te4md58OA=
 github.com/cuducos/go-cnpj v0.1.2/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGtEey/f4Y=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -61,10 +61,6 @@ github.com/montanaflynn/stats v0.7.1 h1:etflOAAHORrCC44V+aR6Ftzort912ZU+YLiSTuV8
 github.com/montanaflynn/stats v0.7.1/go.mod h1:etXPPgVO6n31NxCd9KQUMvCM+ve0ruNzt6R8Bnaayow=
 github.com/newrelic/go-agent/v3 v3.40.1 h1:8nb4R252Fpuc3oySvlHpDwqySqaPWL5nf7ZVEhqtUeA=
 github.com/newrelic/go-agent/v3 v3.40.1/go.mod h1:X0TLXDo+ttefTIue1V96Y5seb8H6wqf6uUq4UpPsYj8=
-github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.2 h1:4hGBV21fXSWIPjkSTi52E5lMhHgIHCKzMVThtqlY+9I=
-github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter v1.0.2/go.mod h1:I0zGEbSBgJG0M5B3I/WIYBLUPOmk9ef/OlLyY/jPpBU=
-github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrwriter v1.0.1 h1:toG3gbzYlm9LxL6KFbfykVHk8RXivM7OD2hmqJG7bpY=
-github.com/newrelic/go-agent/v3/integrations/logcontext-v2/nrwriter v1.0.1/go.mod h1:7N1iAritq/sxgJ8Cbak13iQeQdVZS+wFyoRSMGXGksg=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
