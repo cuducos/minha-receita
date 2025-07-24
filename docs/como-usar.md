@@ -221,6 +221,8 @@ Não utilizar pontuação ou barras nesses valores.
 
 Para buscar por CPF, utilizar `*` como os três primeiros caracteres e como os dois últimos. Por exemplo, para buscar pelo CPF 123.456.789-01, utilizar `***456789**` — é assim que o CPF dos sócios aparece no banco de dados original.
 
+Buscar apenas por CNPJ ou CPF do quadro societátio tende a não funcionar (erro de tempo esgotado, _timeout_). Afunilar a busca acrescentando uma UF, por exemplo, tende a funcionar.
+
 ### Exemplo de JSON de resposta:
 
 ```json
