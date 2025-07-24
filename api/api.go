@@ -36,7 +36,7 @@ type database interface {
 // errorMessage is a helper to serialize an error message to JSON.
 type errorMessage struct {
 	Message string  `json:"message"`
-	Hint    *string `json:"hint"`
+	Hint    *string `json:"hint,omitempty"`
 }
 
 type api struct {
