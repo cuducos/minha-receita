@@ -5,13 +5,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cuducos/minha-receita/transform"
 )
 
 const (
-	timeout      = time.Duration(30 * time.Second)
 	defaultLimit = 256
 	maxLimit     = 1024
 )
@@ -82,11 +80,8 @@ func NewQuery(v url.Values) *Query {
 	if len(ls) == 0 {
 		q.Limit = defaultLimit
 	} else {
-		if ls[0] > maxLimit {
-			q.Limit = maxLimit
-		} else {
-			q.Limit = ls[0]
-		}
+		q.Limit = min(ls[0], maxLimit)
+
 	}
 	if c := v.Get("cursor"); c != "" {
 		q.Cursor = &c

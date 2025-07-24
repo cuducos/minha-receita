@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -26,7 +27,7 @@ type database interface {
 	CreateExtraIndexes(idxs []string) error
 	// api
 	GetCompany(string) (string, error)
-	Search(*db.Query) (string, error)
+	Search(context.Context, *db.Query) (string, error)
 	MetaRead(string) (string, error)
 }
 

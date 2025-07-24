@@ -4,6 +4,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,14 +23,14 @@ import (
 
 const (
 	cacheMaxAge = time.Hour * 24
-	timeout     = time.Minute * 1
+	timeout     = time.Minute * 3
 )
 
 var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
 
 type database interface {
 	GetCompany(string) (string, error)
-	Search(*db.Query) (string, error)
+	Search(context.Context, *db.Query) (string, error)
 	MetaRead(string) (string, error)
 }
 
@@ -95,7 +96,14 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 	if txn != nil {
 		txn.AddAttribute("handler", "paginatedSearch")
 	}
-	s, err := app.db.Search(q)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	s, err := app.db.Search(ctx, q)
+	if err == context.DeadlineExceeded {
+		slog.Error("paginated search timed out", "query", q)
+		app.messageResponse(w, http.StatusRequestTimeout, "Tempo de requisição esgotou (Timeout)")
+		return
+	}
 	if err != nil {
 		slog.Error("paginated search error", "error", err, "query", q)
 		app.messageResponse(w, http.StatusNotFound, "Erro inesperado na busca.")

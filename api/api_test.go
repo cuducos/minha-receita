@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -29,7 +30,7 @@ func (mockDatabase) GetCompany(n string) (string, error) {
 	return string(b), nil
 }
 
-func (mockDatabase) Search(q *db.Query) (string, error) { return "", nil }
+func (mockDatabase) Search(ctx context.Context, q *db.Query) (string, error) { return "", nil }
 
 func (mockDatabase) MetaRead(k string) (string, error) { return "42", nil }
 

@@ -221,7 +221,7 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 
 // Search returns paginated results with JSON for companies bases on a search
 // query
-func (m *MongoDB) Search(q *Query) (string, error) {
+func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 	coll := m.db.Collection(companyTableName)
 	f := bson.M{}
 	if len(q.UF) > 0 {
@@ -258,8 +258,6 @@ func (m *MongoDB) Search(q *Query) (string, error) {
 		f["id"] = bson.M{"$gt": *q.Cursor}
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "id", Value: 1}}).SetLimit(int64(q.Limit))
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
 	c, err := coll.Find(ctx, f, opts)
 	if err != nil {
 		return "", fmt.Errorf("error running query %#v: %w", q, err)

@@ -17,7 +17,6 @@ import (
 	"github.com/cuducos/minha-receita/transform"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 const (
@@ -84,7 +83,6 @@ func (e *ExtraIndex) NestedPath() string {
 // PostgreSQL database interface.
 type PostgreSQL struct {
 	pool             *pgxpool.Pool
-	newRelic         *newrelic.Application
 	uri              string
 	schema           string
 	getCompanyQuery  string
@@ -176,12 +174,6 @@ func (p *PostgreSQL) CreateCompanies(batch [][]string) error {
 // GetCompany returns the JSON of a company based on a CNPJ number.
 func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	ctx := context.Background()
-	if p.newRelic != nil {
-		txn := p.newRelic.StartTransaction("GetCompany")
-		ctx = newrelic.NewContext(ctx, txn)
-		defer txn.End()
-	}
-
 	rows, err := p.pool.Query(ctx, p.getCompanyQuery, id)
 	if err != nil {
 		return "", fmt.Errorf("error looking for cnpj %s: %w", id, err)
@@ -208,7 +200,7 @@ type postgresRecord struct {
 
 // Search returns paginated results with JSON for companies bases on a search
 // query
-func (p *PostgreSQL) Search(q *Query) (string, error) {
+func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 	t, err := template.ParseFS(sql, "postgres/search.sql")
 	if err != nil {
 		return "", fmt.Errorf("error getting search template: %w", err)
@@ -225,8 +217,14 @@ func (p *PostgreSQL) Search(q *Query) (string, error) {
 	}
 	s := strings.TrimSpace(spaces.ReplaceAllString(b.String(), " "))
 	slog.Debug("search", "query", s)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error starting a database transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, "SET LOCAL enable_seqscan = off"); err != nil {
+		return "", fmt.Errorf("error disabling sequential scans: %w", err)
+	}
 	rows, err := p.pool.Query(ctx, s)
 	if err != nil {
 		return "", fmt.Errorf("error searching for %#v: %w", q, err)
@@ -234,6 +232,9 @@ func (p *PostgreSQL) Search(q *Query) (string, error) {
 	rs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[postgresRecord])
 	if err != nil {
 		return "", fmt.Errorf("error reading search result for %#v: %w", q, err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		slog.Error("error committing the read-only search transaction", "error", err)
 	}
 	var cs []transform.Company
 	var cur string
