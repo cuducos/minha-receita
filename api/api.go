@@ -57,7 +57,7 @@ func (app *api) messageResponse(w http.ResponseWriter, s int, m string, h *strin
 	b, err := json.Marshal(errorMessage{m, h})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		slog.Error("Could not wrap message in JSON: %s", m)
+		slog.Error("Could not wrap message in JSON: %s", "message", m)
 		return
 	}
 	w.WriteHeader(s)
