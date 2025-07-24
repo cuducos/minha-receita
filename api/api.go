@@ -17,7 +17,6 @@ import (
 	"github.com/cuducos/go-cnpj"
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/monitor"
-	"github.com/newrelic/go-agent/v3/integrations/logcontext-v2/logWriter"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
@@ -36,41 +35,39 @@ type database interface {
 
 // errorMessage is a helper to serialize an error message to JSON.
 type errorMessage struct {
-	Message string `json:"message"`
+	Message string  `json:"message"`
+	Hint    *string `json:"hint"`
 }
 
 type api struct {
-	db          database
-	host        string
-	errorLogger logWriter.LogWriter
+	db   database
+	host string
 }
 
 // messageResponse takes a text message and a HTTP status, wraps the message into a
 // JSON output and writes it together with the proper headers to a response.
-func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
+func (app *api) messageResponse(w http.ResponseWriter, s int, m string, h *string) {
 	if m == "" {
 		w.WriteHeader(s)
 		if s == http.StatusInternalServerError {
-			app.errorLogger.Write([]byte("Internal server error without error message"))
+			slog.Error("Internal server error without error message")
 		}
 		return
 	}
-
-	b, err := json.Marshal(errorMessage{m})
+	b, err := json.Marshal(errorMessage{m, h})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		app.errorLogger.Write(fmt.Appendf(nil, "Could not wrap message in JSON: %s", m))
+		slog.Error("Could not wrap message in JSON: %s", m)
 		return
 	}
-
 	w.WriteHeader(s)
 	w.Header().Set("Content-type", "application/json")
 	w.Write(b)
-
 	if s == http.StatusInternalServerError {
-		app.errorLogger.Write(b)
+		slog.Error("Internal server error", "message", m)
 	}
 }
+
 func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	txn := newrelic.FromContext(r.Context())
@@ -78,12 +75,12 @@ func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request
 		txn.AddAttribute("handler", "singleCompany")
 	}
 	if !cnpj.IsValid(pth) {
-		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(pth[1:])))
+		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(pth[1:])), nil)
 		return
 	}
 	s, err := getCompany(app.db, pth)
 	if err != nil {
-		app.messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(pth)))
+		app.messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(pth)), nil)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -101,12 +98,17 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 	s, err := app.db.Search(ctx, q)
 	if err == context.DeadlineExceeded {
 		slog.Error("paginated search timed out", "query", q)
-		app.messageResponse(w, http.StatusRequestTimeout, "Tempo de requisição esgotou (Timeout)")
+		var h *string
+		if q.Limit/2 > 1 {
+			m := fmt.Sprintf("Essa busca solicitou %d CNPJs, experimente um número menor utilizando o parâmetro limit=%d", q.Limit, q.Limit/2)
+			h = &m
+		}
+		app.messageResponse(w, http.StatusRequestTimeout, "Tempo de requisição esgotou (Timeout)", h)
 		return
 	}
 	if err != nil {
 		slog.Error("paginated search error", "error", err, "query", q)
-		app.messageResponse(w, http.StatusNotFound, "Erro inesperado na busca.")
+		app.messageResponse(w, http.StatusNotFound, "Erro inesperado na busca.", nil)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -126,7 +128,7 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
-		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.", nil)
 		return
 	}
 	pth := r.URL.Path
@@ -144,12 +146,12 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.", nil)
 		return
 	}
 	s, err := app.db.MetaRead("updated-at")
 	if err != nil {
-		app.messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.")
+		app.messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.", nil)
 		return
 	}
 	if s == "" {
@@ -157,12 +159,12 @@ func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", cacheControl)
-	app.messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s))
+	app.messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s), nil)
 }
 
 func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodHead && r.Method != http.MethodGet {
-		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas os métodos GET e HEAD.")
+		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas os métodos GET e HEAD.", nil)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -188,11 +190,7 @@ func Serve(db database, p string, nr *newrelic.Application) error {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
-	app := api{
-		db:          db,
-		host:        os.Getenv("ALLOWED_HOST"),
-		errorLogger: logWriter.New(os.Stderr, nr),
-	}
+	app := api{db, os.Getenv("ALLOWED_HOST")}
 	for _, r := range []struct {
 		path    string
 		handler func(http.ResponseWriter, *http.Request)
