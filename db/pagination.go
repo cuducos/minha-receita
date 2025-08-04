@@ -28,16 +28,16 @@ func parseURLParams(q []string) []string {
 }
 
 func parseURLParamsToUInt(q []string) []uint32 {
-    var r []uint32
-    for _, v := range parseURLParams(q) {
-        n, err := strconv.Atoi(v)
-        if err != nil || n <= 0 {
-            slog.Info("Ignoring invalid CNAE number", "cnae", v)
-            continue
-        }
-        r = append(r, uint32(n))
-    }
-    return r
+	var r []uint32
+	for _, v := range parseURLParams(q) {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			slog.Info("Ignoring invalid CNAE number", "cnae", v)
+			continue
+		}
+		r = append(r, uint32(n))
+	}
+	return r
 }
 
 type Query struct {
