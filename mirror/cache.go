@@ -41,13 +41,6 @@ func (c *Cache) refresh() error {
 	var fs []File
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion(c.settings.region),
-		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
-			func(svc, rgn string, options ...any) (aws.Endpoint, error) {
-				return aws.Endpoint{
-					URL:               c.settings.endpointURL,
-					HostnameImmutable: true,
-				}, nil
-			})),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			c.settings.accessKey,
 			c.settings.secretAccessKey,
@@ -63,6 +56,9 @@ func (c *Cache) refresh() error {
 		var fs []File
 		sdk := s3.NewFromConfig(cfg, func(o *s3.Options) {
 			o.UsePathStyle = true
+			if c.settings.endpointURL != "" {
+				o.BaseEndpoint = aws.String(c.settings.endpointURL)
+			}
 		})
 		r, err := sdk.ListObjectsV2(context.Background(), &s3.ListObjectsV2Input{
 			Bucket:            aws.String(c.settings.bucket),
