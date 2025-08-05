@@ -39,10 +39,10 @@ func (c *Cache) isExpired() bool {
 
 func (c *Cache) refresh() error {
 	var fs []File
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
+	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion(c.settings.region),
 		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
-			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			func(svc, rgn string, options ...any) (aws.Endpoint, error) {
 				return aws.Endpoint{
 					URL:               c.settings.endpointURL,
 					HostnameImmutable: true,
@@ -61,10 +61,10 @@ func (c *Cache) refresh() error {
 	var t *string
 	loadPage := func(t *string) ([]File, *string, error) {
 		var fs []File
-		client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		sdk := s3.NewFromConfig(cfg, func(o *s3.Options) {
 			o.UsePathStyle = true
 		})
-		r, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		r, err := sdk.ListObjectsV2(context.Background(), &s3.ListObjectsV2Input{
 			Bucket:            aws.String(c.settings.bucket),
 			ContinuationToken: t,
 		})
