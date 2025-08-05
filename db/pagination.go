@@ -27,15 +27,15 @@ func parseURLParams(q []string) []string {
 	return r
 }
 
-func parseURLParamsToUInt(q []string) []uint16 {
-	var r []uint16
+func parseURLParamsToUInt(q []string) []uint32 {
+	var r []uint32
 	for _, v := range parseURLParams(q) {
 		n, err := strconv.Atoi(v)
 		if err != nil || n <= 0 {
 			slog.Info("Ignoring invalid CNAE number", "cnae", v)
 			continue
 		}
-		r = append(r, uint16(n))
+		r = append(r, uint32(n))
 	}
 	return r
 }
@@ -43,10 +43,10 @@ func parseURLParamsToUInt(q []string) []uint16 {
 type Query struct {
 	UF         []string
 	CNPF       []string // CNPJ or CPF in the QSA
-	CNAE       []uint16
-	CNAEFiscal []uint16
+	CNAE       []uint32
+	CNAEFiscal []uint32
 	Cursor     *string
-	Limit      uint16
+	Limit      uint32
 }
 
 func (q *Query) Empty() bool {
