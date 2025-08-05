@@ -2,6 +2,7 @@ package mirror
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -9,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 const cacheExpiration = 12 * time.Hour
@@ -38,16 +39,21 @@ func (c *Cache) isExpired() bool {
 
 func (c *Cache) refresh() error {
 	var fs []File
-	s, err := session.NewSession(&aws.Config{
-		Region:           aws.String(c.settings.region),
-		Endpoint:         aws.String(c.settings.endpointURL),
-		S3ForcePathStyle: aws.Bool(true),
-		Credentials: credentials.NewStaticCredentials(
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(c.settings.region),
+		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
+			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+				return aws.Endpoint{
+					URL:               c.settings.endpointURL,
+					HostnameImmutable: true,
+				}, nil
+			})),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			c.settings.accessKey,
 			c.settings.secretAccessKey,
 			"",
-		),
-	})
+		)),
+	)
 	if err != nil {
 		return err
 	}
@@ -55,8 +61,10 @@ func (c *Cache) refresh() error {
 	var t *string
 	loadPage := func(t *string) ([]File, *string, error) {
 		var fs []File
-		sdk := s3.New(s)
-		r, err := sdk.ListObjectsV2(&s3.ListObjectsV2Input{
+		client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			o.UsePathStyle = true
+		})
+		r, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 			Bucket:            aws.String(c.settings.bucket),
 			ContinuationToken: t,
 		})
