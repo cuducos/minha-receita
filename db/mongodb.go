@@ -252,7 +252,7 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 		}
 	}
 	if len(q.CNPF) > 0 {
-		f["qsa.cnpj_cpf_do_socio"] = bson.M{"$in": q.CNPF}
+		f["json.qsa.cnpj_cpf_do_socio"] = bson.M{"$in": q.CNPF}
 	}
 	if q.Cursor != nil {
 		f["id"] = bson.M{"$gt": *q.Cursor}
