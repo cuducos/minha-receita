@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -13,7 +12,7 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 	if err := cmd.CLI().Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		slog.Error("Exiting minha-receita", "error", err)
 		os.Exit(1)
 	}
 }
