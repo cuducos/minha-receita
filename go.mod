@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	go.mongodb.org/mongo-driver v1.17.4
 	golang.org/x/sync v0.16.0
-	golang.org/x/text v0.27.0
+	golang.org/x/text v0.28.0
 )
 
 require (
