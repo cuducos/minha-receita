@@ -282,7 +282,7 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 			cur = c.Id
 		}
 	}
-	p := newPage(cs, cur)
+	p := newPage(cs, q.Limit, cur)
 	b, err := json.Marshal(p)
 	if err != nil {
 		return "", fmt.Errorf("error serializing the query result: %w", err)

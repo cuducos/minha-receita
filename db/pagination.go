@@ -97,14 +97,14 @@ type page struct {
 	Cursor *string             `json:"cursor" bson:"cursor"`
 }
 
-func newPage(cs []transform.Company, c string) page {
+func newPage(cs []transform.Company, l uint32, c string) page {
 	var p page
 	if len(cs) > 0 {
 		p.Data = cs
 	} else {
 		p.Data = []transform.Company{}
 	}
-	if c != "" {
+	if c != "" && len(cs) == int(l) {
 		p.Cursor = &c
 	}
 	return p

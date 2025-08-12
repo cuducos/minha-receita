@@ -244,7 +244,7 @@ func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 			cur = fmt.Sprintf("%d", r.Cursor)
 		}
 	}
-	d := newPage(cs, cur)
+	d := newPage(cs, q.Limit, cur)
 	j, err := json.Marshal(d)
 	if err != nil {
 		return "", fmt.Errorf("error serializing the query result: %w", err)
