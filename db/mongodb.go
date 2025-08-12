@@ -231,11 +231,18 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 			f["json.uf"] = bson.M{"$in": q.UF}
 		}
 	}
+	if len(q.CodigoNaturezaJuridica) > 0 {
+		if len(q.CodigoNaturezaJuridica) == 1 {
+			f["json.codigo_natureza_juridica"] = q.CodigoNaturezaJuridica[0]
+		} else {
+			f["json.codigo_natureza_juridica"] = bson.M{"$in": q.CodigoNaturezaJuridica}
+		}
+	}
 	if len(q.CNAEFiscal) > 0 {
 		if len(q.CNAEFiscal) == 1 {
 			f["json.cnae_fiscal"] = q.CNAEFiscal[0]
 		} else {
-			f["json.cnae_fiscal"] = bson.M{"$in": q.UF}
+			f["json.cnae_fiscal"] = bson.M{"$in": q.CNAEFiscal}
 		}
 	}
 	if len(q.CNAE) > 0 {

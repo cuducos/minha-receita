@@ -199,6 +199,7 @@ A busca paginada aceita um ou mais desses parâmetros na URL:
 | Parâmetro | Descrição |
 |---|---|
 | `uf` | Sigla da UF com duas letras |
+| `natureza_juridica` | Código da natureza jurídica |
 | `cnae_fiscal` | Código do CNAE fiscal |
 | `cnae` | Busca o código tanto no CNAE fiscal como nos CNAES secundários |
 | `cnpf` | Busca por CPF ou CNPJ da pessoa no quadro societário |

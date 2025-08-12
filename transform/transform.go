@@ -25,10 +25,11 @@ const (
 )
 
 var extraIdexes = [...]string{
-	"uf",
 	"cnae_fiscal",
 	"cnaes_secundarios.codigo",
+	"codigo_natureza_juridica",
 	"qsa.cnpj_cpf_do_socio",
+	"uf",
 }
 
 type database interface {
