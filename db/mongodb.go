@@ -204,7 +204,7 @@ func (m *MongoDB) PostLoad() error {
 
 func (m *MongoDB) GetCompany(id string) (string, error) {
 	coll := m.db.Collection(companyTableName)
-	var r mongoRecord
+	var r bson.Raw
 	err := coll.FindOne(context.Background(), bson.M{idFieldName: id}).Decode(&r)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -212,9 +212,13 @@ func (m *MongoDB) GetCompany(id string) (string, error) {
 		}
 		return "", fmt.Errorf("error querying CNPJ %s: %w", id, err)
 	}
-	b, err := json.Marshal(r.Json)
+	c, err := r.LookupErr("json")
 	if err != nil {
-		return "", fmt.Errorf("error serializing JSON for CNPJ %s: %w", id, err)
+		return "", fmt.Errorf("error getting json for company %s: %w", id, err)
+	}
+	b, err := bson.MarshalExtJSON(c, false, false)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling json for company %s: %w", id, err)
 	}
 	return string(b), nil
 }
@@ -270,24 +274,33 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 		return "", fmt.Errorf("error running query %#v: %w", q, err)
 	}
 	defer c.Close(ctx)
-	var r []mongoRecord
-	if err := c.All(ctx, &r); err != nil {
+	var rs []bson.Raw
+	if err := c.All(ctx, &rs); err != nil {
 		return "", fmt.Errorf("error decoding results: %w", err)
 	}
-	var cs []transform.Company
+	var cs []string
+	for _, r := range rs {
+		c, err := r.LookupErr("json")
+		if err != nil {
+			return "", fmt.Errorf("error getting json from result: %w", err)
+		}
+		b, err := bson.MarshalExtJSON(c, false, false)
+		if err != nil {
+			return "", fmt.Errorf("error marshalling json from result: %w", err)
+		}
+		cs = append(cs, string(b))
+	}
 	var cur string
-	for i, c := range r {
-		cs = append(cs, c.Json)
-		if i == len(r)-1 {
-			cur = c.Id
+	if len(rs) == int(q.Limit) {
+		i, err := rs[len(rs)-1].LookupErr("id")
+		if err != nil {
+			return "", fmt.Errorf("error getting the cursor: %w", err)
+		}
+		if err := i.Unmarshal(&cur); err != nil {
+			return "", fmt.Errorf("error marshalling the cursor: %w", err)
 		}
 	}
-	p := newPage(cs, q.Limit, cur)
-	b, err := json.Marshal(p)
-	if err != nil {
-		return "", fmt.Errorf("error serializing the query result: %w", err)
-	}
-	return string(b), nil
+	return newPage(cs, q.Limit, cur), nil
 }
 
 func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
