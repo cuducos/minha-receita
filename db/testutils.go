@@ -19,6 +19,6 @@ func assertCompaniesAreEqual(t *testing.T, s1 string, s2 string) {
 	c1 := toCompany(s1)
 	c2 := toCompany(s2)
 	if !reflect.DeepEqual(c1, c2) {
-		t.Errorf("expected companies to be equal, got %v and %v", c1, c2)
+		t.Errorf("expected companies to be equal, got %s and %s", s1, s2)
 	}
 }

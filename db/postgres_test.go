@@ -10,9 +10,15 @@ import (
 	"testing"
 
 	"github.com/cuducos/minha-receita/testutils"
+	"github.com/cuducos/minha-receita/transform"
 )
 
 var postgresDefaultIndexes = []string{"cnpj_pkey", "cnpj_id"}
+
+type page struct {
+	Data   []transform.Company `json:"data"`
+	Cursor *string             `json:"cursor"`
+}
 
 func listIndexesPostgres(t *testing.T, pg *PostgreSQL) []string {
 	q := `
@@ -95,7 +101,7 @@ func TestPostgresDB(t *testing.T) {
 	}
 	var r page
 	if err := json.Unmarshal([]byte(sr), &r); err != nil {
-		t.Errorf("expected error deserializing JSON, got %s", err)
+		t.Errorf("expected no error deserializing JSON, got %s", err)
 	}
 	if len(r.Data) != 0 {
 		t.Errorf("expected error no result, got %#v", r)
@@ -106,7 +112,7 @@ func TestPostgresDB(t *testing.T) {
 		t.Errorf("expected no error querying %#v, got %s", q, err)
 	}
 	if err := json.Unmarshal([]byte(sr), &r); err != nil {
-		t.Errorf("expected error deserializing JSON, got %s", err)
+		t.Errorf("expected no error deserializing JSON, got %s", err)
 	}
 	if len(r.Data) != 1 {
 		t.Errorf("expected one result, got %d", len(r.Data))

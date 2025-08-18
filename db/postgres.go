@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -195,7 +194,7 @@ type userQuery struct {
 
 type postgresRecord struct {
 	Cursor  int
-	Company transform.Company
+	Company string
 }
 
 // Search returns paginated results with JSON for companies bases on a search
@@ -236,20 +235,15 @@ func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 	if err := tx.Commit(ctx); err != nil {
 		slog.Error("error committing the read-only search transaction", "error", err)
 	}
-	var cs []transform.Company
-	var cur string
-	for i, r := range rs {
+	var cs []string
+	for _, r := range rs {
 		cs = append(cs, r.Company)
-		if i == len(rs)-1 {
-			cur = fmt.Sprintf("%d", r.Cursor)
-		}
 	}
-	d := newPage(cs, q.Limit, cur)
-	j, err := json.Marshal(d)
-	if err != nil {
-		return "", fmt.Errorf("error serializing the query result: %w", err)
+	var cur string
+	if len(rs) == int(q.Limit) {
+		cur = fmt.Sprintf("%d", rs[len(rs)-1].Cursor)
 	}
-	return string(j), nil
+	return newPage(cs, q.Limit, cur), nil
 
 }
 

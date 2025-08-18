@@ -95,26 +95,26 @@ func TestMongoDB(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error querying %#v, got %s", q, err)
 	}
-	var r page
-	if err := json.Unmarshal([]byte(sr), &r); err != nil {
-		t.Errorf("expected error deserializing JSON, got %s", err)
+	var p page
+	if err := json.Unmarshal([]byte(sr), &p); err != nil {
+		t.Errorf("expected error deserializing JSON %s, got %s", sr, err)
 	}
-	if len(r.Data) != 0 {
-		t.Errorf("expected error no result, got %#v", r)
+	if len(p.Data) != 0 {
+		t.Errorf("expected error no result, got %#v", p)
 	}
 	q.UF = []string{"SP"}
 	sr, err = db.Search(context.Background(), &q)
 	if err != nil {
 		t.Errorf("expected no error querying %#v, got %s", q, err)
 	}
-	if err := json.Unmarshal([]byte(sr), &r); err != nil {
-		t.Errorf("expected error deserializing JSON, got %s", err)
+	if err := json.Unmarshal([]byte(sr), &p); err != nil {
+		t.Errorf("expected no error deserializing JSON %s, got %s", sr, err)
 	}
-	if len(r.Data) != 1 {
-		t.Errorf("expected one result, got %d", len(r.Data))
+	if len(p.Data) != 1 {
+		t.Errorf("expected one result, got %d", len(p.Data))
 	}
-	if r.Data[0].UF != "SP" {
-		t.Errorf("expected query result to be from SP, got %s", r.Data[0].UF)
+	if p.Data[0].UF != "SP" {
+		t.Errorf("expected query result to be from SP, got %s", p.Data[0].UF)
 	}
 	metadata, err := db.MetaRead("answer")
 	if err != nil {

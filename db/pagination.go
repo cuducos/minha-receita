@@ -1,12 +1,11 @@
 package db
 
 import (
+	"fmt"
 	"log/slog"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/cuducos/minha-receita/transform"
 )
 
 const (
@@ -92,20 +91,15 @@ func NewQuery(v url.Values) *Query {
 	return &q
 }
 
-type page struct {
-	Data   []transform.Company `json:"data" bson:"data"`
-	Cursor *string             `json:"cursor" bson:"cursor"`
-}
-
-func newPage(cs []transform.Company, l uint32, c string) page {
-	var p page
-	if len(cs) > 0 {
-		p.Data = cs
+// builds a paginated search JSON response without depending on marshalling and
+// unmarhsalling results from the database (the assumption for performance is
+// that data coming from the database is valid JSON text).
+func newPage(d []string, l uint32, c string) string {
+	ps := []string{fmt.Sprintf(`"data":[%s]`, strings.Join(d, ","))}
+	if c != "" {
+		ps = append(ps, fmt.Sprintf(`"cursor":"%s"`, c))
 	} else {
-		p.Data = []transform.Company{}
+		ps = append(ps, `"cursor":null`)
 	}
-	if c != "" && len(cs) == int(l) {
-		p.Cursor = &c
-	}
-	return p
+	return fmt.Sprintf(`{%s}`, strings.Join(ps, ","))
 }
