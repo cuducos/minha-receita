@@ -38,7 +38,8 @@ $ docker pull ghcr.io/cuducos/minha-receita:main
 
 ### A partir do código fonte
 
-* [Go](https://golang.org/) versão 1.23
+* [Go](https://golang.org/) versão 1.25
+* Variável de ambiente `GOEXPERIMENT=jsonv2`
 
 Depois de clonar o repositório, baixe as dependências e compile a aplicação para um diretório incluído no `PATH`, por exemplo:
 

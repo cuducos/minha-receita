@@ -1,7 +1,7 @@
 package download
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,16 +15,16 @@ const (
 )
 
 type ckanResource struct {
-	URL string
+	URL string `json:"url"`
 }
 
 type ckanResult struct {
-	Resources []ckanResource
+	Resources []ckanResource `json:"resources"`
 }
 
 type ckanPkg struct {
-	Success bool
-	Result  ckanResult
+	Success bool       `json:"success"`
+	Result  ckanResult `json:"result"`
 }
 
 func ckanGetURLS(baseURL, pkgID string) ([]string, error) {

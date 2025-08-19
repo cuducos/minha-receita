@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"html/template"
 	"sync"
@@ -100,12 +100,10 @@ func (c *Cache) refresh() error {
 	}()
 	go func() {
 		defer wg.Done()
-		var j bytes.Buffer
-		if err := json.NewEncoder(&j).Encode(JSONResponse{g}); err != nil {
+		c.JSON, err = json.Marshal(JSONResponse{g})
+		if err != nil {
 			errs <- err
-			return
 		}
-		c.JSON = j.Bytes()
 	}()
 	go func() {
 		wg.Wait()

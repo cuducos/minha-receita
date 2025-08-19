@@ -1,4 +1,5 @@
 FROM golang:1.25-bookworm AS build
+ENV GOEXPERIMENT=jsonv2
 WORKDIR /minha-receita
 COPY go.mod .
 COPY go.sum .

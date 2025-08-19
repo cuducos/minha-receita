@@ -3,6 +3,8 @@ on: [push, pull_request]
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
     steps:
       - uses: actions/checkout@v4
       - uses: WillAbides/setup-go-faster@v1.14.0

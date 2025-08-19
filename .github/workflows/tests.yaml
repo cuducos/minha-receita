@@ -8,12 +8,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: [1.24.x, 1.25.x]
+        go: [1.25.x]
 
     runs-on: ${{ matrix.os }}
     env:
       TEST_MONGODB_URL: mongodb://localhost:27017/minhareceita?authSource=admin
       TEST_POSTGRES_URL: postgresql://postgres:postgres@localhost/postgres
+      GOEXPERIMENT: jsonv2
 
     steps:
       - uses: actions/checkout@v4
