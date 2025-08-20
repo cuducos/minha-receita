@@ -12,8 +12,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/cuducos/minha-receita/transform"
+	"github.com/huandu/go-sqlbuilder"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -182,71 +182,66 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return j, nil
 }
 
-func (p *PostgreSQL) searchQuery(q *Query) squirrel.SelectBuilder {
-	b := squirrel.
-		Select(p.CursorFieldName, p.JSONFieldName).
-		From(p.CompanyTableFullName()).
-		OrderBy(p.CursorFieldName).
-		Limit(uint64(q.Limit))
+func (p *PostgreSQL) searchQuery(q *Query) *sqlbuilder.SelectBuilder {
+	b := sqlbuilder.PostgreSQL.NewSelectBuilder()
+	b.Select(p.CursorFieldName, p.JSONFieldName)
+	b.From(p.CompanyTableFullName())
+	b.OrderBy(p.CursorFieldName)
+	b.Limit(int(q.Limit))
 	if q.Cursor != nil {
 		c, err := q.CursorAsInt()
 		if err == nil {
-			b = b.Where(squirrel.Gt{p.CursorFieldName: c})
+			b.Where(b.GreaterThan(p.CursorFieldName, c))
 		}
 	}
 	if len(q.UF) > 0 {
-		cs := make([]squirrel.Sqlizer, len(q.UF))
+		c := make([]string, len(q.UF))
 		for i, v := range q.UF {
-			cs[i] = squirrel.Expr(fmt.Sprintf(`json -> 'uf' = '"%s"'::jsonb`, v))
+			c[i] = fmt.Sprintf(`json -> 'uf' = '"%s"'::jsonb`, v)
 		}
-		b = b.Where(squirrel.Or(cs))
+		b.Where(b.Or(c...))
 	}
 	if len(q.Municipio) > 0 {
-		cs := make([]squirrel.Sqlizer, len(q.Municipio))
+		c := make([]string, len(q.Municipio)*2)
 		for i, v := range q.Municipio {
-			ms := make([]squirrel.Sqlizer, 2)
-			ms[0] = squirrel.Expr(fmt.Sprintf("json -> 'codigo_municipio' = '%d'::jsonb", v))
-			ms[1] = squirrel.Expr(fmt.Sprintf("json -> 'codigo_municipio_ibge' = '%d'::jsonb", v))
-			cs[i] = squirrel.Or(ms)
+			c[i] = fmt.Sprintf("json -> 'codigo_municipio' = '%d'::jsonb", v)
+			c[i+len(q.Municipio)] = fmt.Sprintf("json -> 'codigo_municipio_ibge' = '%d'::jsonb", v)
 		}
-		b = b.Where(squirrel.Or(cs))
+		b.Where(b.Or(c...))
 	}
 	if len(q.NaturezaJuridica) > 0 {
-		cs := make([]squirrel.Sqlizer, len(q.NaturezaJuridica))
+		c := make([]string, len(q.NaturezaJuridica))
 		for i, v := range q.NaturezaJuridica {
-			cs[i] = squirrel.Expr(fmt.Sprintf("json -> 'codigo_natureza_juridica' = '%d'::jsonb", v))
+			c[i] = fmt.Sprintf("json -> 'codigo_natureza_juridica' = '%d'::jsonb", v)
 		}
-		b = b.Where(squirrel.Or(cs))
+		b.Where(b.Or(c...))
 	}
 	if len(q.CNAEFiscal) > 0 {
-		cs := make([]squirrel.Sqlizer, len(q.CNAEFiscal))
+		c := make([]string, len(q.CNAEFiscal))
 		for i, v := range q.CNAEFiscal {
-			cs[i] = squirrel.Expr(fmt.Sprintf("json -> 'cnae_fiscal' = '%d'::jsonb", v))
+			c[i] = fmt.Sprintf("json -> 'cnae_fiscal' = '%d'::jsonb", v)
 		}
-		b = b.Where(squirrel.Or(cs))
+		b.Where(b.Or(c...))
 	}
 	if len(q.CNAE) > 0 {
-		cs := make([]squirrel.Sqlizer, len(q.CNAE)+1)
+		c := make([]string, len(q.CNAE)+1)
 		s := make([]string, len(q.CNAE))
 		for i, v := range q.CNAE {
 			s[i] = fmt.Sprintf("%d", v)
-			cs[i] = squirrel.Expr(fmt.Sprintf("json -> 'cnae_fiscal' = '%d'::jsonb", v))
+			c[i] = fmt.Sprintf("json -> 'cnae_fiscal' = '%d'::jsonb", v)
 		}
-		cs[len(q.CNAE)] = squirrel.Expr(fmt.Sprintf(
+		c[len(q.CNAE)] = fmt.Sprintf(
 			"jsonb_path_query_array(json, '$.cnaes_secundarios[*].codigo') @> '[%s]'",
 			strings.Join(s, ","),
-		))
-		b.Where(squirrel.Or(cs))
+		)
+		b.Where(b.Or(c...))
 	}
 	if len(q.CNPF) > 0 {
-		s := make([]string, len(q.CNPF))
+		c := make([]string, len(q.CNPF))
 		for i, v := range q.CNPF {
-			s[i] = fmt.Sprintf(`"%s"`, v)
+			c[i] = fmt.Sprintf(`jsonb_path_query_array(json, '$.qsa[*].cnpj_cpf_do_socio') @> '["%s"]'`, v)
 		}
-		b = b.Where(squirrel.Expr(fmt.Sprintf(
-			"jsonb_path_query_array(json, '$.qsa[*].cnpj_cpf_do_socio') @> '[%s]'",
-			strings.Join(s, ","),
-		)))
+		b.Where(b.Or(c...))
 	}
 	return b
 }
@@ -259,10 +254,7 @@ type postgresRecord struct {
 // Search returns paginated results with JSON for companies bases on a search
 // query
 func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
-	s, a, err := p.searchQuery(q).ToSql()
-	if err != nil {
-		return "", fmt.Errorf("error building the query: %w", err)
-	}
+	s, a := p.searchQuery(q).Build()
 	slog.Debug("search", "query", s, "args", a)
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {

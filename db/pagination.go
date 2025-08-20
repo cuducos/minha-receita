@@ -52,18 +52,23 @@ func parseURLParamsToUInt(q []string) []uint32 {
 }
 
 type Query struct {
-	UF               []string
-	CNPF             []string // CNPJ or CPF in the QSA
 	CNAE             []uint32
 	CNAEFiscal       []uint32
-	NaturezaJuridica []uint32
+	CNPF             []string // CNPJ or CPF in the QSA
 	Municipio        []uint32 // IBGE or SIAFI
+	NaturezaJuridica []uint32
+	UF               []string
 	Cursor           *string
 	Limit            uint32
 }
 
 func (q *Query) empty() bool {
-	return len(q.UF) == 0 && len(q.Municipio) == 0 && len(q.CNAE) == 0 && len(q.CNAEFiscal) == 0 && len(q.CNPF) == 0
+	return len(q.CNAE) == 0 &&
+		len(q.CNAEFiscal) == 0 &&
+		len(q.CNPF) == 0 &&
+		len(q.Municipio) == 0 &&
+		len(q.NaturezaJuridica) == 0 &&
+		len(q.UF) == 0
 }
 
 func (q *Query) CursorAsInt() (int, error) {
@@ -85,18 +90,18 @@ func NewQuery(v url.Values) *Query {
 		CNAE:             parseURLParamsToUInt(v["cnae"]),
 		CNAEFiscal:       parseURLParamsToUInt(v["cnae_fiscal"]),
 		NaturezaJuridica: parseURLParamsToUInt(v["natureza_juridica"]),
-		Limit:            0,
+		Limit:            defaultLimit,
 		Cursor:           nil,
 	}
 	if q.empty() {
 		return nil
 	}
-	ls := parseURLParamsToUInt(v["limit"])
-	if len(ls) == 0 {
-		q.Limit = defaultLimit
-	} else {
-		q.Limit = min(ls[0], maxLimit)
-
+	for _, v := range parseURLParamsToUInt(v["limit"]) {
+		if v > maxLimit {
+			continue
+		}
+		q.Limit = v
+		break
 	}
 	if c := v.Get("cursor"); c != "" {
 		q.Cursor = &c
