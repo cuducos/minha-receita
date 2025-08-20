@@ -13,12 +13,24 @@ const (
 	maxLimit     = 1024
 )
 
+func isValid(p string) bool {
+	if p == "" {
+		return false
+	}
+	for _, c := range p {
+		if !((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '*') {
+			return false
+		}
+	}
+	return true
+}
+
 func parseURLParams(q []string) []string {
 	var r []string
 	for _, v := range q {
 		for s := range strings.SplitSeq(v, ",") {
 			s = strings.ToUpper(strings.TrimSpace(s))
-			if s != "" {
+			if isValid(s) {
 				r = append(r, s)
 			}
 		}
@@ -40,13 +52,14 @@ func parseURLParamsToUInt(q []string) []uint32 {
 }
 
 type Query struct {
-	UF                     []string
-	CNPF                   []string // CNPJ or CPF in the QSA
-	CNAE                   []uint32
-	CNAEFiscal             []uint32
-	CodigoNaturezaJuridica []uint32
-	Cursor                 *string
-	Limit                  uint32
+	UF               []string
+	CNPF             []string // CNPJ or CPF in the QSA
+	CNAE             []uint32
+	CNAEFiscal       []uint32
+	NaturezaJuridica []uint32
+	Municipio        []uint32 // IBGE or SIAFI
+	Cursor           *string
+	Limit            uint32
 }
 
 func (q *Query) Empty() bool {
@@ -66,13 +79,14 @@ func (q *Query) CursorAsInt() (int, error) {
 
 func NewQuery(v url.Values) *Query {
 	q := Query{
-		UF:                     parseURLParams(v["uf"]),
-		CNPF:                   parseURLParams(v["cnpf"]),
-		CNAE:                   parseURLParamsToUInt(v["cnae"]),
-		CNAEFiscal:             parseURLParamsToUInt(v["cnae_fiscal"]),
-		CodigoNaturezaJuridica: parseURLParamsToUInt(v["natureza_juridica"]),
-		Limit:                  0,
-		Cursor:                 nil,
+		UF:               parseURLParams(v["uf"]),
+		Municipio:        parseURLParamsToUInt(v["munucipio"]),
+		CNPF:             parseURLParams(v["cnpf"]),
+		CNAE:             parseURLParamsToUInt(v["cnae"]),
+		CNAEFiscal:       parseURLParamsToUInt(v["cnae_fiscal"]),
+		NaturezaJuridica: parseURLParamsToUInt(v["natureza_juridica"]),
+		Limit:            0,
+		Cursor:           nil,
 	}
 	if q.Empty() {
 		return nil
@@ -94,7 +108,7 @@ func NewQuery(v url.Values) *Query {
 // builds a paginated search JSON response without depending on marshalling and
 // unmarhsalling results from the database (the assumption for performance is
 // that data coming from the database is valid JSON text).
-func newPage(d []string, l uint32, c string) string {
+func newPage(d []string, c string) string {
 	ps := []string{fmt.Sprintf(`"data":[%s]`, strings.Join(d, ","))}
 	if c != "" {
 		ps = append(ps, fmt.Sprintf(`"cursor":"%s"`, c))

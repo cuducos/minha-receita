@@ -8,11 +8,11 @@ import (
 	"io/fs"
 	"log/slog"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/cuducos/minha-receita/transform"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,8 +30,6 @@ const (
 
 //go:embed postgres
 var sql embed.FS
-
-var spaces = regexp.MustCompile(`\s+`)
 
 type sqlTemplate struct {
 	path         fs.DirEntry
@@ -184,12 +182,73 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 	return j, nil
 }
 
-type userQuery struct {
-	Query                *Query
-	CompanyTableFullName string
-	CursorFieldName      string
-	IDFieldName          string
-	JSONFieldName        string
+func (p *PostgreSQL) searchQuery(q *Query) squirrel.SelectBuilder {
+	b := squirrel.
+		Select(p.CursorFieldName, p.JSONFieldName).
+		From(p.CompanyTableFullName()).
+		OrderBy(p.CursorFieldName).
+		Limit(uint64(q.Limit))
+	if q.Cursor != nil {
+		c, err := q.CursorAsInt()
+		if err == nil {
+			b = b.Where(squirrel.Gt{p.CursorFieldName: c})
+		}
+	}
+	if len(q.UF) > 0 {
+		cs := make([]squirrel.Sqlizer, len(q.UF))
+		for i, v := range q.UF {
+			cs[i] = squirrel.Expr(fmt.Sprintf(`json -> 'uf' = '"%s"'::jsonb`, v))
+		}
+		b = b.Where(squirrel.Or(cs))
+	}
+	if len(q.Municipio) > 0 {
+		cs := make([]squirrel.Sqlizer, len(q.Municipio))
+		for i, v := range q.Municipio {
+			ms := make([]squirrel.Sqlizer, 2)
+			ms[0] = squirrel.Expr(fmt.Sprintf("json -> 'codigo_municipio' = '%d'::jsonb", v))
+			ms[1] = squirrel.Expr(fmt.Sprintf("json -> 'codigo_municipio_ibge' = '%d'::jsonb", v))
+			cs[i] = squirrel.Or(ms)
+		}
+		b = b.Where(squirrel.Or(cs))
+	}
+	if len(q.NaturezaJuridica) > 0 {
+		cs := make([]squirrel.Sqlizer, len(q.NaturezaJuridica))
+		for i, v := range q.NaturezaJuridica {
+			cs[i] = squirrel.Expr(fmt.Sprintf("json -> 'codigo_natureza_juridica' = '%d'::jsonb", v))
+		}
+		b = b.Where(squirrel.Or(cs))
+	}
+	if len(q.CNAEFiscal) > 0 {
+		cs := make([]squirrel.Sqlizer, len(q.CNAEFiscal))
+		for i, v := range q.CNAEFiscal {
+			cs[i] = squirrel.Expr(fmt.Sprintf("json -> 'cnae_fiscal' = '%d'::jsonb", v))
+		}
+		b = b.Where(squirrel.Or(cs))
+	}
+	if len(q.CNAE) > 0 {
+		cs := make([]squirrel.Sqlizer, len(q.CNAE)+1)
+		s := make([]string, len(q.CNAE))
+		for i, v := range q.CNAE {
+			s[i] = fmt.Sprintf("%d", v)
+			cs[i] = squirrel.Expr(fmt.Sprintf("json -> 'cnae_fiscal' = '%d'::jsonb", v))
+		}
+		cs[len(q.CNAE)] = squirrel.Expr(fmt.Sprintf(
+			"jsonb_path_query_array(json, '$.cnaes_secundarios[*].codigo') @> '[%s]'",
+			strings.Join(s, ","),
+		))
+		b.Where(squirrel.Or(cs))
+	}
+	if len(q.CNPF) > 0 {
+		s := make([]string, len(q.CNPF))
+		for i, v := range q.CNPF {
+			s[i] = fmt.Sprintf(`"%s"`, v)
+		}
+		b = b.Where(squirrel.Expr(fmt.Sprintf(
+			"jsonb_path_query_array(json, '$.qsa[*].cnpj_cpf_do_socio') @> '[%s]'",
+			strings.Join(s, ","),
+		)))
+	}
+	return b
 }
 
 type postgresRecord struct {
@@ -200,22 +259,11 @@ type postgresRecord struct {
 // Search returns paginated results with JSON for companies bases on a search
 // query
 func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
-	t, err := template.ParseFS(sql, "postgres/search.sql")
+	s, a, err := p.searchQuery(q).ToSql()
 	if err != nil {
-		return "", fmt.Errorf("error getting search template: %w", err)
+		return "", fmt.Errorf("error building the query: %w", err)
 	}
-	var b bytes.Buffer
-	if err = t.Execute(&b, userQuery{
-		q,
-		p.CompanyTableFullName(),
-		p.CursorFieldName,
-		p.IDFieldName,
-		p.JSONFieldName,
-	}); err != nil {
-		return "", fmt.Errorf("error rendering searching template: %w", err)
-	}
-	s := strings.TrimSpace(spaces.ReplaceAllString(b.String(), " "))
-	slog.Debug("search", "query", s)
+	slog.Debug("search", "query", s, "args", a)
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("error starting a database transaction: %w", err)
@@ -224,7 +272,7 @@ func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 	if _, err := tx.Exec(ctx, "SET LOCAL enable_seqscan = off"); err != nil {
 		return "", fmt.Errorf("error disabling sequential scans: %w", err)
 	}
-	rows, err := p.pool.Query(ctx, s)
+	rows, err := p.pool.Query(ctx, s, a...)
 	if err != nil {
 		return "", fmt.Errorf("error searching for %#v: %w", q, err)
 	}
@@ -243,7 +291,7 @@ func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 	if len(rs) == int(q.Limit) {
 		cur = fmt.Sprintf("%d", rs[len(rs)-1].Cursor)
 	}
-	return newPage(cs, q.Limit, cur), nil
+	return newPage(cs, cur), nil
 
 }
 

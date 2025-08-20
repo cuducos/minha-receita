@@ -199,6 +199,7 @@ A busca paginada aceita um ou mais desses parâmetros na URL:
 | Parâmetro | Descrição |
 |---|---|
 | `uf` | Sigla da UF com duas letras |
+| `municipio` | Código do munícipio (apenas números) pelo IBGE ou SIAFI |
 | `natureza_juridica` | Código da natureza jurídica |
 | `cnae_fiscal` | Código do CNAE fiscal |
 | `cnae` | Busca o código tanto no CNAE fiscal como nos CNAES secundários |

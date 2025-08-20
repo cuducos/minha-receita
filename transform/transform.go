@@ -27,6 +27,8 @@ const (
 var extraIdexes = [...]string{
 	"cnae_fiscal",
 	"cnaes_secundarios.codigo",
+	"codigo_municipio",
+	"codigo_municipio_ibge",
 	"codigo_natureza_juridica",
 	"qsa.cnpj_cpf_do_socio",
 	"uf",

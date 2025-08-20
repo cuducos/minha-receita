@@ -235,11 +235,24 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 			f["json.uf"] = bson.M{"$in": q.UF}
 		}
 	}
-	if len(q.CodigoNaturezaJuridica) > 0 {
-		if len(q.CodigoNaturezaJuridica) == 1 {
-			f["json.codigo_natureza_juridica"] = q.CodigoNaturezaJuridica[0]
+	if len(q.Municipio) > 0 {
+		if len(q.Municipio) == 1 {
+			f["$or"] = []bson.M{
+				{"json.codigo_municipio": q.Municipio[0]},
+				{"json.codigo_municipio_ibge": q.Municipio[0]},
+			}
 		} else {
-			f["json.codigo_natureza_juridica"] = bson.M{"$in": q.CodigoNaturezaJuridica}
+			f["$or"] = []bson.M{
+				{"json.codigo_municipio": bson.M{"$in": q.Municipio}},
+				{"json.codigo_municipio_ibge": bson.M{"$in": q.Municipio}},
+			}
+		}
+	}
+	if len(q.NaturezaJuridica) > 0 {
+		if len(q.NaturezaJuridica) == 1 {
+			f["json.codigo_natureza_juridica"] = q.NaturezaJuridica[0]
+		} else {
+			f["json.codigo_natureza_juridica"] = bson.M{"$in": q.NaturezaJuridica}
 		}
 	}
 	if len(q.CNAEFiscal) > 0 {
@@ -300,7 +313,7 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 			return "", fmt.Errorf("error marshalling the cursor: %w", err)
 		}
 	}
-	return newPage(cs, q.Limit, cur), nil
+	return newPage(cs, cur), nil
 }
 
 func (m *MongoDB) CreateExtraIndexes(idxs []string) error {
