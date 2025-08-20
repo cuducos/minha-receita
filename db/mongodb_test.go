@@ -90,7 +90,7 @@ func TestMongoDB(t *testing.T) {
 	}
 	var q Query
 	q.Limit = 1
-	q.UF = []string{"RJ"}
+	q.Municipio = []uint32{3500303}
 	sr, err := db.Search(context.Background(), &q)
 	if err != nil {
 		t.Errorf("expected no error querying %#v, got %s", q, err)
@@ -102,6 +102,7 @@ func TestMongoDB(t *testing.T) {
 	if len(p.Data) != 0 {
 		t.Errorf("expected error no result, got %#v", p)
 	}
+	q.Municipio = nil
 	q.UF = []string{"SP"}
 	sr, err = db.Search(context.Background(), &q)
 	if err != nil {

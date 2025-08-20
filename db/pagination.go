@@ -62,7 +62,7 @@ type Query struct {
 	Limit            uint32
 }
 
-func (q *Query) Empty() bool {
+func (q *Query) empty() bool {
 	return len(q.UF) == 0 && len(q.Municipio) == 0 && len(q.CNAE) == 0 && len(q.CNAEFiscal) == 0 && len(q.CNPF) == 0
 }
 
@@ -80,7 +80,7 @@ func (q *Query) CursorAsInt() (int, error) {
 func NewQuery(v url.Values) *Query {
 	q := Query{
 		UF:               parseURLParams(v["uf"]),
-		Municipio:        parseURLParamsToUInt(v["munucipio"]),
+		Municipio:        parseURLParamsToUInt(v["municipio"]),
 		CNPF:             parseURLParams(v["cnpf"]),
 		CNAE:             parseURLParamsToUInt(v["cnae"]),
 		CNAEFiscal:       parseURLParamsToUInt(v["cnae_fiscal"]),
@@ -88,7 +88,7 @@ func NewQuery(v url.Values) *Query {
 		Limit:            0,
 		Cursor:           nil,
 	}
-	if q.Empty() {
+	if q.empty() {
 		return nil
 	}
 	ls := parseURLParamsToUInt(v["limit"])

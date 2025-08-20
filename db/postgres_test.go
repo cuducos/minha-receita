@@ -94,7 +94,7 @@ func TestPostgresDB(t *testing.T) {
 	assertCompaniesAreEqual(t, got, c)
 	var q Query
 	q.Limit = 1
-	q.UF = []string{"RJ"}
+	q.Municipio = []uint32{3500303}
 	sr, err := pg.Search(context.Background(), &q)
 	if err != nil {
 		t.Errorf("expected no error querying %#v, got %s", q, err)
@@ -106,6 +106,7 @@ func TestPostgresDB(t *testing.T) {
 	if len(r.Data) != 0 {
 		t.Errorf("expected error no result, got %#v", r)
 	}
+	q.Municipio = nil
 	q.UF = []string{"SP"}
 	sr, err = pg.Search(context.Background(), &q)
 	if err != nil {
