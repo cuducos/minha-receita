@@ -74,7 +74,11 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-type", "application/json")
 	txn := newrelic.FromContext(r.Context())
 	if txn != nil {
+		if q.Compact {
+		txn.AddAttribute("handler", "compactPaginatedSearch")
+		}else{
 		txn.AddAttribute("handler", "paginatedSearch")
+		}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
