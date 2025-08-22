@@ -23,7 +23,7 @@ import (
 
 const (
 	cacheMaxAge = time.Hour * 24
-	timeout     = time.Minute * 1
+	timeout     = time.Second * 90
 )
 
 var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
@@ -196,7 +196,7 @@ func Serve(db database, p string, nr *newrelic.Application) error {
 	} {
 		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
-	s := &http.Server{Addr: p}
+	s := &http.Server{Addr: p, ReadTimeout: timeout * 2, WriteTimeout: timeout * 2}
 	slog.Info(fmt.Sprintf("Serving at http://0.0.0.0%s", p))
 	return s.ListenAndServe()
 }
