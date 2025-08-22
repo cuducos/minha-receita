@@ -1,6 +1,6 @@
 # Como usar
 
-!!! info
+!!! info "URL"
     Nos exemplos a seguir, substituta `https://minhareceita.org` por `http://0.0.0.0:8000` caso esteja rodando o servidor localmente.
 
 A API web tem apenas um _endpoints_ principal: `/<número do CNPJ>`. 
@@ -203,7 +203,7 @@ Para mais detalhes sobre os dados, consulte o [Dicionário de dados](dicionario.
 
 ## Busca paginada
 
-!!! warning
+!!! warning "Aviso"
      Essa funcionalidade está em fase de testes e mudanças podem ocorrer nos parâmetros e estrutura da resposta até que uma implementação e um formato garanta os requisitos de performance.
 
 A busca paginada aceita um ou mais desses parâmetros na URL:
@@ -237,7 +237,7 @@ Por exemplo, a empresa do JSON anterior pode ser encontrada (bem como outras sem
 
 ### Busca por CPF ou CNPJ da pessoa no quadro societário
 
-!!! danger "Important"
+!!! danger "Importante"
      Não utilizar pontuação ou barras nesses valores.
 
 Para buscar por CPF, utilizar `*` como os três primeiros caracteres e como os dois últimos. Por exemplo, para buscar pelo CPF 123.456.789-01, utilizar `***456789**` — é assim que o CPF dos sócios aparece no banco de dados original.
