@@ -19,9 +19,8 @@ Disponibilizo essa aplicação para que cada um rode na sua própria infraestrut
 
 Para fazer uma consulta usando a API web, acrescente o CNPJ a ser consultado ao final da URL. Por exemplo: `https://minhareceita.org/33.683.111/0002-80`. Para mais detalhes sobre como utilizar a API, confira a seção [Como usar](como-usar.md).
 
-### Limites e disponibilidade
-
-A API web não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade e diminuir o tempo de resposta é com [contribuições mensais](https://github.com/sponsors/cuducos) ou contribuições pontuais via Pix (`d6ede813-6621-4df4-9a93-8d0108fd9b6a`) ou Bitcoin (`13WCAR21g1LGqzzn6WTNV5g7QdN1J35BDk`).
+!!! important "Limites e disponibilidade"
+    A API web não tem nenhuma [garantia de nível de serviço](https://pt.wikipedia.org/wiki/Acordo_de_n%C3%ADvel_de_servi%C3%A7o) e a única forma de aumentar sua disponibilidade e diminuir o tempo de resposta é com [contribuições mensais](https://github.com/sponsors/cuducos) ou contribuições pontuais via Pix (`d6ede813-6621-4df4-9a93-8d0108fd9b6a`) ou Bitcoin (`13WCAR21g1LGqzzn6WTNV5g7QdN1J35BDk`).
 
 ## Contato
 

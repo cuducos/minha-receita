@@ -1,6 +1,10 @@
 # Como usar
 
-A API web tem apenas um _endpoints_ principal: `/<número do CNPJ>`. Nos exemplos a seguir, substituta `https://minhareceita.org` por `http://0.0.0.0:8000` caso esteja rodando o servidor localmente.
+!!! info
+    Nos exemplos a seguir, substituta `https://minhareceita.org` por `http://0.0.0.0:8000` caso esteja rodando o servidor localmente.
+
+A API web tem apenas um _endpoints_ principal: `/<número do CNPJ>`. 
+
 
 | Caminho da URL | Tipo de requisição | Código esperado na resposta | Conteúdo esperado na resposta |
 |---|---|---|---|
@@ -24,7 +28,7 @@ $ curl https://minhareceita.org/33683111000280
 
 ### Exemplo de resposta válida
 
-??? JSON
+??? example "JSON"
     ```json
     {
         "cnpj": "33683111000280",
@@ -217,38 +221,41 @@ A busca paginada aceita um ou mais desses parâmetros na URL:
 |---|---|
 | `compact ` | Busca que retorna apenas os números de CNPJ. Útil para filtros abrangentes que resultam em _timeout_.<br>Aceita qualquer valor (por exemplo `true`) |
 | `limit` | Número máximo de CNPJ por página (o máximo é 1.000) |
-| `cursor` | Valor a ser passado para requisitar a próxima página da busca |
+| `cursor` | Valor a ser passado para [requisitar a próxima página da busca](#cursor) |
 
 Por exemplo, a empresa do JSON anterior pode ser encontrada (bem como outras semelhantes) com: `GET /?uf=DF&cnae=6209100`.
 
-Mais de um valor pode ser passado, seja repetindo o parâmetro, seja separando os valores por vírgulas. Por exemplo, para buscas no Rio Grande do Norte, Paraíba e Pernambuco, todas essas são opções válidas:
+!!! tip "Dica"
 
-* `GET /?uf=rn&uf=pb&uf=pe`
-* `GET /?uf=rn,pb,pe`
-* `GET /?uf=rn,pb&uf=pe`
+    Mais de um valor pode ser passado, seja repetindo o parâmetro, seja separando os valores por vírgulas. Por exemplo, para buscas no Rio Grande do Norte, Paraíba e Pernambuco, todas essas são opções válidas:
 
-O mesmo vale para `cnae` e `cnae_fiscal`.
+    * `GET /?uf=rn&uf=pb&uf=pe`
+    * `GET /?uf=rn,pb,pe`
+    * `GET /?uf=rn,pb&uf=pe`
+
+    O mesmo vale para todos os campos de busca.
 
 ### Busca por CPF ou CNPJ da pessoa no quadro societário
 
-Não utilizar pontuação ou barras nesses valores.
+!!! danger "Important"
+     Não utilizar pontuação ou barras nesses valores.
 
 Para buscar por CPF, utilizar `*` como os três primeiros caracteres e como os dois últimos. Por exemplo, para buscar pelo CPF 123.456.789-01, utilizar `***456789**` — é assim que o CPF dos sócios aparece no banco de dados original.
 
-Buscar apenas por CNPJ ou CPF do quadro societátio tende a não funcionar (erro de tempo esgotado, _timeout_). Afunilar a busca acrescentando uma UF, por exemplo, tende a funcionar.
+!!! tip "Dica"
+    Buscar apenas por CNPJ ou CPF do quadro societátio tende a não funcionar (erro de tempo esgotado, _timeout_). Afunilar a busca acrescentando uma UF, ou utilizar o modo `compact=true` por exemplo, tende a ajudar.
 
 ### Exemplo de JSON de resposta:
 
 ```json
-{
-    "data": [],
-    "cursor": "33683111000280"
-}
+{"data": […], "cursor": "42"}
 ```
 
-`data` contém uma sequência de JSON como o do exemplo para uma única empresa, ou, no caso de `compact` constar nos parâmetros da URL, `data` contém uma sequência de CNPJs.
+#### Data
 
-### Cursor
+`data` contém uma sequência de JSON como o do exemplo para uma única empresa, **ou**, no caso de `compact` constar nos parâmetros da URL, `data` contém uma sequência de CNPJs.
+
+#### Cursor
 
 Com uma resposta dessas do exemplo, para requisitar a próxima página, basta adicionar `&cursor=33683111000280` ao final da URL.
 
