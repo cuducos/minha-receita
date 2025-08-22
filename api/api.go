@@ -6,6 +6,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -83,7 +84,7 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	s, err := app.db.Search(ctx, q)
-	if err == context.DeadlineExceeded {
+	if errors.Is(err, context.DeadlineExceeded) {
 		slog.Error("paginated search timed out", "query", q)
 		var b bytes.Buffer
 		b.WriteString("Tempo de requisição esgotou (Timeout)")
