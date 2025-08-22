@@ -90,6 +90,9 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 				q.Limit/2,
 			))
 		}
+		if !q.Compact {
+			b.WriteString(". Experimente adicionar compact=true na URL para listar apenas os números de CNPJ, diminuindo o tempo de resposta.")
+		}
 		app.messageResponse(w, http.StatusRequestTimeout, b.String())
 		return
 	}

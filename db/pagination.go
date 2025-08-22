@@ -60,6 +60,7 @@ type Query struct {
 	UF               []string
 	Cursor           *string
 	Limit            uint32
+	Compact          bool
 }
 
 func (q *Query) empty() bool {
@@ -92,6 +93,7 @@ func NewQuery(v url.Values) *Query {
 		NaturezaJuridica: parseURLParamsToUInt(v["natureza_juridica"]),
 		Limit:            defaultLimit,
 		Cursor:           nil,
+		Compact:          v.Get("compact") != "",
 	}
 	if q.empty() {
 		return nil

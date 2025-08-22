@@ -204,6 +204,7 @@ A busca paginada aceita um ou mais desses parâmetros na URL:
 | `cnae_fiscal` | Código do CNAE fiscal |
 | `cnae` | Busca o código tanto no CNAE fiscal como nos CNAES secundários |
 | `cnpf` | Busca por CPF ou CNPJ da pessoa no quadro societário |
+| `compact ` | Busca que retorna apenas os números de CNPJ. Útil para filtros abrangentes que resultam em _timeout_. Aceita qualquer valor (por exemplo `true`) |
 | `limit` | Número máximo de CNPJ por página (o máximo é 1.000) |
 | `cursor` | Valor a ser passado para requisitar a próxima página da busca |
 
