@@ -17,6 +17,7 @@ theme:
 nav:
   - index.md
   - como-usar.md
+  - dicionario.md
   - instalacao.md
   - servidor.md
   - faq.md
