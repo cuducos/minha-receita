@@ -259,26 +259,17 @@ type postgresRecord struct {
 // query
 func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 	s, a := p.searchQuery(q).Build()
-	slog.Debug("search", "query", s, "args", a)
-	tx, err := p.pool.Begin(ctx)
-	if err != nil {
-		return "", fmt.Errorf("error starting a database transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-	if _, err := tx.Exec(ctx, "SET LOCAL enable_seqscan = off"); err != nil {
-		return "", fmt.Errorf("error disabling sequential scans: %w", err)
-	}
+	slog.Debug("searching", "query", s, "args", a)
 	rows, err := p.pool.Query(ctx, s, a...)
 	if err != nil {
 		return "", fmt.Errorf("error searching for %#v: %w", q, err)
 	}
+	slog.Debug("query sent to postgres", "query", s, "args", a)
 	rs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[postgresRecord])
 	if err != nil {
 		return "", fmt.Errorf("error reading search result for %#v: %w", q, err)
 	}
-	if err := tx.Commit(ctx); err != nil {
-		slog.Error("error committing the read-only search transaction", "error", err)
-	}
+	slog.Debug("rows collected from postgres", "query", s, "args", a)
 	var cs []string
 	for _, r := range rs {
 		if q.Compact {
@@ -287,10 +278,12 @@ func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 			cs = append(cs, r.Company)
 		}
 	}
+	slog.Debug("parsing cursor", "query", s, "args", a)
 	var cur string
 	if len(rs) == int(q.Limit) {
 		cur = fmt.Sprintf("%d", rs[len(rs)-1].Cursor)
 	}
+	defer slog.Debug("returning to the api handler", "query", s, "args", a)
 	return newPage(cs, cur), nil
 
 }
