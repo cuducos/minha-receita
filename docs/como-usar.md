@@ -241,7 +241,7 @@ Buscar apenas por CNPJ ou CPF do quadro societátio tende a não funcionar (erro
 }
 ```
 
-`data` contém uma sequência de JSON como o do exemplo para uma única empresa.
+`data` contém uma sequência de JSON como o do exemplo para uma única empresa, ou, no caso de `compact` constar nos parâmetros da URL, `data` contém uma sequência de CNPJs.
 
 #### Cursor
 
