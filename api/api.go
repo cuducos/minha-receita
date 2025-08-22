@@ -22,7 +22,7 @@ import (
 
 const (
 	cacheMaxAge = time.Hour * 24
-	timeout     = time.Minute * 3
+	timeout     = time.Minute * 1
 )
 
 var cacheControl = fmt.Sprintf("max-age=%d", int(cacheMaxAge.Seconds()))
@@ -75,9 +75,9 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 	txn := newrelic.FromContext(r.Context())
 	if txn != nil {
 		if q.Compact {
-		txn.AddAttribute("handler", "compactPaginatedSearch")
-		}else{
-		txn.AddAttribute("handler", "paginatedSearch")
+			txn.AddAttribute("handler", "compactPaginatedSearch")
+		} else {
+			txn.AddAttribute("handler", "paginatedSearch")
 		}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -195,7 +195,7 @@ func Serve(db database, p string, nr *newrelic.Application) error {
 	} {
 		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
-	s := &http.Server{Addr: p, ReadTimeout: timeout, WriteTimeout: timeout}
+	s := &http.Server{Addr: p}
 	slog.Info(fmt.Sprintf("Serving at http://0.0.0.0%s", p))
 	return s.ListenAndServe()
 }
