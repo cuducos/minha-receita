@@ -194,17 +194,23 @@ $ curl https://minhareceita.org/33683111000280
 
 ## Busca paginada
 
+!!! warning
+     Essa funcionalidade está em fase de testes e mudanças podem ocorrer nos parâmetros e estrutura da resposta até que uma implementação e um formato garanta os requisitos de performance.
+
 A busca paginada aceita um ou mais desses parâmetros na URL:
 
-| Parâmetro | Descrição |
+| Campo de busca | Descrição |
 |---|---|
-| `uf` | Sigla da UF com duas letras |
-| `municipio` | Código do munícipio (apenas números) pelo IBGE ou SIAFI |
-| `natureza_juridica` | Código da natureza jurídica |
 | `cnae_fiscal` | Código do CNAE fiscal |
 | `cnae` | Busca o código tanto no CNAE fiscal como nos CNAES secundários |
 | `cnpf` | Busca por CPF ou CNPJ da pessoa no quadro societário |
-| `compact ` | Busca que retorna apenas os números de CNPJ. Útil para filtros abrangentes que resultam em _timeout_. Aceita qualquer valor (por exemplo `true`) |
+| `municipio` | Código do munícipio (apenas números) pelo IBGE ou SIAFI |
+| `natureza_juridica` | Código da natureza jurídica |
+| `uf` | Sigla da UF com duas letras |
+
+| Configurações | Descrição |
+|---|---|
+| `compact ` | Busca que retorna apenas os números de CNPJ. Útil para filtros abrangentes que resultam em _timeout_.<br>Aceita qualquer valor (por exemplo `true`) |
 | `limit` | Número máximo de CNPJ por página (o máximo é 1.000) |
 | `cursor` | Valor a ser passado para requisitar a próxima página da busca |
 
