@@ -199,7 +199,7 @@ $ curl https://minhareceita.org/33683111000280
     }
     ```
 
-Para mais detalhes sobre os dados, consulte o [Dicionário de dados](dicionario.md) e a [Sobre os dados](Sobre-os-dados.md).
+Para mais detalhes sobre os dados, consulte o [Dicionário de dados](dicionario.md) e a [Sobre os dados](sobre-os-dados.md).
 
 ## Busca paginada
 
