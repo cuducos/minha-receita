@@ -279,9 +279,13 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 		f["json.qsa.cnpj_cpf_do_socio"] = bson.M{"$in": q.CNPF}
 	}
 	if q.Cursor != nil {
-		f["id"] = bson.M{"$gt": *q.Cursor}
+		id, err := primitive.ObjectIDFromHex(*q.Cursor)
+		if err != nil {
+			return "", fmt.Errorf("error parsing cursor: %w", err)
+		}
+		f["_id"] = bson.M{"$gt": id}
 	}
-	opts := options.Find().SetSort(bson.D{{Key: "id", Value: 1}}).SetLimit(int64(q.Limit))
+	opts := options.Find().SetSort(bson.D{{Key: "_id", Value: 1}}).SetLimit(int64(q.Limit))
 	if q.Compact {
 		opts.SetProjection(bson.M{"id": 1, "_id": 0})
 	}
@@ -321,13 +325,8 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 	}
 	var cur string
 	if len(rs) == int(q.Limit) {
-		i, err := rs[len(rs)-1].LookupErr("id")
-		if err != nil {
-			return "", fmt.Errorf("error getting the cursor: %w", err)
-		}
-		if err := i.Unmarshal(&cur); err != nil {
-			return "", fmt.Errorf("error marshalling the cursor: %w", err)
-		}
+		i := rs[len(rs)-1].Lookup("_id").ObjectID()
+		cur = i.Hex()
 	}
 	return newPage(cs, cur), nil
 }
