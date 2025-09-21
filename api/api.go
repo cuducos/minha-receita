@@ -75,11 +75,7 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-type", "application/json")
 	txn := newrelic.FromContext(r.Context())
 	if txn != nil {
-		if q.Compact {
-			txn.AddAttribute("handler", "compactPaginatedSearch")
-		} else {
-			txn.AddAttribute("handler", "paginatedSearch")
-		}
+		txn.AddAttribute("handler", "paginatedSearch")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -94,9 +90,6 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 				q.Limit,
 				q.Limit/2,
 			))
-		}
-		if !q.Compact {
-			b.WriteString(". Experimente adicionar compact=true na URL para listar apenas os números de CNPJ, diminuindo o tempo de resposta.")
 		}
 		app.messageResponse(w, http.StatusRequestTimeout, b.String())
 		return

@@ -184,11 +184,7 @@ func (p *PostgreSQL) GetCompany(id string) (string, error) {
 
 func (p *PostgreSQL) searchQuery(q *Query) *sqlbuilder.SelectBuilder {
 	b := sqlbuilder.PostgreSQL.NewSelectBuilder()
-	if q.Compact {
-		b.Select(p.CursorFieldName, p.IDFieldName)
-	} else {
-		b.Select(p.CursorFieldName, p.JSONFieldName)
-	}
+	b.Select(p.CursorFieldName, p.JSONFieldName)
 	b.From(p.CompanyTableFullName())
 	b.OrderBy(p.CursorFieldName)
 	b.Limit(int(q.Limit))
@@ -270,11 +266,7 @@ func (p *PostgreSQL) Search(ctx context.Context, q *Query) (string, error) {
 	}
 	var cs []string
 	for _, r := range rs {
-		if q.Compact {
-			cs = append(cs, fmt.Sprintf(`"%s"`, r.Company))
-		} else {
-			cs = append(cs, r.Company)
-		}
+		cs = append(cs, r.Company)
 	}
 	var cur string
 	if len(rs) == int(q.Limit) {

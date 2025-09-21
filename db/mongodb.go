@@ -286,9 +286,6 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 		f["_id"] = bson.M{"$gt": id}
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "_id", Value: 1}}).SetLimit(int64(q.Limit))
-	if q.Compact {
-		opts.SetProjection(bson.M{"id": 1, "_id": 0})
-	}
 	c, err := coll.Find(ctx, f, opts)
 	if err != nil {
 		return "", fmt.Errorf("error running query %#v: %w", q, err)
@@ -300,28 +297,15 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 	}
 	var cs []string
 	for _, r := range rs {
-		if q.Compact {
-			i, err := r.LookupErr("id")
-			if err != nil {
-				return "", fmt.Errorf("error getting id from result: %w", err)
-			}
-			var c string
-			if err := i.Unmarshal(&c); err != nil {
-				return "", fmt.Errorf("error unmarshalling id: %w", err)
-			}
-			cs = append(cs, fmt.Sprintf(`"%s"`, c))
-		} else {
-			// Original logic for full JSON mode
-			c, err := r.LookupErr("json")
-			if err != nil {
-				return "", fmt.Errorf("error getting json from result: %w", err)
-			}
-			b, err := bson.MarshalExtJSON(c, false, false)
-			if err != nil {
-				return "", fmt.Errorf("error marshalling json from result: %w", err)
-			}
-			cs = append(cs, string(b))
+		c, err := r.LookupErr("json")
+		if err != nil {
+			return "", fmt.Errorf("error getting json from result: %w", err)
 		}
+		b, err := bson.MarshalExtJSON(c, false, false)
+		if err != nil {
+			return "", fmt.Errorf("error marshalling json from result: %w", err)
+		}
+		cs = append(cs, string(b))
 	}
 	var cur string
 	if len(rs) == int(q.Limit) {

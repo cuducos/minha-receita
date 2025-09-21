@@ -35,12 +35,8 @@ type testCase struct {
 	expected int
 }
 
-func (tc *testCase) name(db database, c bool) string {
-	v := ""
-	if c {
-		v = " (compact)"
-	}
-	return fmt.Sprintf("%T %s expecting %d%s", db, tc.params.Encode(), tc.expected, v)
+func (tc *testCase) name(db database) string {
+	return fmt.Sprintf("%T %s expecting %d", db, tc.params.Encode(), tc.expected)
 }
 
 type page struct {
@@ -48,24 +44,8 @@ type page struct {
 	Cursor *string             `json:"cursor"`
 }
 
-type compactPage struct {
-	Data   []string `json:"data"`
-	Cursor *string  `json:"cursor"`
-}
-
 func assertSearchCount(t *testing.T, s string, tc testCase) {
 	var p page
-	if err := json.Unmarshal([]byte(s), &p); err != nil {
-		t.Errorf("expected no error deserializing JSON, got %s", err)
-		return
-	}
-	if got := len(p.Data); got != tc.expected {
-		t.Errorf("expected %d results for %v, got %d", tc.expected, tc.params.Encode(), got)
-	}
-}
-
-func assertComppactSearchCount(t *testing.T, s string, tc testCase) {
-	var p compactPage
 	if err := json.Unmarshal([]byte(s), &p); err != nil {
 		t.Errorf("expected no error deserializing JSON, got %s", err)
 		return
@@ -206,24 +186,15 @@ func TestSearch(t *testing.T) {
 		{map[string][]string{"cnpf": {"21449073000135", "***112108**"}}, 1},
 	} {
 		for _, db := range []database{pg, m} {
-			for _, c := range []bool{false, true} {
-				t.Run(tc.name(db, c), func(t *testing.T) {
-					q := NewQuery(tc.params)
-					if c {
-						q.Compact = true
-					}
-					s, err := db.Search(context.Background(), q)
-					if err != nil {
-						t.Errorf("expected no error searching, got %s", err)
-						return
-					}
-					if c {
-						assertComppactSearchCount(t, s, tc)
-					} else {
-						assertSearchCount(t, s, tc)
-					}
-				})
-			}
+			t.Run(tc.name(db), func(t *testing.T) {
+				q := NewQuery(tc.params)
+				s, err := db.Search(context.Background(), q)
+				if err != nil {
+					t.Errorf("expected no error searching, got %s", err)
+					return
+				}
+				assertSearchCount(t, s, tc)
+			})
 		}
 	}
 }

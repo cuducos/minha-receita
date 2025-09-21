@@ -219,7 +219,6 @@ A busca paginada aceita um ou mais desses parâmetros na URL:
 
 | Configurações | Descrição |
 |---|---|
-| `compact ` | Busca que retorna apenas os números de CNPJ. Útil para filtros abrangentes que resultam em _timeout_.<br>Aceita qualquer valor (por exemplo `true`) |
 | `limit` | Número máximo de CNPJ por página (o máximo é 1.000) |
 | `cursor` | Valor a ser passado para [requisitar a próxima página da busca](#cursor) |
 
@@ -243,7 +242,7 @@ Por exemplo, a empresa do JSON anterior pode ser encontrada (bem como outras sem
 Para buscar por CPF, utilizar `*` como os três primeiros caracteres e como os dois últimos. Por exemplo, para buscar pelo CPF 123.456.789-01, utilizar `***456789**` — é assim que o CPF dos sócios aparece no banco de dados original.
 
 !!! tip "Dica"
-    Buscar apenas por CNPJ ou CPF do quadro societátio tende a não funcionar (erro de tempo esgotado, _timeout_). Afunilar a busca acrescentando uma UF, ou utilizar o modo `compact=true` por exemplo, tende a ajudar.
+    Buscar apenas por CNPJ ou CPF do quadro societátio tende a não funcionar (erro de tempo esgotado, _timeout_). Afunilar a busca acrescentando uma UF tende a ajudar.
 
 ### Exemplo de JSON de resposta:
 
@@ -253,7 +252,7 @@ Para buscar por CPF, utilizar `*` como os três primeiros caracteres e como os d
 
 #### Data
 
-`data` contém uma sequência de JSON como o do exemplo para uma única empresa, **ou**, no caso de `compact` constar nos parâmetros da URL, `data` contém uma sequência de CNPJs.
+`data` contém uma sequência de JSON como o do exemplo para uma única empresa.
 
 #### Cursor
 
