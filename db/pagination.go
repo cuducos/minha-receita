@@ -18,7 +18,7 @@ func isValid(p string) bool {
 		return false
 	}
 	for _, c := range p {
-		if !((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '*') {
+		if (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '*' {
 			return false
 		}
 	}
