@@ -164,12 +164,12 @@ func (m *MongoDB) PostLoad() error {
 	ctx := context.Background()
 	coll := m.db.Collection(companyTableName)
 	p := mongo.Pipeline{
-		{{"$group", bson.D{
-			{"_id", fmt.Sprintf("$%s", idFieldName)},
-			{"docs", bson.D{{"$push", "$_id"}}},
-			{"count", bson.D{{"$sum", 1}}},
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: fmt.Sprintf("$%s", idFieldName)},
+			{Key: "docs", Value: bson.D{{Key: "$push", Value: "$_id"}}},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 		}}},
-		{{"$match", bson.D{{"count", bson.D{{"$gt", 1}}}}}},
+		{{Key: "$match", Value: bson.D{{Key: "count", Value: bson.D{{Key: "$gt", Value: 1}}}}}},
 	}
 	c, err := coll.Aggregate(ctx, p)
 	if err != nil {
