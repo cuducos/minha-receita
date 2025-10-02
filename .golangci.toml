@@ -2,4 +2,4 @@ version = "2"
 
 [linters]
 [linters.exclusions]
-paths = ["sample"]
+paths = []
