@@ -161,29 +161,27 @@ func (c *Company) cnaes(l *lookups, p, s string) error {
 	return nil
 }
 
-func (p *PartnerData) qualificacaoSocio(l *lookups, q, r string) error {
+func (p *PartnerData) qualificacaoSocio(l *lookups, q, r string) {
 	i, err := toInt(q)
 	if err != nil {
-		return fmt.Errorf("error trying to parse CodigoQualificacaoSocio %s: %w", q, err)
+		slog.Error("error trying to parse CodigoQualificacaoSocio", "code", q, "partner", p.CNPJCPFDoSocio)
 	}
 	j, err := toInt(r)
 	if err != nil {
-		return fmt.Errorf("error trying to parse CodigoQualificacaoRepresentanteLegal %s: %w", r, err)
+		slog.Error("error trying to parse CodigoQualificacaoRepresentanteLegal", "code", r, "partner", p.CNPJCPFDoSocio)
 	}
-	if i == nil && j == nil {
-		return nil
+	if i != nil {
+		s := l.qualifications[*i]
+		p.CodigoQualificacaoSocio = i
+		if s != "" {
+			p.QualificaoSocio = &s
+		}
 	}
-
-	s := l.qualifications[*i]
-	p.CodigoQualificacaoSocio = i
-	if s != "" {
-		p.QualificaoSocio = &s
+	if j != nil {
+		t := l.qualifications[*j]
+		p.CodigoQualificacaoRepresentanteLegal = j
+		if t != "" {
+			p.QualificacaoRepresentanteLegal = &t
+		}
 	}
-
-	t := l.qualifications[*j]
-	p.CodigoQualificacaoRepresentanteLegal = j
-	if t != "" {
-		p.QualificacaoRepresentanteLegal = &t
-	}
-	return nil
 }
