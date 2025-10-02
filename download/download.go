@@ -30,7 +30,9 @@ func getURLs(url string, handler getURLsHandler, dir string, skip bool) ([]strin
 			continue
 		}
 		if err == nil {
-			f.Close()
+			if err := f.Close(); err != nil {
+				return nil, fmt.Errorf("error closing %s: %w", p, err)
+			}
 		}
 	}
 	return out, nil

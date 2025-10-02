@@ -60,7 +60,9 @@ func httpTestServer(t *testing.T, cs []string) *httptest.Server {
 			atomic.AddUint32(&c, 1)
 			if r.Method == http.MethodHead {
 				f, s := loadFixture(t, cs[idx])
-				defer f.Close()
+				if err := f.Close(); err != nil {
+					t.Errorf("expected no error closing %s, got %s", cs[idx], err)
+				}
 				w.Header().Add("Content-Length", fmt.Sprint(s))
 				return
 			}

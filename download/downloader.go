@@ -3,6 +3,7 @@ package download
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -50,7 +51,7 @@ func (b *bar) downloadedBytes() int64 {
 	return t
 }
 
-func (b *bar) update(s chunk.DownloadStatus) {
+func (b *bar) update(s chunk.DownloadStatus) error {
 	_, exists := b.urls[s.URL]
 	if !exists {
 		b.urls[s.URL] = 0
@@ -66,7 +67,7 @@ func (b *bar) update(s chunk.DownloadStatus) {
 		b.main.ChangeMax64(b.totalBytes)
 		b.main.Describe(b.label())
 	}
-	b.main.Set64(b.downloadedBytes())
+	return b.main.Set64(b.downloadedBytes())
 }
 
 func download(dir string, urls []string, parallel int, retries uint, chunkSize int64, timeout time.Duration, restart bool) error {
@@ -82,18 +83,24 @@ func download(dir string, urls []string, parallel int, retries uint, chunkSize i
 		if s.Error != nil {
 			return s.Error
 		}
-		b.update(s)
+		if err := b.update(s); err != nil {
+			return fmt.Errorf("could not increase progress bar: %w", err)
+		}
 	}
 	return nil
 }
 
-func simpleDownload(url, dir string) error {
+func simpleDownload(url, dir string) (err error) {
 	pth := filepath.Join(dir, filepath.Base(url))
 	h, err := os.Create(pth)
 	if err != nil {
 		return fmt.Errorf("could not create %s: %w", pth, err)
 	}
-	defer h.Close()
+	defer func() {
+		if e := h.Close(); e != nil && err == nil {
+			err = fmt.Errorf("could not close %s: %w", pth, e)
+		}
+	}()
 	c := http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -104,7 +111,11 @@ func simpleDownload(url, dir string) error {
 	if err != nil {
 		return fmt.Errorf("error requesting %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Warn("could not close http response", "url", url, "error", err)
+		}
+	}()
 	_, err = io.Copy(h, resp.Body)
 	if err != nil {
 		return fmt.Errorf("error writing to %s: %w", pth, err)

@@ -65,8 +65,8 @@ func createKeyValueStorage(dir string, pth string, l lookups, maxKV int) (err er
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
 	defer func() {
-		if e := kv.close(); e != nil {
-			err = e
+		if e := kv.close(); e != nil && err == nil {
+			err = fmt.Errorf("could not close key/value storage: %w", e)
 		}
 	}()
 	if err := kv.load(dir, &l, maxKV); err != nil {

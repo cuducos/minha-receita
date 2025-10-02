@@ -12,7 +12,11 @@ func TestDownloader(t *testing.T) {
 	defer ts.Close()
 
 	f, s := loadFixture(t, "Empresas1.zip")
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Errorf("expected no error closing fixture, got %s", err)
+		}
+	}()
 
 	tmp := t.TempDir()
 	urls := []string{ts.URL + "/file1.html", ts.URL + "/file2.html"}
