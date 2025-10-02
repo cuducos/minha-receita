@@ -3,10 +3,11 @@ package transform
 import (
 	"context"
 	"fmt"
-	"sync"
+	"log/slog"
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
 )
 
 type venuesTask struct {
@@ -17,11 +18,6 @@ type venuesTask struct {
 	dir       string
 	db        database
 	batchSize int
-	rows      chan []string
-	saved     chan int
-	errors    chan error
-	consumers sync.WaitGroup
-	bar       *progressbar.ProgressBar
 }
 
 func (t *venuesTask) saveBatch(b []Company) (int, error) {
@@ -42,20 +38,17 @@ func (t *venuesTask) saveBatch(b []Company) (int, error) {
 	return len(s), nil
 }
 
-func (t *venuesTask) consumeRows(ctx context.Context) error {
+func (t *venuesTask) consumeRows(ctx context.Context, q <-chan []string, done chan<- int) error {
 	ch := make(chan int)
 	errs := make(chan error, 1)
-	defer func() {
-		t.consumers.Done()
-		close(errs)
-	}()
+	defer close(errs)
 	go func() {
 		var b []Company
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case r, ok := <-t.rows:
+			case r, ok := <-q:
 				if !ok {
 					n, err := t.saveBatch(b)
 					if err != nil {
@@ -93,7 +86,7 @@ func (t *venuesTask) consumeRows(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-			t.saved <- n
+			done <- n
 		case err := <-errs:
 			close(ch)
 			return err
@@ -102,41 +95,53 @@ func (t *venuesTask) consumeRows(ctx context.Context) error {
 }
 
 func (t *venuesTask) run(m int) error {
-	defer t.source.close()
-	if err := t.bar.RenderBlank(); err != nil {
+	bar := progressbar.Default(int64(t.source.total))
+	bar.Describe("Creating the JSON data for each CNPJ")
+	defer func() {
+		if err := t.source.close(); err != nil {
+			slog.Warn("could not close source files", "error", err)
+		}
+	}()
+	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
 	}
 	if err := t.db.PreLoad(); err != nil {
 		return fmt.Errorf("error preparing the database: %w", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		if err := t.source.sendTo(ctx, t.rows); err != nil {
-			t.errors <- fmt.Errorf("error reading %s: %w", t.source.kind, err)
+	defer cancel()
+	var g errgroup.Group
+	q := make(chan []string)
+	g.Go(func() error {
+		if err := t.source.sendTo(ctx, q); err != nil {
+			return fmt.Errorf("error reading %s: %w", t.source.kind, err)
 		}
-		close(t.rows)
-	}()
+		close(q)
+		return nil
+	})
+	ch := make(chan int)
+	close(ch)
 	for range m {
-		t.consumers.Add(1)
-		go t.consumeRows(ctx)
+		g.Go(func() error {
+			return t.consumeRows(ctx, q, ch)
+		})
 	}
-	defer func() {
-		t.consumers.Wait()
-		close(t.saved)
-		close(t.errors)
+	errs := make(chan error, 1)
+	defer close(errs)
+	go func() {
+		if err := g.Wait(); err != nil {
+			errs <- err
+		}
 	}()
 	for {
 		select {
-		case err := <-t.errors:
-			cancel()
+		case err := <-errs:
 			return err
-		case n := <-t.saved:
-			if err := t.bar.Add(n); err != nil {
-				t.errors <- err
-				continue
+		case n := <-ch:
+			if err := bar.Add(n); err != nil {
+				return err
 			}
-			if t.bar.IsFinished() {
-				cancel()
+			if bar.IsFinished() {
 				return nil
 			}
 		}
@@ -156,11 +161,6 @@ func createJSONRecordsTask(dir string, db database, l *lookups, kv kvStorage, b 
 		dir:       dir,
 		db:        db,
 		batchSize: b,
-		rows:      make(chan []string),
-		saved:     make(chan int),
-		errors:    make(chan error, 1),
-		bar:       progressbar.Default(int64(v.total)),
 	}
-	t.bar.Describe("Creating the JSON data for each CNPJ")
 	return &t, nil
 }
