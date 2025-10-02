@@ -1,10 +1,5 @@
-version = '2'
+version = "2"
 
 [linters]
 [linters.exclusions]
-paths = [
-    "db",
-    "download",
-    "sample",
-    "transform",
-]
+paths = ["download", "sample", "transform"]
