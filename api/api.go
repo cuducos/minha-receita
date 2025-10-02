@@ -45,7 +45,9 @@ func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
 	w.WriteHeader(s)
 	if m != "" {
 		w.Header().Set("Content-type", "application/json")
-		io.WriteString(w, fmt.Sprintf(`{"message":"%s"}`, m))
+		if _, err := io.WriteString(w, fmt.Sprintf(`{"message":"%s"}`, m)); err != nil {
+			slog.Error("could not write response message for", "status code", s, "message", m, "error", err)
+		}
 	}
 	if s == http.StatusInternalServerError {
 		slog.Error("Internal server error", "message", m)
@@ -68,7 +70,9 @@ func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, s)
+	if _, err := io.WriteString(w, s); err != nil {
+		slog.Error("error responding to successful single company request", "request", r, "error", err)
+	}
 }
 
 func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Request) {
@@ -100,7 +104,9 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, s)
+	if _, err := io.WriteString(w, s); err != nil {
+		slog.Error("error responding to successful paginated search request", "query", q, "request", r, "error", err)
+	}
 }
 
 func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {

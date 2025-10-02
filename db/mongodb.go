@@ -175,7 +175,11 @@ func (m *MongoDB) PostLoad() error {
 	if err != nil {
 		return fmt.Errorf("error executing aggregation: %w", err)
 	}
-	defer c.Close(ctx)
+	defer func() {
+		if err := c.Close(ctx); err != nil {
+			slog.Warn("could not close database connection", "error", err)
+		}
+	}()
 	for c.Next(ctx) {
 		var result struct {
 			ID   string               `bson:"_id"`
@@ -290,7 +294,11 @@ func (m *MongoDB) Search(ctx context.Context, q *Query) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error running query %#v: %w", q, err)
 	}
-	defer c.Close(ctx)
+	defer func() {
+		if err := c.Close(ctx); err != nil {
+			slog.Error("could not close database connection", "error", err)
+		}
+	}()
 	var rs []bson.Raw
 	if err := c.All(ctx, &rs); err != nil {
 		return "", fmt.Errorf("error decoding results: %w", err)

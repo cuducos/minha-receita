@@ -47,7 +47,11 @@ func listIndexesMongo(t *testing.T, db *MongoDB) []string {
 	if err != nil {
 		t.Errorf("expected no errors checking index list, got %s", err)
 	}
-	defer c.Close(context.Background())
+	defer func() {
+		if err := c.Close(context.Background()); err != nil {
+			t.Errorf("expected no error closing the connection, got %s", err)
+		}
+	}()
 	var i []string
 	for c.Next(context.Background()) {
 		var idx bson.M

@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-func startServer(c *Cache, p string) {
+func startServer(c *Cache, p string) error {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if c.isExpired() {
 			if err := c.refresh(); err != nil {
@@ -20,10 +20,15 @@ func startServer(c *Cache, p string) {
 				return
 			}
 		}
+		var b []byte
 		if r.Header.Get("Accept") == "application/json" {
-			w.Write(c.JSON)
+			b = c.JSON
 		} else {
-			w.Write(c.HTML)
+			b = c.HTML
+		}
+		if _, err := w.Write(b); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("could not write response", "error", err)
 		}
 	})
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +40,7 @@ func startServer(c *Cache, p string) {
 	})
 	p = fmt.Sprintf(":%s", p)
 	slog.Info(fmt.Sprintf("Server listening on http://0.0.0.0%s", p))
-	http.ListenAndServe(p, nil)
+	return http.ListenAndServe(p, nil)
 }
 
 func Mirror(p string) error {
@@ -47,6 +52,5 @@ func Mirror(p string) error {
 	if err != nil {
 		return fmt.Errorf("error loading mirror cache: %w", err)
 	}
-	startServer(c, p)
-	return nil
+	return startServer(c, p)
 }

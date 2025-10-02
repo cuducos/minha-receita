@@ -7,13 +7,13 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"html/template"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"golang.org/x/sync/errgroup"
 )
 
 const cacheExpiration = 12 * time.Hour
@@ -90,29 +90,25 @@ func (c *Cache) refresh() error {
 
 	g := newGroups(fs)
 	errs := make(chan error, 1)
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
+	defer close(errs)
+	var wg errgroup.Group
+	wg.Go(func() error {
 		var b bytes.Buffer
-		c.template.Execute(&b, g)
-		c.HTML = b.Bytes()
-	}()
-	go func() {
-		defer wg.Done()
-		c.JSON, err = json.Marshal(JSONResponse{g})
-		if err != nil {
-			errs <- err
+		if err := c.template.Execute(&b, g); err != nil {
+			return err
 		}
-	}()
-	go func() {
-		wg.Wait()
-		close(errs)
-	}()
-	for err := range errs {
+		c.HTML = b.Bytes()
+		return nil
+	})
+	wg.Go(func() error {
+		c.JSON, err = json.Marshal(JSONResponse{g})
 		if err != nil {
 			return err
 		}
+		return nil
+	})
+	if err := wg.Wait(); err != nil {
+		return err
 	}
 	c.createdAt = time.Now()
 	return nil
