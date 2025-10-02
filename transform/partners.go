@@ -62,6 +62,7 @@ func (p *PartnerData) pais(l *lookups, v string) {
 	i, err := toInt(v)
 	if err != nil || i == nil {
 		slog.Error("error trying to parse CodigoPais %s: %w", v, err)
+		return
 	}
 	s := l.countries[*i]
 	p.CodigoPais = i

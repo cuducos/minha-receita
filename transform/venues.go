@@ -120,7 +120,7 @@ func (t *venuesTask) run(m int) error {
 		return nil
 	})
 	ch := make(chan int)
-	close(ch)
+	defer close(ch)
 	for range m {
 		g.Go(func() error {
 			return t.consumeRows(ctx, q, ch)
