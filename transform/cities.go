@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -36,7 +37,11 @@ func citiesLookup(dir string) (lookup, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			slog.Warn("could not close", "path", pth, "error", err)
+		}
+	}()
 	r := csv.NewReader(f)
 	r.Comma = ';'
 	l := make(map[int]string)

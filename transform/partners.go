@@ -3,6 +3,7 @@ package transform
 import (
 	"encoding/json/v2"
 	"fmt"
+	"log/slog"
 )
 
 type PartnerData struct {
@@ -57,20 +58,17 @@ func (p *PartnerData) faixaEtaria(v string) {
 	}
 }
 
-func (p *PartnerData) pais(l *lookups, v string) error {
+func (p *PartnerData) pais(l *lookups, v string) {
 	i, err := toInt(v)
-	if err != nil {
-		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
-	}
-	if i == nil {
-		return nil
+	if err != nil || i == nil {
+		slog.Error("error trying to parse CodigoPais %s: %w", v, err)
+		return
 	}
 	s := l.countries[*i]
 	p.CodigoPais = i
 	if s != "" {
 		p.Pais = &s
 	}
-	return nil
 }
 
 func newPartnerData(l *lookups, r []string) (PartnerData, error) {

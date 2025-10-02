@@ -37,7 +37,11 @@ func TestReadItems(t *testing.T) {
 	t.Run("partners", func(t *testing.T) {
 		p := newTestPartner()
 		db := newTestBadgerDB(t)
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				t.Errorf("expected no error closing the database connection, got %s", err)
+			}
+		}()
 		if err := saveItem(t, db, keyForPartners(testBaseCNPJ)+":md5hash", p); err != nil {
 			t.Errorf("expected no error saving partner, got %s", err)
 		}
@@ -56,7 +60,11 @@ func TestReadItems(t *testing.T) {
 
 	t.Run("base", func(t *testing.T) {
 		db := newTestBadgerDB(t)
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				t.Errorf("expected no error closing the database connection, got %s", err)
+			}
+		}()
 		d := newTestBaseCNPJ()
 		if err := saveItem(t, db, keyForBase(testBaseCNPJ), d); err != nil {
 			t.Errorf("expected no error saving partner, got %s", err)
@@ -72,7 +80,11 @@ func TestReadItems(t *testing.T) {
 
 	t.Run("taxes", func(t *testing.T) {
 		db := newTestBadgerDB(t)
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				t.Errorf("expected no error closing the database connection, got %s", err)
+			}
+		}()
 		d := newTestTaxes()
 		if err := saveItem(t, db, keyForSimpleTaxes(testBaseCNPJ), d); err != nil {
 			t.Errorf("expected no error saving partner, got %s", err)

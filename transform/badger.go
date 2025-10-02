@@ -68,7 +68,7 @@ func simpleTaxesOf(db *badger.DB, n string) (simpleTaxesData, error) {
 func taxRegimeOf(db *badger.DB, n string) (TaxRegimes, error) {
 	var ts TaxRegimes
 	pre := []byte(keyForTaxRegime(n))
-	db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		for it.Seek(pre); it.ValidForPrefix(pre); it.Next() {
@@ -87,6 +87,9 @@ func taxRegimeOf(db *badger.DB, n string) (TaxRegimes, error) {
 		}
 		return nil
 	})
+	if err != nil {
+		return TaxRegimes{}, fmt.Errorf("error getting tax regime for %s: %w", n, err)
+	}
 	sort.Sort(TaxRegimes(ts))
 	return ts, nil
 }
@@ -94,7 +97,7 @@ func taxRegimeOf(db *badger.DB, n string) (TaxRegimes, error) {
 func partnersOf(db *badger.DB, n string) ([]PartnerData, error) {
 	var ps []PartnerData
 	pre := []byte(keyForPartners(n))
-	db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		for it.Seek(pre); it.ValidForPrefix(pre); it.Next() {
@@ -113,5 +116,8 @@ func partnersOf(db *badger.DB, n string) ([]PartnerData, error) {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("error getting partners for %s: %w", n, err)
+	}
 	return ps, nil
 }

@@ -59,12 +59,16 @@ func saveUpdatedAt(db database, dir string) error {
 	return db.MetaSave("updated-at", string(v))
 }
 
-func createKeyValueStorage(dir string, pth string, l lookups, maxKV int) error {
+func createKeyValueStorage(dir string, pth string, l lookups, maxKV int) (err error) { // using named return so we can set it in the defer call
 	kv, err := newBadgerStorage(pth, false)
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
-	defer kv.close()
+	defer func() {
+		if e := kv.close(); e != nil {
+			err = e
+		}
+	}()
 	if err := kv.load(dir, &l, maxKV); err != nil {
 		return fmt.Errorf("error loading data to badger: %w", err)
 	}
@@ -76,7 +80,11 @@ func createJSONs(dir string, pth string, db database, l lookups, maxDB, batchSiz
 	if err != nil {
 		return fmt.Errorf("could not create badger storage: %w", err)
 	}
-	defer kv.close()
+	defer func() {
+		if err := kv.close(); err != nil {
+			slog.Warn("could not close key-value storage", "path", pth, "error", err)
+		}
+	}()
 	j, err := createJSONRecordsTask(dir, db, &l, kv, batchSize, privacy)
 	if err != nil {
 		return fmt.Errorf("error creating new task for venues in %s: %w", dir, err)
@@ -108,7 +116,11 @@ func Transform(dir string, db database, maxDB, maxKV, s int, p bool) error {
 	if err != nil {
 		return fmt.Errorf("error creating temporary key-value storage: %w", err)
 	}
-	defer os.RemoveAll(pth)
+	defer func() {
+		if err := os.RemoveAll(pth); err != nil {
+			slog.Error("could not remove temporary", "directory", pth, "error", err)
+		}
+	}()
 	l, err := newLookups(dir)
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)

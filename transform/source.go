@@ -138,7 +138,9 @@ func (s *source) countLines() error {
 		go s.countCSVRows(r, count, errs)
 	}
 	defer func() {
-		s.resetReaders()
+		if err := s.resetReaders(); err != nil {
+			slog.Warn("could not close", "source", s.kind, "path", s.dir, "error", err)
+		}
 		close(count)
 		close(errs)
 	}()
@@ -186,7 +188,9 @@ func newSource(ctx context.Context, t sourceType, d string) (*source, error) {
 			return
 		}
 		s = source{kind: t, dir: d, files: ls}
-		s.createReaders()
+		if err := s.createReaders(); err != nil {
+			ch <- fmt.Errorf("error creating readers: %w", err)
+		}
 		if err = s.countLines(); err != nil {
 			if !done.Load() {
 				ch <- fmt.Errorf("error counting lines for %s in %s: %w", string(t), d, err)
