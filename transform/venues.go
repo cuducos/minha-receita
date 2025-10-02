@@ -131,7 +131,10 @@ func (t *venuesTask) run(m int) error {
 			cancel()
 			return err
 		case n := <-t.saved:
-			t.bar.Add(n)
+			if err := t.bar.Add(n); err != nil {
+				t.errors <- err
+				continue
+			}
 			if t.bar.IsFinished() {
 				cancel()
 				return nil

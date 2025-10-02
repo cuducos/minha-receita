@@ -125,8 +125,7 @@ func (kv *badgerStorage) loadSource(ctx context.Context, s *source, l *lookups, 
 					if err := kv.loadRow(r, s.kind, l); err != nil {
 						return err
 					}
-					bar.Add(1)
-					return nil
+					return bar.Add(1)
 				})
 			}
 
@@ -156,7 +155,11 @@ func (kv *badgerStorage) load(dir string, l *lookups, m int) error {
 		}
 	}()
 	bar := progressbar.Default(t, "Processing base CNPJ, partners and taxes")
-	defer bar.Close()
+	defer func() {
+		if err := bar.Close(); err != nil {
+			slog.Warn("could not close the progress bar", "error", err)
+		}
+	}()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
