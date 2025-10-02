@@ -34,13 +34,21 @@ func testdataWithoutUpdatedAt(t *testing.T) string {
 			if err != nil {
 				t.Fatalf("could not open %s", f)
 			}
-			defer r.Close()
+			defer func() {
+				if err := r.Close(); err != nil {
+					t.Errorf("expected no error closing %s, got %s", f, err)
+				}
+			}()
 			d := filepath.Join(tmp, filepath.Base(f))
 			w, err := os.Create(d)
 			if err != nil {
 				t.Fatalf("could not create %s", d)
 			}
-			defer w.Close()
+			defer func() {
+				if err := w.Close(); err != nil {
+					t.Errorf("expected no error closing %s, got %s", d, err)
+				}
+			}()
 			_, err = io.Copy(w, r)
 			if err != nil {
 				t.Fatalf("could not copy %s to %s", f, d)

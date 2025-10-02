@@ -46,7 +46,7 @@ func sampleLines(r io.Reader, w io.Writer, m int) error {
 	return nil
 }
 
-func makeSampleFromCSV(src, outDir string, m int) error {
+func makeSampleFromCSV(src, outDir string, m int) (err error) { // using named return so we can set it in the defer call
 	name := filepath.Base(src)
 	out := filepath.Join(outDir, name)
 
@@ -54,13 +54,21 @@ func makeSampleFromCSV(src, outDir string, m int) error {
 	if err != nil {
 		return fmt.Errorf("error opening %s: %w", src, err)
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			slog.Warn("could not close", "path", src, "error", err)
+		}
+	}()
 
 	w, err := os.Create(out)
 	if err != nil {
 		return fmt.Errorf("error creating %s: %w", out, err)
 	}
-	defer w.Close()
+	defer func() {
+		if e := w.Close(); e != nil && err == nil {
+			err = fmt.Errorf("error closing %s: %w", out, e)
+		}
+	}()
 
 	if err := sampleLines(r, w, m); err != nil {
 		return fmt.Errorf("error creating sample %s from %s: %w", out, src, err)
@@ -69,12 +77,16 @@ func makeSampleFromCSV(src, outDir string, m int) error {
 	return nil
 }
 
-func makeSampleFromZIP(src, outDir string, m int) error {
+func makeSampleFromZIP(src, outDir string, m int) (err error) { // using named return so we can set it in the defer call
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return fmt.Errorf("error opening %s: %w", src, err)
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			slog.Warn("could not close", "path", src, "error", err)
+		}
+	}()
 
 	name := filepath.Base(src)
 	base := strings.TrimSuffix(name, filepath.Ext(src))
@@ -87,17 +99,29 @@ func makeSampleFromZIP(src, outDir string, m int) error {
 		if err != nil {
 			return fmt.Errorf("error reading file %s in %s: %w", z.Name, src, err)
 		}
-		defer fSrc.Close()
+		defer func() {
+			if err := fSrc.Close(); err != nil {
+				slog.Warn("could not close", "path", z.Name, "error", err)
+			}
+		}()
 
 		o, err := os.Create(out)
 		if err != nil {
 			return fmt.Errorf("error creating %s: %w", out, err)
 		}
-		defer o.Close()
+		defer func() {
+			if e := o.Close(); e != nil && err == nil {
+				err = fmt.Errorf("could not close %s: %w", out, err)
+			}
+		}()
 
 		buf := bufio.NewWriter(o)
 		w := zip.NewWriter(buf)
-		defer w.Close()
+		defer func() {
+			if e := w.Close(); e != nil && err == nil {
+				err = fmt.Errorf("could not wrote buffer: %w", err)
+			}
+		}()
 
 		fOut, err := w.Create(base)
 		if err != nil {
@@ -117,7 +141,7 @@ func makeSampleFromZIP(src, outDir string, m int) error {
 	return nil
 }
 
-func createUpdateAt(src, dir string, dt string) error {
+func createUpdateAt(src, dir string, dt string) (err error) {
 	n := filepath.Base(src)
 	out := filepath.Join(dir, n)
 	r, err := os.Open(src)
@@ -138,12 +162,20 @@ func createUpdateAt(src, dir string, dt string) error {
 	if err != nil {
 		return fmt.Errorf("error opening %s in sample directory: %w", n, err)
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			slog.Warn("could not close", "path", src, "error", err)
+		}
+	}()
 	w, err := os.Create(out)
 	if err != nil {
 		return fmt.Errorf("error creating %s: %w", out, err)
 	}
-	defer w.Close()
+	defer func() {
+		if e := w.Close(); e != nil && err == nil {
+			err = fmt.Errorf("error closing %s: %w", out, e)
+		}
+	}()
 	if _, err := io.Copy(w, r); err != nil {
 		return fmt.Errorf("error copying %s to %s: %w", src, out, err)
 	}
@@ -181,15 +213,21 @@ func Sample(src, target string, m int, updatedAt string) error {
 		return errors.New("source directory %s has no zip files")
 	}
 	ls = append(ls, filepath.Join(src, download.FederalRevenueUpdatedAt))
-	nt, f, _ := transform.NationalTreasureFile(src)
-	if err == nil {
-		f.Close() // we just need the path
+	nt, f, err := transform.NationalTreasureFile(src)
+	if err == nil { // we just need the path, so no problem ignoring the error
+		if err := f.Close(); err != nil {
+			slog.Warn("error closing", "path", nt, "error", err)
+		}
 	}
 	if nt != "" {
 		ls = append(ls, nt)
 	}
 	bar := progressbar.Default(int64(len(ls)))
-	defer bar.Close()
+	defer func() {
+		if err := bar.Close(); err != nil {
+			slog.Warn("could not close the progress bar", "error", bar)
+		}
+	}()
 	bar.Describe("Creating sample files")
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
@@ -197,7 +235,9 @@ func Sample(src, target string, m int, updatedAt string) error {
 	var g errgroup.Group
 	for _, pth := range ls {
 		g.Go(func() error {
-			defer bar.Add(1)
+			if err := bar.Add(1); err != nil {
+				return err
+			}
 			return makeSample(pth, target, m, updatedAt)
 		})
 	}
