@@ -16,17 +16,18 @@ import (
 
 func checksumFor(path string) (string, error) {
 	h := md5.New()
-
 	r, err := os.Open(path)
 	if err != nil {
 		return "", fmt.Errorf("error opening %s: %w", path, err)
 	}
-	defer r.Close()
-
+	defer func() {
+		if err := r.Close(); err != nil {
+			slog.Error("could not close", "file", path, "error", err)
+		}
+	}()
 	if _, err := io.Copy(h, r); err != nil {
 		return "", fmt.Errorf("error reading %s content: %w", path, err)
 	}
-
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
@@ -57,7 +58,11 @@ func CheckChecksum(src, target string) error {
 	}
 
 	bar := progressbar.Default(int64(len(ls)))
-	defer bar.Close()
+	defer func() {
+		if err := bar.Close(); err != nil {
+			slog.Warn("could not properly close progress bar", "error", err)
+		}
+	}()
 	bar.Describe("Checking files checksum")
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
@@ -93,13 +98,12 @@ func CheckChecksum(src, target string) error {
 		if m.err != nil {
 			return err
 		}
-
-		bar.Add(1)
-
+		if err := bar.Add(1); err != nil {
+			return err
+		}
 		if !m.equal {
 			notEqual = append(notEqual, m.f)
 		}
-
 		if bar.IsFinished() {
 			if len(notEqual) > 0 {
 				return fmt.Errorf("got different checksum for file(s): %v", notEqual)
@@ -135,7 +139,11 @@ func CreateChecksum(src string) error {
 	}
 
 	bar := progressbar.Default(int64(len(ls)))
-	defer bar.Close()
+	defer func() {
+		if err := bar.Close(); err != nil {
+			slog.Warn("could not properly close progress bar", "error", err)
+		}
+	}()
 	bar.Describe("Creating checksum files")
 	if err := bar.RenderBlank(); err != nil {
 		return fmt.Errorf("error rendering the progress bar: %w", err)
@@ -167,9 +175,9 @@ func CreateChecksum(src string) error {
 		if err != nil {
 			return err
 		}
-
-		bar.Add(1)
-
+		if err := bar.Add(1); err != nil {
+			return err
+		}
 		if bar.IsFinished() {
 			return nil
 		}

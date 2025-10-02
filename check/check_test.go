@@ -15,10 +15,10 @@ var testdata = filepath.Join("..", "testdata")
 func TestCheckZipFiles(t *testing.T) {
 	t.Run("failure", func(t *testing.T) {
 		tmp := t.TempDir()
-		if err := copyZipFiles(tmp); err != nil {
+		if err := copyZipFiles(t, tmp); err != nil {
 			t.Fatal("could not copy test files")
 		}
-		if err := createBadZipFile(tmp); err != nil {
+		if err := createBadZipFile(t, tmp); err != nil {
 			t.Fatal("could not create test files")
 		}
 		got, err := checkZipFiles(tmp)
@@ -47,7 +47,7 @@ func TestCheckZipFiles(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		tmp := t.TempDir()
-		if err := copyZipFiles(tmp); err != nil {
+		if err := copyZipFiles(t, tmp); err != nil {
 			t.Fatal("could not copy test files")
 		}
 		got, err := checkZipFiles(t.TempDir())
@@ -63,10 +63,10 @@ func TestCheckZipFiles(t *testing.T) {
 func TestCheckZipFile(t *testing.T) {
 	tmp := t.TempDir()
 	badZipPath := filepath.Join(tmp, badZipFile)
-	if err := copyZipFiles(tmp); err != nil {
+	if err := copyZipFiles(t, tmp); err != nil {
 		t.Fatal("could not copy test files")
 	}
-	if err := createBadZipFile(tmp); err != nil {
+	if err := createBadZipFile(t, tmp); err != nil {
 		t.Fatal("could not create test files")
 	}
 	tt := []struct {
@@ -91,7 +91,7 @@ func TestCheckZipFile(t *testing.T) {
 	}
 }
 
-func copyZipFiles(dir string) error {
+func copyZipFiles(t *testing.T, dir string) error {
 	ls, err := filepath.Glob(filepath.Join(testdata, "*.zip"))
 	if err != nil {
 		return fmt.Errorf("error find zip files for the test: %w", err)
@@ -101,13 +101,21 @@ func copyZipFiles(dir string) error {
 		if err != nil {
 			return fmt.Errorf("error opening %s: %w", f, err)
 		}
-		defer src.Close()
+		defer func() {
+			if err := src.Close(); err != nil {
+				t.Errorf("expected no error closing %s, got %s", f, err)
+			}
+		}()
 		pth := filepath.Join(dir, filepath.Base(f))
 		dst, err := os.Create(pth)
 		if err != nil {
 			return fmt.Errorf("error creating %s: %w", pth, err)
 		}
-		defer dst.Close()
+		defer func() {
+			if err := dst.Close(); err != nil {
+				t.Errorf("expected no error closing %s, got %s", f, err)
+			}
+		}()
 		_, err = io.Copy(dst, src)
 		if err != nil {
 			return fmt.Errorf("error copying %s to %s: %w", f, pth, err)
@@ -122,12 +130,16 @@ func copyZipFiles(dir string) error {
 	return nil
 }
 
-func createBadZipFile(dir string) error {
+func createBadZipFile(t *testing.T, dir string) error {
 	pth := filepath.Join(dir, badZipFile)
 	dst, err := os.Create(pth)
 	if err != nil {
 		return fmt.Errorf("error creating %s: %w", pth, err)
 	}
-	defer dst.Close()
+	defer func() {
+		if err := dst.Close(); err != nil {
+			t.Errorf("expected no error closing %s, got %s", pth, err)
+		}
+	}()
 	return nil
 }

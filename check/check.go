@@ -15,7 +15,11 @@ func checkZipFile(pth string) error {
 	if err != nil {
 		return fmt.Errorf("error opening %s: %w", pth, err)
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			slog.Error("could not close", "path", pth, "error", err)
+		}
+	}()
 	for _, f := range r.File {
 		if f.FileInfo().IsDir() {
 			continue
@@ -31,7 +35,6 @@ func checkZipFile(pth string) error {
 		if err := s.Err(); err != nil {
 			return fmt.Errorf("error reading %s in %s: %w", f.Name, pth, err)
 		}
-		r.Close()
 	}
 	return nil
 }
@@ -79,7 +82,9 @@ func Check(dir string, del bool) error {
 		if del {
 			for f := range fails {
 				slog.Info("Deleting", "file", f)
-				os.Remove(f)
+				if err := os.Remove(f); err != nil {
+					return fmt.Errorf("error deleting %s: %w", f, err)
+				}
 			}
 			return nil
 		}
