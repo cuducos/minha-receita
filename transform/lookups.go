@@ -15,7 +15,11 @@ func newLookup(p string) (lookup, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating archivedCSV for %s: %w", p, err)
 	}
-	defer z.close()
+	defer func() {
+		if err := z.close(); err != nil {
+			slog.Warn("could not close", "path", p, "error", err)
+		}
+	}()
 	l, err := z.toLookup()
 	if err != nil {
 		return nil, fmt.Errorf("error creating lookup table from %s: %w", p, err)
