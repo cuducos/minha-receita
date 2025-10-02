@@ -1,0 +1,12 @@
+version = '2'
+
+[linters]
+[linters.exclusions]
+paths = [
+    "api",
+    "db",
+    "download",
+    "mirror",
+    "sample",
+    "transform",
+]
