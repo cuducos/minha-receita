@@ -58,7 +58,11 @@ func TestArchivedCSVToLookup(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error creating an archivedCSV with %s, got %s", path, err)
 	}
-	defer z.close()
+	defer func() {
+		if err := z.close(); err != nil {
+			t.Errorf("expected no error closing %s, got %s", path, err)
+		}
+	}()
 
 	got, err := z.toLookup()
 	if err != nil {
