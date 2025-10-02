@@ -116,7 +116,11 @@ func Transform(dir string, db database, maxDB, maxKV, s int, p bool) error {
 	if err != nil {
 		return fmt.Errorf("error creating temporary key-value storage: %w", err)
 	}
-	defer os.RemoveAll(pth)
+	defer func() {
+		if err := os.RemoveAll(pth); err != nil {
+			slog.Error("could not remove temporary", "directory", pth, "error", err)
+		}
+	}()
 	l, err := newLookups(dir)
 	if err != nil {
 		return fmt.Errorf("error creating look up tables from %s: %w", dir, err)
