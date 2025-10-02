@@ -13,3 +13,4 @@ jobs:
       - run: "go install honnef.co/go/tools/cmd/staticcheck@v0.6.0"
       - run: "staticcheck ./..."
       - uses: golangci/golangci-lint-action@v8
+      - run: "golangci-lint run"
