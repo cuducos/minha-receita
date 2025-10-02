@@ -4,6 +4,7 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -33,7 +34,11 @@ func ckanGetURLS(baseURL, pkgID string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting %s: %w", url, err)
 	}
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			slog.Warn("could not close http response", "url", url, "error", err)
+		}
+	}()
 	if r.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s responded with %s", url, r.Status)
 	}

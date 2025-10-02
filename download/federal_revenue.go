@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,7 +25,6 @@ const (
 	federalRevenueURL        = "https://arquivos.receitafederal.gov.br/dados/cnpj/"
 	federalRevenueSourcePath = "dados_abertos_cnpj"
 	federalRevenueTaxesPath  = "regime_tributario"
-	federalRevenueDateFormat = "02/01/2006 15:04"
 )
 
 var fileTimestampPattern = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
@@ -43,7 +43,11 @@ func get(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error getting %s: %w", url, err)
 	}
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			slog.Warn("could not close http response", "url", url, "error", err)
+		}
+	}()
 	if r.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("%s responded with %s", url, r.Status)
 	}
@@ -112,7 +116,7 @@ func federalRevenueGetURLs(url string) ([]string, error) {
 	return urls, nil
 }
 
-func saveUpdatedAt(dir string) error {
+func saveUpdatedAt(dir string) (err error) { // using named return so we can set it in the defer call
 	u := federalRevenueURL + federalRevenueSourcePath
 	m, err := federalRevenueGetMostRecentURL(u)
 	if err != nil {
@@ -133,12 +137,15 @@ func saveUpdatedAt(dir string) error {
 	if err != nil {
 		return fmt.Errorf("error creating %s: %w", pth, err)
 	}
-	defer f.Close()
+	defer func() {
+		if e := f.Close(); e != nil && err == nil {
+			err = fmt.Errorf("could not close %s: %w", pth, e)
+		}
+	}()
 	w := bufio.NewWriter(f)
 	_, err = w.WriteString(d)
 	if err != nil {
 		return fmt.Errorf("error writing %s: %w", pth, err)
 	}
-	w.Flush()
-	return nil
+	return w.Flush()
 }
