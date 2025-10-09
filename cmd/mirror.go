@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/cuducos/minha-receita/mirror"
@@ -20,6 +21,7 @@ var mirrorCmd = &cobra.Command{
 	Long:  mirrorHelper,
 	Short: "Starts the files mirror web interface.",
 	RunE: func(_ *cobra.Command, _ []string) error {
+		slog.Warn("The data mirror (and this subcommand) is deprecated. It wil be removed by November 2025.")
 		if port == "" {
 			port = os.Getenv("PORT")
 		}
