@@ -60,9 +60,8 @@ func (p *PartnerData) faixaEtaria(v string) {
 
 func (p *PartnerData) pais(l *lookups, v string) {
 	if v == "" {
-		return // nada a fazer, valor vazio é aceitável
+		return
 	}
-
 	i, err := toInt(v)
 	if err != nil {
 		slog.Error("error trying to parse CodigoPais %s: %v", v, err)
@@ -71,7 +70,6 @@ func (p *PartnerData) pais(l *lookups, v string) {
 	if i == nil {
 		return
 	}
-
 	s := l.countries[*i]
 	p.CodigoPais = i
 	if s != "" {
