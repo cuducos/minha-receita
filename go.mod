@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/aws/aws-sdk-go-v2 v1.39.2
 	github.com/aws/aws-sdk-go-v2/config v1.31.11
-	github.com/aws/aws-sdk-go-v2/credentials v1.18.15
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.16
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.3
 	github.com/cuducos/chunk v1.1.5
 	github.com/cuducos/go-cnpj v0.1.2
@@ -32,7 +32,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.8.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.9 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.29.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.29.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.6 // indirect
 	github.com/aws/smithy-go v1.23.0 // indirect
