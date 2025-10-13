@@ -186,7 +186,7 @@ func (p *PostgreSQL) searchQuery(q *Query) *sqlbuilder.SelectBuilder {
 	b := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	b.Select(p.CursorFieldName, p.JSONFieldName)
 	b.From(p.CompanyTableFullName())
-	b.OrderBy(p.CursorFieldName)
+	b.OrderByAsc(p.CursorFieldName)
 	b.Limit(int(q.Limit))
 	if q.Cursor != nil {
 		c, err := q.CursorAsInt()
