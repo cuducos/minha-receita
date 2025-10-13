@@ -167,11 +167,7 @@ func newCompany(row []string, l *lookups, kv kvStorage, privacy bool) (Company, 
 	if err := c.motivoSituacaoCadastral(l, row[7]); err != nil {
 		return c, fmt.Errorf("error trying to parse MotivoSituacaoCadastral: %w", err)
 	}
-
-	if err := c.pais(l, row[9]); err != nil {
-		return c, fmt.Errorf("error trying to parse CodigoPais: %w", err)
-	}
-
+	c.pais(l, row[9])
 	dataInicioAtividade, err := toDate(row[10])
 	if err != nil {
 		return c, fmt.Errorf("error trying to parse DataInicioAtividade %s: %w", row[10], err)

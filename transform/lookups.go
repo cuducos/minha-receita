@@ -79,20 +79,24 @@ func (c *Company) motivoSituacaoCadastral(l *lookups, v string) error {
 	return nil
 }
 
-func (c *Company) pais(l *lookups, v string) error {
+func (c *Company) pais(l *lookups, v string) {
 	i, err := toInt(v)
 	if err != nil {
-		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
+		slog.Error("error trying to parse CodigoPais", "value", v, "error", err)
+		return
 	}
 	if i == nil {
-		return nil
+		return
 	}
-	s := l.countries[*i]
+	s, ok := l.countries[*i]
+	if !ok {
+		slog.Error("unknown CodigoPais", "value", v)
+		return
+	}
 	c.CodigoPais = i
 	if s != "" {
 		c.Pais = &s
 	}
-	return nil
 }
 
 func (c *Company) municipio(l *lookups, v string) error {
