@@ -79,7 +79,6 @@ func (p *PartnerData) pais(l *lookups, v string) {
 	}
 }
 
-
 func newPartnerData(l *lookups, r []string) (PartnerData, error) {
 	identificadorDeSocio, err := toInt(r[1])
 	if err != nil {

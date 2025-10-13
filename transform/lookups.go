@@ -80,26 +80,25 @@ func (c *Company) motivoSituacaoCadastral(l *lookups, v string) error {
 }
 
 func (c *Company) pais(l *lookups, v string) error {
-    if v == "" {
-        return nil // valor vazio é permitido
-    }
+	if v == "" {
+		return nil // valor vazio é permitido
+	}
 
-    i, err := toInt(v)
-    if err != nil {
-        return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
-    }
-    if i == nil {
-        return nil
-    }
+	i, err := toInt(v)
+	if err != nil {
+		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
+	}
+	if i == nil {
+		return nil
+	}
 
-    s := l.countries[*i]
-    c.CodigoPais = i
-    if s != "" {
-        c.Pais = &s
-    }
-    return nil
+	s := l.countries[*i]
+	c.CodigoPais = i
+	if s != "" {
+		c.Pais = &s
+	}
+	return nil
 }
-
 
 func (c *Company) municipio(l *lookups, v string) error {
 	if c.UF == "EX" {
