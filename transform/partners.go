@@ -59,17 +59,26 @@ func (p *PartnerData) faixaEtaria(v string) {
 }
 
 func (p *PartnerData) pais(l *lookups, v string) {
+	if v == "" {
+		return // nada a fazer, valor vazio é aceitável
+	}
+
 	i, err := toInt(v)
-	if err != nil || i == nil {
-		slog.Error("error trying to parse CodigoPais %s: %w", v, err)
+	if err != nil {
+		slog.Error("error trying to parse CodigoPais %s: %v", v, err)
 		return
 	}
+	if i == nil {
+		return
+	}
+
 	s := l.countries[*i]
 	p.CodigoPais = i
 	if s != "" {
 		p.Pais = &s
 	}
 }
+
 
 func newPartnerData(l *lookups, r []string) (PartnerData, error) {
 	identificadorDeSocio, err := toInt(r[1])
