@@ -80,14 +80,11 @@ func (c *Company) motivoSituacaoCadastral(l *lookups, v string) error {
 }
 
 func (c *Company) pais(l *lookups, v string) error {
-	if v == "" {
-		return nil
-	}
 	i, err := toInt(v)
-	if err != nil {
-		return fmt.Errorf("error trying to parse CodigoPais %s: %w", v, err)
-	}
-	if i == nil {
+	if err != nil || i == nil {
+		if v != "" {
+			slog.Error("error trying to parse CodigoPais", "value", v, "error", err)
+		}
 		return nil
 	}
 	s := l.countries[*i]
