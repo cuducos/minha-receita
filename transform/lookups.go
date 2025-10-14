@@ -60,6 +60,40 @@ func newLookups(d string) (lookups, error) {
 	if err != nil {
 		return lookups{}, fmt.Errorf("error creating ibge lookup: %w", err)
 	}
+	// in Oct. 2025 the Federal Revenue started using the country code 367.
+	// which is not present in Paises.zip. The issue was officially reported to
+	// them via Fala.BR. Meanwhile due to the reasons above, it seems safe to
+	// assume this is England:
+	// 1. Other official documents from the institution uses 367 for England, eg
+	//    - https://balanca.economia.gov.br/balanca/bd/tabelas/PAIS.csv
+	//    - https://www.cenofisco.com.br/arquivos/BDFlash/IR_IN_RFB_1076.pdf
+	// 2. Paises.zip contains a CSV ordered by country name and “Inglaterra”
+	//    would match this ordering
+	// The same logic was used to other unmatched country codes:
+	for k, v := range map[int]string{
+		15:  "Aland, Ilhas",
+		150: "Canal, Ilhas do (Guernsey)",
+		151: "Canárias, Ilhas",
+		200: "Curaçao",
+		321: "Guernsey",
+		359: "Ilha de Man",
+		367: "Inglaterra",
+		393: "Jersey",
+		449: "Macedônia",
+		452: "Madeira, Ilha da",
+		498: "Montenegro",
+		578: "Palestina",
+		678: "Saint Kitts e Nevis",
+		699: "Sint Maarten",
+		737: "Sérvia",
+		994: "A Designar",
+	} {
+		if _, ok := ls[2][k]; !ok {
+			ls[2][k] = v
+		} else {
+			return lookups{}, fmt.Errorf("cannot overwrite country code %d in country lookups", k)
+		}
+	}
 	return lookups{ls[0], ls[1], ls[2], ls[3], ls[4], ls[5], c}, nil
 }
 

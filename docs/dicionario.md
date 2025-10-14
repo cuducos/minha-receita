@@ -52,6 +52,9 @@ A API web tenta manter o máximo de similaridade com o nome dos campos, signific
 
 ### Dados enriquecidos
 
+!!! warning "Aviso"
+    A Receita Federal, em outubro de 2025, passou a divulgar diversos códigos de países que não constam no `Paises.zip`. Seguindo outros documentos da própria Receita Federal ([exemplo](https://balanca.economia.gov.br/balanca/bd/tabelas/PAIS.csv)) o Minha Receita vai adicionar esses códigos de países nos dados: 15 (Aland, Ilhas), 150 (Ilhas do Guernsey), 151 (Canárias, Ilhas), 200 (Curaçao), 321 (Guernsey), 359 (Ilha de Man), 367 (Inglaterra), 393 (Jersey), 449 (Macedônia), 452 (Madeira, Ilha da), 498 (Montenegro), 578 (Palestina), 678 (Saint Kitts e Nevis), 699 (Sint Maarten), 737 (Sérvia) e 994 (A Designar).
+
 
 | Nome | Tipo | Origem | Descrição |
 |---|---|---|---|
