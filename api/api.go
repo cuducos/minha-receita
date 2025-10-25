@@ -19,6 +19,7 @@ import (
 	"github.com/cuducos/minha-receita/db"
 	"github.com/cuducos/minha-receita/monitor"
 	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -54,7 +55,7 @@ func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
 	}
 }
 
-func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request) {
+func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request, i int64) {
 	w.Header().Set("Content-type", "application/json")
 	txn := newrelic.FromContext(r.Context())
 	if txn != nil {
@@ -62,20 +63,23 @@ func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request
 	}
 	if !cnpj.IsValid(pth) {
 		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(pth[1:])))
+		registerMetric("singleCompany", r.Method, http.StatusBadRequest, i)
 		return
 	}
 	s, err := getCompany(app.db, pth)
 	if err != nil {
 		app.messageResponse(w, http.StatusNotFound, fmt.Sprintf("CNPJ %s não encontrado.", cnpj.Mask(pth)))
+		registerMetric("singleCompany", r.Method, http.StatusNotFound, i)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.WriteString(w, s); err != nil {
 		slog.Error("error responding to successful single company request", "request", r, "error", err)
 	}
+	registerMetric("singleCompany", r.Method, http.StatusOK, i)
 }
 
-func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Request) {
+func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Request, i int64) {
 	w.Header().Set("Content-type", "application/json")
 	txn := newrelic.FromContext(r.Context())
 	if txn != nil {
@@ -96,20 +100,24 @@ func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Requ
 			))
 		}
 		app.messageResponse(w, http.StatusRequestTimeout, b.String())
+		registerMetric("paginatedSearch", r.Method, http.StatusRequestTimeout, i)
 		return
 	}
 	if err != nil {
 		slog.Error("paginated search error", "error", err, "query", q)
 		app.messageResponse(w, http.StatusNotFound, "Erro inesperado na busca.")
+		registerMetric("paginatedSearch", r.Method, http.StatusNotFound, i)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.WriteString(w, s); err != nil {
 		slog.Error("error responding to successful paginated search request", "query", q, "request", r, "error", err)
 	}
+	registerMetric("paginatedSearch", r.Method, http.StatusOK, i)
 }
 
 func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
+	i := time.Now().UnixMilli()
 	w.Header().Set("Cache-Control", cacheControl)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -120,9 +128,11 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		break
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
+		registerMetric("earlyReturn", r.Method, http.StatusOK, i)
 		return
 	default:
 		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		registerMetric("earlyReturn", r.Method, http.StatusMethodNotAllowed, i)
 		return
 	}
 	pth := r.URL.Path
@@ -130,38 +140,47 @@ func (app *api) companyHandler(w http.ResponseWriter, r *http.Request) {
 		q := db.NewQuery(r.URL.Query())
 		if q == nil {
 			http.Redirect(w, r, "https://docs.minhareceita.org", http.StatusFound)
+			registerMetric("redirectedToDocs", r.Method, http.StatusFound, i)
 			return
 		}
-		app.paginatedSearch(q, w, r)
+		app.paginatedSearch(q, w, r, i)
 		return
 	}
-	app.singleCompany(pth, w, r)
+	app.singleCompany(pth, w, r, i)
 }
 
 func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
+	i := time.Now().UnixMilli()
 	if r.Method != http.MethodGet {
 		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas o método GET.")
+		registerMetric("updated", r.Method, http.StatusMethodNotAllowed, i)
 		return
 	}
 	s, err := app.db.MetaRead("updated-at")
 	if err != nil {
 		app.messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.")
+		registerMetric("updated", r.Method, http.StatusInternalServerError, i)
 		return
 	}
 	if s == "" {
 		w.WriteHeader(http.StatusInternalServerError)
+		registerMetric("updated", r.Method, http.StatusInternalServerError, i)
 		return
 	}
 	w.Header().Set("Cache-Control", cacheControl)
 	app.messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s))
+	registerMetric("updated", r.Method, http.StatusOK, i)
 }
 
 func (app *api) healthHandler(w http.ResponseWriter, r *http.Request) {
+	i := time.Now().UnixMilli()
 	if r.Method != http.MethodHead && r.Method != http.MethodGet {
 		app.messageResponse(w, http.StatusMethodNotAllowed, "Essa URL aceita apenas os métodos GET e HEAD.")
+		registerMetric("health", r.Method, http.StatusMethodNotAllowed, i)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	registerMetric("health", r.Method, http.StatusOK, i)
 }
 
 func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
@@ -195,6 +214,7 @@ func Serve(db database, p string, nr *newrelic.Application) error {
 	} {
 		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
 	}
+	http.HandleFunc("/metrics", promhttp.Handler().ServeHTTP)
 	s := &http.Server{Addr: p, ReadTimeout: timeout * 2, WriteTimeout: timeout * 2}
 	slog.Info(fmt.Sprintf("Serving at http://0.0.0.0%s", p))
 	return s.ListenAndServe()

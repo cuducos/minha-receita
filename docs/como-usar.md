@@ -268,3 +268,4 @@ Para todos esses _endpoints_ é esperada resposta com status `200`:
 |---|---|---|
 | `/updated` | `GET` | JSON contendo a data de extração dos dados pela Receita Federal. |
 | `/healthz` | `GET` ou `HEAD` | Resposta sem conteúdo |
+| `/metrics` | `GET` | Métricas do [Prometheus](https://prometheus.io/) para consumo. |
