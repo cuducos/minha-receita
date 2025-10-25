@@ -1,11 +1,15 @@
 name: Docker image
 on:
-  push:
+  workflow_run:
+    workflows: ["Format", "Lint", "Tests"]
+    types:
+      - completed
     branches: ['main']
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
