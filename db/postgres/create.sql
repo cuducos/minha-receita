@@ -8,4 +8,3 @@ CREATE TABLE IF NOT EXISTS {{ .MetaTableFullName }} (
     {{ .ValueFieldName }} text NOT NULL
 );
 CREATE UNIQUE INDEX {{ .CompanyTableName }}_id ON {{ .CompanyTableFullName }} ({{ .IDFieldName }});
-CREATE UNIQUE INDEX {{ .MetaTableName }}_{{ .KeyFieldName }} ON {{ .MetaTableFullName }} ({{ .KeyFieldName }});
