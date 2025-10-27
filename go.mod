@@ -13,7 +13,6 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/huandu/go-sqlbuilder v1.38.0
 	github.com/jackc/pgx/v5 v5.7.6
-	github.com/newrelic/go-agent/v3 v3.41.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/spf13/cobra v1.10.1
@@ -73,7 +72,5 @@ require (
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/term v0.36.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251014184007-4626949a642f // indirect
-	google.golang.org/grpc v1.76.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )

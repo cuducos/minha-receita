@@ -22,6 +22,6 @@ var (
 
 func registerMetric(e, m string, s int, i int64) {
 	c := fmt.Sprintf("%d", s)
-	requestCount.WithLabelValues(m, c,  e).Inc()
+	requestCount.WithLabelValues(m, c, e).Inc()
 	requestDuration.WithLabelValues(m, c, e).Observe(float64(time.Now().UnixMilli() - i))
 }

@@ -5,8 +5,6 @@ import (
 	"os"
 
 	"github.com/cuducos/minha-receita/api"
-	"github.com/cuducos/minha-receita/monitor"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/spf13/cobra"
 )
 
@@ -28,27 +26,14 @@ ALLOWED_HOST environment variable. If this variable is not set, this validation
 is skipped.`
 )
 
-var (
-	port     string
-	newRelic string
-)
+var port string
 
 var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Spins up the web API",
 	Long:  apiHelper,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		if newRelic == "" {
-			newRelic = os.Getenv("NEW_RELIC_LICENSE_KEY")
-		}
-		var nr *newrelic.Application
 		var err error
-		if newRelic != "" {
-			nr, err = monitor.NewRelicApp(newRelic)
-			if err != nil {
-				return err
-			}
-		}
 		if port == "" {
 			port = os.Getenv("PORT")
 		}
@@ -60,7 +45,7 @@ var apiCmd = &cobra.Command{
 			return fmt.Errorf("could not find database: %w", err)
 		}
 		defer db.Close()
-		return api.Serve(db, port, nr)
+		return api.Serve(db, port)
 	},
 }
 
@@ -71,13 +56,6 @@ func apiCLI() *cobra.Command {
 		"p",
 		"",
 		fmt.Sprintf("web server port (default PORT environment variable or %s)", defaultPort),
-	)
-	apiCmd.Flags().StringVarP(
-		&newRelic,
-		"new-relic-key",
-		"n",
-		"",
-		"New Relic license key (default NEW_RELIC_LICENSE_KEY environment variable)",
 	)
 	return apiCmd
 }

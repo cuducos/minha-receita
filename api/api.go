@@ -17,8 +17,6 @@ import (
 
 	"github.com/cuducos/go-cnpj"
 	"github.com/cuducos/minha-receita/db"
-	"github.com/cuducos/minha-receita/monitor"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -57,10 +55,6 @@ func (app *api) messageResponse(w http.ResponseWriter, s int, m string) {
 
 func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request, i int64) {
 	w.Header().Set("Content-type", "application/json")
-	txn := newrelic.FromContext(r.Context())
-	if txn != nil {
-		txn.AddAttribute("handler", "singleCompany")
-	}
 	if !cnpj.IsValid(pth) {
 		app.messageResponse(w, http.StatusBadRequest, fmt.Sprintf("CNPJ %s inválido.", cnpj.Mask(pth[1:])))
 		registerMetric("singleCompany", r.Method, http.StatusBadRequest, i)
@@ -81,10 +75,6 @@ func (app *api) singleCompany(pth string, w http.ResponseWriter, r *http.Request
 
 func (app *api) paginatedSearch(q *db.Query, w http.ResponseWriter, r *http.Request, i int64) {
 	w.Header().Set("Content-type", "application/json")
-	txn := newrelic.FromContext(r.Context())
-	if txn != nil {
-		txn.AddAttribute("handler", "paginatedSearch")
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	s, err := app.db.Search(ctx, q)
@@ -199,7 +189,7 @@ func (app *api) allowedHostWrapper(h func(http.ResponseWriter, *http.Request)) f
 }
 
 // Serve spins up the HTTP server.
-func Serve(db database, p string, nr *newrelic.Application) error {
+func Serve(db database, p string) error {
 	if !strings.HasPrefix(p, ":") {
 		p = ":" + p
 	}
@@ -211,10 +201,10 @@ func Serve(db database, p string, nr *newrelic.Application) error {
 		{"/", app.companyHandler},
 		{"/updated", app.updatedHandler},
 		{"/healthz", app.healthHandler},
+		{"/metrics", promhttp.Handler().ServeHTTP},
 	} {
-		http.HandleFunc(monitor.NewRelicHandle(nr, r.path, app.allowedHostWrapper(r.handler)))
+		http.HandleFunc(r.path, app.allowedHostWrapper(r.handler))
 	}
-	http.HandleFunc("/metrics", promhttp.Handler().ServeHTTP)
 	s := &http.Server{Addr: p, ReadTimeout: timeout * 2, WriteTimeout: timeout * 2}
 	slog.Info(fmt.Sprintf("Serving at http://0.0.0.0%s", p))
 	return s.ListenAndServe()
