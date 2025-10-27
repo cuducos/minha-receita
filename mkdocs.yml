@@ -20,8 +20,9 @@ nav:
   - dicionario.md
   - instalacao.md
   - servidor.md
-  - faq.md
   - sobre-os-dados.md
+  - guia-de-contribuicao.md
+  - faq.md
 plugins:
   - search
   - minify:
