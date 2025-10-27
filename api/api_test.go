@@ -192,7 +192,7 @@ func TestUpdatedHandler(t *testing.T) {
 		status  int
 		content string
 	}{
-		{http.MethodGet, http.StatusOK, `{"message":"42 é a data de extração dos dados pela Receita Federal."}`},
+		{http.MethodGet, http.StatusOK, `{"message":"42"}`},
 		{http.MethodPost, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
 		{http.MethodHead, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},
 		{http.MethodOptions, http.StatusMethodNotAllowed, `{"message":"Essa URL aceita apenas o método GET."}`},

@@ -147,18 +147,13 @@ func (app *api) updatedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s, err := app.db.MetaRead("updated-at")
-	if err != nil {
+	if err != nil || s == "" {
 		app.messageResponse(w, http.StatusInternalServerError, "Erro buscando data de atualização.")
 		registerMetric("updated", r.Method, http.StatusInternalServerError, i)
 		return
 	}
-	if s == "" {
-		w.WriteHeader(http.StatusInternalServerError)
-		registerMetric("updated", r.Method, http.StatusInternalServerError, i)
-		return
-	}
 	w.Header().Set("Cache-Control", cacheControl)
-	app.messageResponse(w, http.StatusOK, fmt.Sprintf("%s é a data de extração dos dados pela Receita Federal.", s))
+	app.messageResponse(w, http.StatusOK, s)
 	registerMetric("updated", r.Method, http.StatusOK, i)
 }
 
