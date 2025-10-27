@@ -11,7 +11,7 @@ require (
 	github.com/cuducos/chunk v1.1.5
 	github.com/cuducos/go-cnpj v0.1.2
 	github.com/dgraph-io/badger/v4 v4.8.0
-	github.com/huandu/go-sqlbuilder v1.38.0
+	github.com/huandu/go-sqlbuilder v1.38.1
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/newrelic/go-agent/v3 v3.41.0
 	github.com/prometheus/client_golang v1.23.2
