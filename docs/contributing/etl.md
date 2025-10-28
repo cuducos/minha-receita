@@ -77,11 +77,11 @@ flowchart
       Bad@{ shape: db, label: "Badger" }
     end
 
-    ETL1["Etapa 1"]
-    ETL2["Etapa 2"]
-    ETL3["Etapa 3"]
-    ETL4["Etapa 4"]
-    DB["Banco de dados"]
+    ETL1@{ shape: subproc, label: "Etapa 1" }
+    ETL2@{ shape: subproc, label: "Etapa 2" }
+    ETL3@{ shape: subproc, label: "Etapa 3" }
+    ETL4@{ shape: subproc, label: "Etapa 4" }
+    DB@{ shape: db, label: "Banco de dados" }
 
     Cna -->|Lê| ETL1
     Mot -->|Lê| ETL1
