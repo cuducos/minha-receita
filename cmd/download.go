@@ -21,6 +21,13 @@ Shows the URLs of the required ZIP and CSV files.
 
 The main files are downloaded from the official website of the Brazilian
 Federal Revenue. An extra CSV file is downloaded from the National Treasure.`
+
+	checkHelper = `
+Checks the integrity of the downloaded ZIP files.
+
+The main files downloaded from the official website of the Brazilian
+Federal Revenue are ZIP files. This command tries to unarchive them to check
+their integrity.`
 )
 
 var (
@@ -30,6 +37,7 @@ var (
 	chunkSize         int64
 	skipExistingFiles bool
 	restart           bool
+	deleteZipFiles    bool
 )
 
 var downloadCmd = &cobra.Command{
@@ -62,6 +70,18 @@ var urlsCmd = &cobra.Command{
 	},
 }
 
+var checkCmd = &cobra.Command{
+	Use:   "check",
+	Short: "Checks the integrity of downloaded ZIP files",
+	Long:  checkHelper,
+	RunE: func(_ *cobra.Command, _ []string) error {
+		if err := assertDirExists(); err != nil {
+			return err
+		}
+		return download.Check(dir, deleteZipFiles)
+	},
+}
+
 func downloadCLI() *cobra.Command {
 	downloadCmd = addDataDir(downloadCmd)
 	downloadCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
@@ -77,4 +97,11 @@ func urlsCLI() *cobra.Command {
 	urlsCmd.Flags().StringVarP(&dir, "directory", "d", defaultDataDir, "directory of the downloaded files, used only with --skip")
 	urlsCmd.Flags().BoolVarP(&skipExistingFiles, "skip", "x", false, "skip the download of existing files")
 	return urlsCmd
+}
+
+func checkCLI() *cobra.Command {
+	checkCmd = addDataDir(checkCmd)
+	checkCmd.Flags().BoolVarP(&deleteZipFiles, "delete", "x", deleteZipFiles, "deletes ZIP files that fails the check")
+
+	return checkCmd
 }
