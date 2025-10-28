@@ -21,7 +21,12 @@ nav:
   - instalacao.md
   - servidor.md
   - sobre-os-dados.md
-  - guia-de-contribuicao.md
+  - Guia de Contribuição:
+    - contributing/index.md
+    - contributing/docker.md
+    - contributing/dados.md
+    - contributing/etl.md
+    - contributing/documentacao.md
   - faq.md
 plugins:
   - search
@@ -33,3 +38,8 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

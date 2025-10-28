@@ -1,6 +1,6 @@
 # Sobre os dados
 
-Os dados servidos pela API estão disponibilizados tal como foram publicados pela Receita Federal, salvo as [exceções feitas para em prol da privacidade](/servidor/#questoes-de-privacidade).
+Os dados servidos pela API estão disponibilizados tal como foram publicados pela Receita Federal, salvo as [exceções feitas para em prol da privacidade](servidor.md#questoes-de-privacidade).
 
 Devido à experiência utilizando dados públicos, é bom lembrar que esses dados _podem_ conter problemas como desatualização, incorreção, incompletude ou inconsistência, por exemplo. Como essa API é apenas uma fonte secundária para os dados, não temos como identificar ou corrigir esses problemas, então tenha isso em mente ao consultar o _Minha Receita_.
 
