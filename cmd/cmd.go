@@ -107,7 +107,6 @@ func CLI() *cobra.Command {
 		createExtraIndexesCmd,
 		transformCLI(),
 		sampleCLI(),
-		mirrorCLI(),
 	} {
 		rootCmd.AddCommand(c)
 	}

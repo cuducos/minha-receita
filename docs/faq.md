@@ -57,11 +57,3 @@ TO 'nome-do-arquivo.csv' DELIMITER ',' CSV HEADER;
 A atualização é manual e normalmente ocorre alguns dias depois de a Receita Federal liberar uma nova versão dos dados — salvo quando a Receita Federal divulga dados absurdos, como empresas abertas no ano [202](https://twitter.com/cuducos/status/1646684441979281410) ou [4100](https://twitter.com/cuducos/status/1479078346248097793).
 
 Para saber a data de divulgação pela Receita Federal dos dados disponíveis no _Minha Receita_, [consulte a própria API](como-usar.md#endpoints-auxiliares).
-
-## Não consigo baixar os dados, pode me passar?
-
-O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org). Nele está disponível:
-
-* Uma cópia dos dados públicos baixados da Receita Federal, organizados por diretórios com a data de extração divulgada pela Receita Federal
-* Executáveis do _Minha Receita_
-* Uma versão dos links em JSON enviando o cabeçalho `Accept: application/json` ao servidor

@@ -30,10 +30,6 @@ Caso o download falhe, é recomendado variar as configurações explicadas no `-
 
 Em último caso, é possível listar as URLs para download dos arquivos com comando `urls`; e, então, tentar fazer o download de outra forma (manualmente, com alguma ferramenta que permite recomeçar downloads interrompidos, etc.). Caso essa seja uma opção crie um arquivo `updated_at.txt` no mesmo diretório com a data de extração dos dados no formato `YYYY-MM-DD`.
 
-### Espelho dos dados
-
-O _Minha Receita_ mantém um [espelho dos dados em uma diretório compartilhado](https://mirror.minhareceita.org).
-
 ### Exemplos de uso
 
 Sem Docker:
