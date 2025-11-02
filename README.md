@@ -7,7 +7,7 @@
 API web para consulta de informações do CNPJ (Cadastro Nacional da Pessoa Jurídica) da Receita Federal.
 
 [Documentação](https://docs.minhareceita.org)<br>
-[Guia de contribuição](CONTRIBUTING.md)<br>
+[Guia de contribuição](https://docs.minhareceita.org/contributing/)<br>
 [Ajude a manter o servidor no ar](https://github.com/sponsors/cuducos)<br>
 [Monitor do status do servidor](https://stats.uptimerobot.com/tqpD6AQZqI)<br>
 [Métricas do servidor](https://metrics.minhareceita.org)
