@@ -44,17 +44,16 @@ func cleanupColumn(s string) string {
 }
 
 type reader struct {
-	pth       string
-	sep       rune
-	hasHeader bool
-	ch        chan<- []string
+	pth string
+	src *source
+	ch  chan<- []string
 }
 
 func (c *reader) readFromReader(ctx context.Context, f io.Reader, sz int64) error {
 	b := &byteCountingReader{reader: f}
 	r := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(b))
-	r.Comma = c.sep
-	if c.hasHeader {
+	r.Comma = c.src.sep
+	if c.src.hasHeader {
 		if _, err := r.Read(); err != nil {
 			return fmt.Errorf("could not skip %s header: %w", c.pth, err)
 		}
@@ -131,7 +130,7 @@ func (c *reader) readCSV(ctx context.Context) error {
 	return c.readFromReader(ctx, f, st.Size())
 }
 
-func readCSVs(ctx context.Context, dir, prefix string, sep rune, hasHeader bool, ch chan<- []string) error {
+func readCSVs(ctx context.Context, dir string, src *source, ch chan<- []string) error {
 	ps, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("could not read directory %s: %w", dir, err)
@@ -140,10 +139,10 @@ func readCSVs(ctx context.Context, dir, prefix string, sep rune, hasHeader bool,
 	defer cancel()
 	var g errgroup.Group
 	for _, p := range ps {
-		if strings.HasPrefix(p.Name(), prefix) {
+		if strings.HasPrefix(p.Name(), src.prefix) {
 			g.Go(func() error {
 				pth := filepath.Join(dir, p.Name())
-				r := reader{pth, sep, hasHeader, ch}
+				r := reader{pth, src, ch}
 				switch filepath.Ext(p.Name()) {
 				case ".zip":
 					return r.readArchivedCSV(ctx)
