@@ -41,7 +41,7 @@ func TestReadCSVs(t *testing.T) {
 			for _, r := range rows {
 				got = append(got, r[0])
 			}
-			testutils.AssertArraysHaveSameItems(t,got, tc.expected)
+			testutils.AssertArraysHaveSameItems(t, got, tc.expected)
 		})
 	}
 }
