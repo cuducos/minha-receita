@@ -97,7 +97,7 @@ func CLI() *cobra.Command {
 	for _, c := range []*cobra.Command{createCmd, dropCmd} {
 		addDatabase(c)
 	}
-	for _, c := range []*cobra.Command{
+	rootCmd.AddCommand(
 		apiCLI(),
 		downloadCLI(),
 		urlsCLI(),
@@ -107,8 +107,9 @@ func CLI() *cobra.Command {
 		createExtraIndexesCmd,
 		transformCLI(),
 		sampleCLI(),
-	} {
-		rootCmd.AddCommand(c)
+	)
+	if os.Getenv("DEBUG") != "" {
+		rootCmd.AddCommand(transformNextCLI())
 	}
 	return rootCmd
 }
