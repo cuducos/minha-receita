@@ -2,9 +2,11 @@ package transformnext
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 	"sync"
+	"time"
 
+	"github.com/schollz/progressbar/v3"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -27,11 +29,42 @@ func sources() []*source { // all but Estabelecimentos (this one is loaded later
 	}
 }
 
+type progress struct {
+	bar *progressbar.ProgressBar
+}
+
+func (p *progress) update(srcs []*source) error {
+	var tot, read int64
+	for _, src := range srcs {
+		tot += src.total.Load()
+		read += src.done.Load()
+	}
+	if tot == 0 {
+		return nil
+	}
+	p.bar.ChangeMax64(tot)
+	return p.bar.Set64(read)
+}
+
+func newProgressBar(label string) *progress {
+	return &progress{progressbar.NewOptions(
+		-1,
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionSetDescription(label),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionShowTotalBytes(true),
+		progressbar.OptionThrottle(time.Duration(1*time.Second)),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionShowCount(),
+	)}
+}
+
 func Transform(dir string) error {
 	srcs := sources()
 	var g errgroup.Group
 	var wg sync.WaitGroup
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	ch := make(chan []string)
 	for _, src := range srcs {
 		wg.Add(1)
@@ -44,8 +77,11 @@ func Transform(dir string) error {
 		wg.Wait()
 		close(ch)
 	}()
-	for r := range ch {
-		slog.Info("got", "row", r)
+	bar := newProgressBar("[Step 1 of 2] Loading data to key-value storage")
+	for range ch {
+		if err := bar.update(srcs); err != nil {
+			return fmt.Errorf("could not update the progress bar: %w", err)
+		}
 	}
 	return g.Wait()
 }

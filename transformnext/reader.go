@@ -49,7 +49,7 @@ type reader struct {
 	ch  chan<- []string
 }
 
-func (c *reader) readFromReader(ctx context.Context, f io.Reader, sz int64) error {
+func (c *reader) readFromReader(ctx context.Context, f io.Reader) error {
 	b := &byteCountingReader{reader: f}
 	r := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(b))
 	r.Comma = c.src.sep
@@ -58,6 +58,7 @@ func (c *reader) readFromReader(ctx context.Context, f io.Reader, sz int64) erro
 			return fmt.Errorf("could not skip %s header: %w", c.pth, err)
 		}
 	}
+	var prev int64
 	for {
 		select {
 		case <-ctx.Done():
@@ -66,6 +67,7 @@ func (c *reader) readFromReader(ctx context.Context, f io.Reader, sz int64) erro
 			row, err := r.Read()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
+					c.src.done.Add(b.count - prev)
 					return nil
 				}
 				return fmt.Errorf("error reading %s: %w", c.pth, err)
@@ -73,8 +75,9 @@ func (c *reader) readFromReader(ctx context.Context, f io.Reader, sz int64) erro
 			for n := range row {
 				row[n] = cleanupColumn(row[n])
 			}
-			slog.Debug("progress", "path", c.pth, "total", sz, "read", b.count)
 			c.ch <- row
+			c.src.done.Add(b.count - prev)
+			prev = b.count
 		}
 	}
 }
@@ -104,7 +107,8 @@ func (c *reader) readArchivedCSV(ctx context.Context) error {
 					slog.Warn("Could not close csv reader", "path", c.pth, "name", z.Name, "error", err)
 				}
 			}()
-			return c.readFromReader(ctx, f, int64(z.UncompressedSize64))
+			c.src.total.Add(int64(z.UncompressedSize64))
+			return c.readFromReader(ctx, f)
 		}()
 		if err != nil {
 			return err
@@ -127,7 +131,8 @@ func (c *reader) readCSV(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("could not get %s info: %w", c.pth, err)
 	}
-	return c.readFromReader(ctx, f, st.Size())
+	c.src.total.Add(st.Size())
+	return c.readFromReader(ctx, f)
 }
 
 func readCSVs(ctx context.Context, dir string, src *source, ch chan<- []string) error {
@@ -135,8 +140,6 @@ func readCSVs(ctx context.Context, dir string, src *source, ch chan<- []string) 
 	if err != nil {
 		return fmt.Errorf("could not read directory %s: %w", dir, err)
 	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	var g errgroup.Group
 	for _, p := range ps {
 		if strings.HasPrefix(p.Name(), src.prefix) {

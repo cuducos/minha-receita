@@ -11,7 +11,13 @@ type source struct {
 	sep          rune
 	hasHeader    bool
 	isCumulative bool
-	counter      atomic.Uint32
+
+	// for accumulative keys
+	counter atomic.Uint32
+
+	// progress tracker
+	total atomic.Int64
+	done  atomic.Int64
 }
 
 func (s *source) keyFor(id string) string {
