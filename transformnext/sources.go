@@ -20,13 +20,13 @@ type source struct {
 	done  atomic.Int64
 }
 
-func (s *source) keyFor(id string) string {
+func (s *source) keyFor(id string) []byte {
 	k := strings.ToLower(strings.TrimPrefix(s.prefix, "Lucro ")[0:3])
 	if !s.isCumulative {
-		return fmt.Sprintf("%s::%s", id, k)
+		return []byte(fmt.Sprintf("%s::%s", id, k))
 	}
 	c := s.counter.Add(1)
-	return fmt.Sprintf("%s::%s::%d", id, k, c)
+	return []byte(fmt.Sprintf("%s::%s::%d", id, k, c))
 }
 
 func newSource(prefix string, sep rune, hasHeader, isCumulative bool) *source {

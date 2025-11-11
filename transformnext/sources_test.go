@@ -23,8 +23,8 @@ func TestSourceKey(t *testing.T) {
 		src := srcs[idx]
 		t.Run(src.prefix, func(t *testing.T) {
 			got := src.keyFor("42")
-			if got != exp {
-				t.Errorf("expected key for %s to be %s, got %s", src.prefix, exp, got)
+			if string(got) != exp {
+				t.Errorf("expected key for %s to be %s, got %s", src.prefix, exp, string(got))
 			}
 		})
 	}
