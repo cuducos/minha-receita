@@ -9,6 +9,11 @@ func TestSerializeDeserialize(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error opening badger, got %s", err)
 	}
+	defer func() {
+		if err := kv.db.Close(); err != nil {
+			t.Errorf("expected no error closing badger, got %s", err)
+		}
+	}()
 	for _, tc := range []struct {
 		name string
 		row  []string
