@@ -27,6 +27,11 @@ func TestLoadCSVs(t *testing.T) {
 		t.Run(src.prefix, func(t *testing.T) {
 			ctx := context.Background()
 			kv, err := newBadger(t.TempDir(), false)
+			defer func() {
+				if err := kv.db.Close(); err != nil {
+					t.Errorf("expected no error closing badger, got %s", err)
+				}
+			}()
 			if err != nil {
 				t.Errorf("expected no error creating badger, got %s", err)
 			}

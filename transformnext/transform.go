@@ -58,6 +58,11 @@ func Transform(dir string) error {
 	if err != nil {
 		return fmt.Errorf("could not create badger database: %w", err)
 	}
+	defer func() {
+		if err := kv.db.Close(); err != nil {
+			slog.Warn("could not close badger database", "error", err)
+		}
+	}()
 	bar, err := newProgressBar("[Step 1 of 2] Loading data to key-value storage", srcs)
 	if err != nil {
 		return fmt.Errorf("could not create a progress bar: %w", err)
