@@ -149,6 +149,11 @@ func (c *reader) readCSV(ctx context.Context, bar *progressbar.ProgressBar, kv *
 }
 
 func loadCSVs(ctx context.Context, dir string, src *source, bar *progressbar.ProgressBar, kv *kv) error {
+	if bar != nil {
+		defer func() {
+			bar.AddMax(-1) // compensate for the extra byte added when creating the bar
+		}()
+	}
 	pths, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("could not read directory %s: %w", dir, err)
