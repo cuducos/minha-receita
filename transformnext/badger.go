@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sync"
@@ -41,10 +42,10 @@ func (kv *kv) deserialize(b []byte) ([]string, error) {
 	}
 	var out []string
 	r := bytes.NewReader(b)
-	for {
+	for r.Len() > 0 {
 		var s uint32
 		if err := binary.Read(r, binary.LittleEndian, &s); err != nil {
-			break
+			return nil, fmt.Errorf("error reading size: %w", err)
 		}
 		raw := kv.bytes.Get().(*[]byte)
 		if cap(*raw) < int(s) {
@@ -52,9 +53,14 @@ func (kv *kv) deserialize(b []byte) ([]string, error) {
 		} else {
 			*raw = (*raw)[:s]
 		}
-		if _, err := r.Read(*raw); err != nil {
+		n, err := io.ReadFull(r, *raw)
+		if err != nil {
 			kv.bytes.Put(raw)
 			return nil, fmt.Errorf("could not deserialize value: %w", err)
+		}
+		if n != int(s) {
+			kv.bytes.Put(raw)
+			return nil, fmt.Errorf("expected to read %d bytes, got %d", s, n)
 		}
 		out = append(out, string(*raw))
 		kv.bytes.Put(raw)
@@ -96,6 +102,33 @@ func (kv *kv) get(k []byte) ([]string, error) {
 		return nil, fmt.Errorf("could not get key %s: %w", string(k), err)
 	}
 	return kv.deserialize(b)
+}
+
+func (kv *kv) getPrefix(k []byte) ([][]string, error) {
+	vs := [][]string{}
+	err := kv.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		for it.Seek(k); it.ValidForPrefix(k); it.Next() {
+			i := it.Item()
+			err := i.Value(func(b []byte) error {
+				v, err := kv.deserialize(b)
+				if err != nil {
+					return fmt.Errorf("could not deserialize %s: %w", string(i.Key()), err)
+				}
+				vs = append(vs, v)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return vs, nil
 }
 
 type noLogger struct{}

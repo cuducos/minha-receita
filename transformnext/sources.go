@@ -11,22 +11,24 @@ type source struct {
 	sep          rune
 	hasHeader    bool
 	isCumulative bool
-
-	// for accumulative keys
-	counter atomic.Uint32
-
-	// progress tracker
-	total atomic.Int64
-	done  atomic.Int64
+	counter      atomic.Uint32
 }
 
 func (s *source) keyFor(id string) []byte {
 	k := strings.ToLower(strings.TrimPrefix(s.prefix, "Lucro ")[0:3])
 	if !s.isCumulative {
-		return []byte(fmt.Sprintf("%s::%s", id, k))
+		return fmt.Appendf([]byte{}, "%s::%s", id, k)
 	}
 	c := s.counter.Add(1)
-	return []byte(fmt.Sprintf("%s::%s::%d", id, k, c))
+	return fmt.Appendf([]byte{}, "%s::%s::%d", id, k, c)
+}
+
+func (s *source) keyPrefixFor(id string) []byte {
+	if !s.isCumulative {
+		return s.keyFor(id)
+	}
+	k := strings.ToLower(strings.TrimPrefix(s.prefix, "Lucro ")[0:3])
+	return fmt.Appendf([]byte{}, "%s::%s", id, k)
 }
 
 func newSource(prefix string, sep rune, hasHeader, isCumulative bool) *source {
