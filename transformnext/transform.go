@@ -3,7 +3,8 @@ package transformnext
 import (
 	"context"
 	"fmt"
-	"sync"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -29,59 +30,51 @@ func sources() []*source { // all but Estabelecimentos (this one is loaded later
 	}
 }
 
-type progress struct {
-	bar *progressbar.ProgressBar
-}
-
-func (p *progress) update(srcs []*source) error {
-	var tot, read int64
-	for _, src := range srcs {
-		tot += src.total.Load()
-		read += src.done.Load()
-	}
-	if tot == 0 {
-		return nil
-	}
-	p.bar.ChangeMax64(tot)
-	return p.bar.Set64(read)
-}
-
-func newProgressBar(label string) *progress {
-	return &progress{progressbar.NewOptions(
-		-1,
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionSetDescription(label),
-		progressbar.OptionShowBytes(true),
-		progressbar.OptionShowTotalBytes(true),
-		progressbar.OptionThrottle(time.Duration(1*time.Second)),
+func newProgressBar(label string, srcs []*source) (*progressbar.ProgressBar, error) {
+	bar := progressbar.NewOptions(
+		len(srcs), // it has a bug starting at zero, so we compensate for it later
 		progressbar.OptionFullWidth(),
+		progressbar.OptionSetDescription(label),
+		progressbar.OptionUseANSICodes(true),
+		progressbar.OptionShowBytes(true),
 		progressbar.OptionShowCount(),
-	)}
+		progressbar.OptionShowTotalBytes(true),
+	)
+	return bar, bar.RenderBlank()
 }
 
 func Transform(dir string) error {
 	srcs := sources()
-	var g errgroup.Group
-	var wg sync.WaitGroup
+	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
+	if err != nil {
+		return fmt.Errorf("could not create temporary directory for badger: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tmp); err != nil {
+			slog.Warn("could not remove badger temporary directory", "path", tmp, "error", err)
+		}
+	}()
+	kv, err := newBadger(tmp, false)
+	if err != nil {
+		return fmt.Errorf("could not create badger database: %w", err)
+	}
+	defer func() {
+		if err := kv.db.Close(); err != nil {
+			slog.Warn("could not close badger database", "error", err)
+		}
+	}()
+	bar, err := newProgressBar("[Step 1 of 2] Loading data to key-value storage", srcs)
+	if err != nil {
+		return fmt.Errorf("could not create a progress bar: %w", err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := make(chan []string)
+	var g errgroup.Group
 	for _, src := range srcs {
-		wg.Add(1)
+		src := src
 		g.Go(func() error {
-			defer wg.Done()
-			return readCSVs(ctx, dir, src, ch)
+			return loadCSVs(ctx, dir, src, bar, kv)
 		})
-	}
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-	bar := newProgressBar("[Step 1 of 2] Loading data to key-value storage")
-	for range ch {
-		if err := bar.update(srcs); err != nil {
-			return fmt.Errorf("could not update the progress bar: %w", err)
-		}
 	}
 	return g.Wait()
 }

@@ -13,22 +13,12 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/schollz/progressbar/v3"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/text/encoding/charmap"
 )
 
 var multipleSpaces = regexp.MustCompile(`\s{2,}`)
-
-type byteCountingReader struct {
-	reader io.Reader
-	count  int64
-}
-
-func (b *byteCountingReader) Read(p []byte) (int, error) {
-	n, err := b.reader.Read(p)
-	b.count += int64(n)
-	return n, err
-}
 
 func removeNulChar(r rune) rune {
 	if r == '\x00' {
@@ -43,15 +33,25 @@ func cleanupColumn(s string) string {
 	return strings.TrimSpace(s)
 }
 
+type countReader struct {
+	reader io.Reader
+	read   int64
+}
+
+func (b *countReader) Read(p []byte) (int, error) {
+	n, err := b.reader.Read(p)
+	b.read += int64(n)
+	return n, err
+}
+
 type reader struct {
 	pth string
 	src *source
-	ch  chan<- []string
 }
 
-func (c *reader) readFromReader(ctx context.Context, f io.Reader) error {
-	b := &byteCountingReader{reader: f}
-	r := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(b))
+func (c *reader) readFromReader(ctx context.Context, f io.Reader, bar *progressbar.ProgressBar, kv *kv) error {
+	b := countReader{f, 0}
+	r := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(&b))
 	r.Comma = c.src.sep
 	if c.src.hasHeader {
 		if _, err := r.Read(); err != nil {
@@ -67,22 +67,32 @@ func (c *reader) readFromReader(ctx context.Context, f io.Reader) error {
 			row, err := r.Read()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					c.src.done.Add(b.count - prev)
 					return nil
 				}
 				return fmt.Errorf("error reading %s: %w", c.pth, err)
 			}
+			if len(row) < 2 {
+				return fmt.Errorf("unexpected row with %d columns in %s", len(row), c.src.prefix)
+			}
 			for n := range row {
 				row[n] = cleanupColumn(row[n])
 			}
-			c.ch <- row
-			c.src.done.Add(b.count - prev)
-			prev = b.count
+			if err := kv.put(c.src, row[0], row[1:]); err != nil {
+				return fmt.Errorf("could not save %s line %v to badger: %w", c.src.prefix, row, err)
+			}
+			s := b.read - prev
+			if bar != nil && s > 0 {
+				if err := bar.Add64(s); err != nil {
+					slog.Warn("could not update the progress bar", "error", err)
+				}
+			}
+			prev = b.read
+
 		}
 	}
 }
 
-func (c *reader) readArchivedCSV(ctx context.Context) error {
+func (c *reader) readArchivedCSV(ctx context.Context, bar *progressbar.ProgressBar, kv *kv) error {
 	a, err := zip.OpenReader(c.pth)
 	if err != nil {
 		return fmt.Errorf("could not open archive %s: %w", c.pth, err)
@@ -92,7 +102,11 @@ func (c *reader) readArchivedCSV(ctx context.Context) error {
 			slog.Warn("could not close %s reader", "path", c.pth, "error", err)
 		}
 	}()
+	var g errgroup.Group
 	for _, z := range a.File {
+		if bar != nil {
+			bar.AddMax64(int64(z.UncompressedSize64))
+		}
 		st := z.FileInfo()
 		if st.IsDir() {
 			continue
@@ -101,23 +115,20 @@ func (c *reader) readArchivedCSV(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("could not read %s from %s: %w", z.Name, c.pth, err)
 		}
-		err = func() error {
+		r := f
+		g.Go(func() error {
 			defer func() {
-				if err := f.Close(); err != nil {
+				if err := r.Close(); err != nil {
 					slog.Warn("Could not close csv reader", "path", c.pth, "name", z.Name, "error", err)
 				}
 			}()
-			c.src.total.Add(int64(z.UncompressedSize64))
-			return c.readFromReader(ctx, f)
-		}()
-		if err != nil {
-			return err
-		}
+			return c.readFromReader(ctx, r, bar, kv)
+		})
 	}
-	return nil
+	return g.Wait()
 }
 
-func (c *reader) readCSV(ctx context.Context) error {
+func (c *reader) readCSV(ctx context.Context, bar *progressbar.ProgressBar, kv *kv) error {
 	f, err := os.Open(c.pth)
 	if err != nil {
 		return fmt.Errorf("could not open csv %s: %w", c.pth, err)
@@ -129,28 +140,36 @@ func (c *reader) readCSV(ctx context.Context) error {
 	}()
 	st, err := f.Stat()
 	if err != nil {
-		return fmt.Errorf("could not get %s info: %w", c.pth, err)
+		return fmt.Errorf("could not get stats for %s: %w", c.pth, err)
 	}
-	c.src.total.Add(st.Size())
-	return c.readFromReader(ctx, f)
+	if bar != nil {
+		bar.AddMax64(st.Size())
+	}
+	return c.readFromReader(ctx, f, bar, kv)
 }
 
-func readCSVs(ctx context.Context, dir string, src *source, ch chan<- []string) error {
-	ps, err := os.ReadDir(dir)
+func loadCSVs(ctx context.Context, dir string, src *source, bar *progressbar.ProgressBar, kv *kv) error {
+	if bar != nil {
+		defer func() {
+			bar.AddMax(-1) // compensate for the extra byte added when creating the bar
+		}()
+	}
+	pths, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("could not read directory %s: %w", dir, err)
 	}
 	var g errgroup.Group
-	for _, p := range ps {
-		if strings.HasPrefix(p.Name(), src.prefix) {
+	for _, pth := range pths {
+		if strings.HasPrefix(pth.Name(), src.prefix) {
+			p := pth
 			g.Go(func() error {
 				pth := filepath.Join(dir, p.Name())
-				r := reader{pth, src, ch}
+				r := reader{pth, src}
 				switch filepath.Ext(p.Name()) {
 				case ".zip":
-					return r.readArchivedCSV(ctx)
+					return r.readArchivedCSV(ctx, bar, kv)
 				case ".csv":
-					return r.readCSV(ctx)
+					return r.readCSV(ctx, bar, kv)
 				default:
 					return fmt.Errorf("unexpected file extension for %s", pth)
 				}

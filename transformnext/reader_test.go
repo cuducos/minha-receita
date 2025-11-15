@@ -3,11 +3,9 @@ package transformnext
 import (
 	"context"
 	"testing"
-
-	"github.com/cuducos/minha-receita/testutils"
 )
 
-func TestReadCSVs(t *testing.T) {
+func TestLoadCSVs(t *testing.T) {
 	srcs := sources()
 	for idx, exp := range [][]string{ // expected value is the first column of each row
 		{"6204000", "6201501", "6202300", "6203100", "6209100", "6311900"},
@@ -28,29 +26,28 @@ func TestReadCSVs(t *testing.T) {
 		src := srcs[idx]
 		t.Run(src.prefix, func(t *testing.T) {
 			ctx := context.Background()
-			ch := make(chan []string)
-			ok := make(chan struct{})
-			var rows [][]string
-			go func() {
-				defer close(ok)
-				for row := range ch {
-					rows = append(rows, row)
+			kv, err := newBadger(t.TempDir(), false)
+			defer func() {
+				if err := kv.db.Close(); err != nil {
+					t.Errorf("expected no error closing badger, got %s", err)
 				}
 			}()
-			err := readCSVs(ctx, "../testdata", src, ch)
 			if err != nil {
-				t.Errorf("expected no error reading csvs, got %s", err)
+				t.Errorf("expected no error creating badger, got %s", err)
 			}
-			close(ch)
-			<-ok
-			if len(rows) != len(exp) {
-				t.Errorf("expected %d rows, got %d", len(exp), len(rows))
+			if err := loadCSVs(ctx, "../testdata", src, nil, kv); err != nil {
+				t.Errorf("expected no error loading csvs, got %s", err)
 			}
-			var got []string
-			for _, r := range rows {
-				got = append(got, r[0])
+			for _, id := range exp {
+				key := src.keyPrefixFor(id)
+				got, err := kv.getPrefix(key)
+				if err != nil {
+					t.Errorf("expect no error getting %s, got %s", string(key), err)
+				}
+				if got == nil {
+					t.Errorf("expected to find key %s, got nil", string(key))
+				}
 			}
-			testutils.AssertArraysHaveSameItems(t, got, exp)
 		})
 	}
 }
