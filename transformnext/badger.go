@@ -139,7 +139,7 @@ func (*noLogger) Infof(string, ...any)    {}
 func (*noLogger) Debugf(string, ...any)   {}
 
 func newBadger(dir string, ro bool) (*kv, error) {
-	opt := badger.DefaultOptions(dir).WithReadOnly(ro)
+	opt := badger.DefaultOptions(dir).WithReadOnly(ro).WithBypassLockGuard(true).WithDetectConflicts(false)
 	slog.Debug("Creating temporary key-value storage", "path", dir)
 	if os.Getenv("DEBUG") == "" {
 		opt = opt.WithLogger(&noLogger{})
