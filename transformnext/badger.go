@@ -49,7 +49,7 @@ func (kv *kv) deserialize(b []byte) ([]string, error) {
 		}
 		raw := kv.bytes.Get().(*[]byte)
 		if cap(*raw) < int(s) {
-			*raw = make([]byte, s)
+			return nil, fmt.Errorf("buffer from pool too small (%d): needs %d", cap(*raw), s)
 		} else {
 			*raw = (*raw)[:s]
 		}
@@ -156,7 +156,11 @@ func newBadger(dir string, ro bool) (*kv, error) {
 	}
 	kv.bytes = sync.Pool{
 		New: func() any {
-			b := make([]byte, 0, 1024)
+			// as of 2025-11 the longest sequence we've got was 159, so setting
+			// it to 256 to have some room — but this could be set from a cli
+			// flag to avoid recompiling when source data changes and needs
+			// more space
+			b := make([]byte, 0, 256)
 			return &b
 		},
 	}
