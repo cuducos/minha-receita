@@ -3,8 +3,11 @@ package transformnext
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -41,6 +44,26 @@ func newProgressBar(label string, srcs []*source) (*progressbar.ProgressBar, err
 		progressbar.OptionShowTotalBytes(true),
 	)
 	return bar, bar.RenderBlank()
+}
+
+func Cleanup() error {
+	return filepath.WalkDir(os.TempDir(), func(pth string, d fs.DirEntry, err error) error {
+		if !d.IsDir() {
+			return nil
+		}
+		if !strings.HasPrefix(d.Name(), "minha-receita-") {
+			return nil
+		}
+		part := strings.Split(d.Name(), "-")
+		if len(part) != 4 {
+			return nil
+		}
+		if _, err := time.Parse("20060102150405", part[2]); err != nil {
+			return nil
+		}
+		fmt.Printf("Removing %s\n", pth)
+		return os.RemoveAll(pth)
+	})
 }
 
 func Transform(dir string) error {

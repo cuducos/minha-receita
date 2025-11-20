@@ -12,3 +12,11 @@ var transformNextCmd = &cobra.Command{
 		return transformnext.Transform(dir)
 	},
 }
+
+var cleanupTempCmd = &cobra.Command{
+	Use:   "cleanup",
+	Short: "Clean-up temporary ETL files",
+	RunE: func(_ *cobra.Command, _ []string) error {
+		return transformnext.Cleanup()
+	},
+}
