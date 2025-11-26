@@ -109,7 +109,7 @@ func CLI() *cobra.Command {
 		sampleCLI(),
 	)
 	if os.Getenv("DEBUG") != "" {
-		rootCmd.AddCommand(addDataDir(transformNextCmd))
+		rootCmd.AddCommand(addDataDir(transformNextCLI()))
 		rootCmd.AddCommand(addDataDir(cleanupTempCmd))
 	}
 	return rootCmd
