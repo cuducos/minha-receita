@@ -14,8 +14,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func sources() []*source { // all but Estabelecimentos (this one is loaded later on)
-	return []*source{
+// BatchSize determines the size of the batches used to create the initial JSON
+// data in the database.
+const BatchSize = 8192
+
+type database interface {
+	CreateCompanies([][]string) error
+}
+
+func sources() map[string]*source { // all but Estabelecimentos (this one is loaded later on)
+	srcs := []*source{
 		newSource("Cnaes", ';', false, false),
 		newSource("Empresas", ';', false, false),
 		newSource("Imunes e Isentas", ',', true, true),
@@ -31,11 +39,16 @@ func sources() []*source { // all but Estabelecimentos (this one is loaded later
 		newSource("Socios", ';', false, true),
 		newSource("tabmun", ';', false, false),
 	}
+	m := make(map[string]*source)
+	for _, src := range srcs {
+		m[src.key] = src
+	}
+	return m
 }
 
-func newProgressBar(label string, srcs []*source) (*progressbar.ProgressBar, error) {
+func newProgressBar(label string, srcs int) (*progressbar.ProgressBar, error) {
 	bar := progressbar.NewOptions(
-		len(srcs), // it has a bug starting at zero, so we compensate for it later
+		srcs, // it has a bug starting At zero, so we compensate for it later
 		progressbar.OptionFullWidth(),
 		progressbar.OptionSetDescription(label),
 		progressbar.OptionUseANSICodes(true),
@@ -66,7 +79,7 @@ func Cleanup() error {
 	})
 }
 
-func Transform(dir string) error {
+func Transform(dir string, db database, batch int, privacy bool) error {
 	srcs := sources()
 	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
@@ -86,7 +99,7 @@ func Transform(dir string) error {
 			slog.Warn("could not close badger database", "error", err)
 		}
 	}()
-	bar, err := newProgressBar("[Step 1 of 2] Loading data to key-value storage", srcs)
+	bar, err := newProgressBar("[Step 1 of 2] Loading data to key-value storage", len(srcs))
 	if err != nil {
 		return fmt.Errorf("could not create a progress bar: %w", err)
 	}
@@ -99,5 +112,8 @@ func Transform(dir string) error {
 			return loadCSVs(ctx, dir, src, bar, kv)
 		})
 	}
-	return g.Wait()
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return writeJSONs(ctx, srcs, kv, db, dir, privacy)
 }
