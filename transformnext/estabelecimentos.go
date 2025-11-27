@@ -138,7 +138,9 @@ func findEstabelecimentosFiles(dir string) ([]string, error) {
 
 func processEstabelecimentosFile(ctx context.Context, filePath string, kv *kv, dbConn *db.PostgreSQL, bar *progressbar.ProgressBar) error {
 	defer func() {
-		bar.Add(1)
+		if err := bar.Add(1); err != nil {
+			slog.Warn("could not update progress bar", "error", err)
+		}
 	}()
 
 	slog.Debug("Processing Estabelecimentos file", "file", filePath)
@@ -148,7 +150,11 @@ func processEstabelecimentosFile(ctx context.Context, filePath string, kv *kv, d
 	if err != nil {
 		return fmt.Errorf("could not open zip file %s: %w", filePath, err)
 	}
-	defer archive.Close()
+	defer func() {
+		if err := archive.Close(); err != nil {
+			slog.Warn("could not close archive", "file", filePath, "error", err)
+		}
+	}()
 
 	var wg sync.WaitGroup
 	batchChan := make(chan []string, 100) // Buffered channel for batches
@@ -184,7 +190,11 @@ func processCSVFile(ctx context.Context, zipFile *zip.File, kv *kv, batchChan ch
 	if err != nil {
 		return fmt.Errorf("could not open file %s: %w", zipFile.Name, err)
 	}
-	defer fileReader.Close()
+	defer func() {
+		if err := fileReader.Close(); err != nil {
+			slog.Warn("could not close file reader", "file", zipFile.Name, "error", err)
+		}
+	}()
 
 	reader := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(fileReader))
 	reader.Comma = ';'
@@ -204,7 +214,7 @@ func processCSVFile(ctx context.Context, zipFile *zip.File, kv *kv, batchChan ch
 			row, err := reader.Read()
 			if err != nil {
 				if err == io.EOF {
-					break
+					goto doneReading
 				}
 				return fmt.Errorf("error reading CSV row: %w", err)
 			}
@@ -246,6 +256,8 @@ func processCSVFile(ctx context.Context, zipFile *zip.File, kv *kv, batchChan ch
 			}
 		}
 	}
+
+doneReading:
 
 	// Send remaining batch
 	if len(batch) > 0 {
