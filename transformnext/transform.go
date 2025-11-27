@@ -86,7 +86,9 @@ func Transform(dir string) error {
 			slog.Warn("could not close badger database", "error", err)
 		}
 	}()
-	bar, err := newProgressBar("[Step 1 of 2] Loading data to key-value storage", srcs)
+
+	// Step 1: Load auxiliary data to key-value storage
+	bar, err := newProgressBar("[Step 1 of 2] Loading auxiliary data to key-value storage", srcs)
 	if err != nil {
 		return fmt.Errorf("could not create a progress bar: %w", err)
 	}
@@ -99,5 +101,10 @@ func Transform(dir string) error {
 			return loadCSVs(ctx, dir, src, bar, kv)
 		})
 	}
-	return g.Wait()
+	if err := g.Wait(); err != nil {
+		return err
+	}
+
+	// Step 2: Process Estabelecimentos with enrichment and database writes
+	return processEstabelecimentos(dir, kv)
 }
