@@ -141,7 +141,7 @@ func (*noLogger) Debugf(string, ...any)   {}
 func newBadger(dir string, ro bool) (*kv, error) {
 	opt := badger.DefaultOptions(dir).WithReadOnly(ro).WithBypassLockGuard(true).WithDetectConflicts(false)
 	slog.Debug("Creating temporary key-value storage", "path", dir)
-	if os.Getenv("DEBUG") == "" {
+	if os.Getenv("DEBUG") != "badger" { // TODO: remove that after moving transformnext into transform
 		opt = opt.WithLogger(&noLogger{})
 	}
 	db, err := badger.Open(opt)

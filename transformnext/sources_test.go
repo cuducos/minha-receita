@@ -1,10 +1,13 @@
 package transformnext
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestSourceKey(t *testing.T) {
 	srcs := sources()
-	for idx, exp := range []string{
+	for _, exp := range []string{
 		"42::cna",
 		"42::emp",
 		"42::imu::1",
@@ -20,7 +23,11 @@ func TestSourceKey(t *testing.T) {
 		"42::soc::1",
 		"42::tab",
 	} {
-		src := srcs[idx]
+		key := strings.TrimSuffix(strings.TrimPrefix(exp, "42::"), "::1")
+		src, ok := srcs[key]
+		if !ok {
+			t.Fatalf("expected source %s in %v, got nil", key, srcs)
+		}
 		t.Run(src.prefix, func(t *testing.T) {
 			got := src.keyFor("42")
 			if string(got) != exp {

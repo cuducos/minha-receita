@@ -8,6 +8,7 @@ import (
 
 type source struct {
 	prefix       string
+	key          string
 	sep          rune
 	hasHeader    bool
 	isCumulative bool
@@ -15,22 +16,21 @@ type source struct {
 }
 
 func (s *source) keyFor(id string) []byte {
-	k := strings.ToLower(strings.TrimPrefix(s.prefix, "Lucro ")[0:3])
 	if !s.isCumulative {
-		return fmt.Appendf([]byte{}, "%s::%s", id, k)
+		return fmt.Appendf([]byte{}, "%s::%s", id, s.key)
 	}
 	c := s.counter.Add(1)
-	return fmt.Appendf([]byte{}, "%s::%s::%d", id, k, c)
+	return fmt.Appendf([]byte{}, "%s::%s::%d", id, s.key, c)
 }
 
 func (s *source) keyPrefixFor(id string) []byte {
 	if !s.isCumulative {
 		return s.keyFor(id)
 	}
-	k := strings.ToLower(strings.TrimPrefix(s.prefix, "Lucro ")[0:3])
-	return fmt.Appendf([]byte{}, "%s::%s", id, k)
+	return fmt.Appendf([]byte{}, "%s::%s", id, s.key)
 }
 
 func newSource(prefix string, sep rune, hasHeader, isCumulative bool) *source {
-	return &source{prefix: prefix, sep: sep, hasHeader: hasHeader, isCumulative: isCumulative}
+	key := strings.ToLower(strings.TrimPrefix(prefix, "Lucro ")[0:3])
+	return &source{prefix: prefix, key: key, sep: sep, hasHeader: hasHeader, isCumulative: isCumulative}
 }
