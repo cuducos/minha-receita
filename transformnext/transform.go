@@ -14,9 +14,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// BatchSize determines the size of the batches used to create the initial JSON
-// data in the database.
-const BatchSize = 8192
+const (
+	// BatchSize determines the size of the batches used to create the initial JSON
+	// data in the database.
+	BatchSize = 8192
+
+	// MaxParallelDBQueries is the default for maximum number of parallels save
+	// queries sent to the database
+	MaxParallelDBQueries = 8
+)
 
 type database interface {
 	CreateCompanies([][]string) error
@@ -79,7 +85,7 @@ func Cleanup() error {
 	})
 }
 
-func Transform(dir string, db database, batch int, privacy bool) error {
+func Transform(dir string, db database, batch, maxDB int, privacy bool) error {
 	srcs := sources()
 	tmp, err := os.MkdirTemp("", fmt.Sprintf("minha-receita-%s-*", time.Now().Format("20060102150405")))
 	if err != nil {
@@ -115,5 +121,5 @@ func Transform(dir string, db database, batch int, privacy bool) error {
 	if err := g.Wait(); err != nil {
 		return err
 	}
-	return writeJSONs(ctx, srcs, kv, db, dir, privacy)
+	return writeJSONs(ctx, srcs, kv, db, maxDB, batch, dir, privacy)
 }

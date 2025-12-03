@@ -18,7 +18,31 @@ import (
 	"golang.org/x/text/encoding/charmap"
 )
 
-func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db database, dir string, privacy bool) error { // TODO: test
+func worker(ctx context.Context, db database, s int, ch <-chan []string) error {
+	var b [][]string
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case row, ok := <-ch:
+			if !ok {
+				if len(b) > 0 {
+					return db.CreateCompanies(b)
+				}
+				return nil
+			}
+			b = append(b, row)
+			if len(b) >= s {
+				if err := db.CreateCompanies(b); err != nil {
+					return err
+				}
+				b = [][]string{}
+			}
+		}
+	}
+}
+
+func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db database, maxDB, batch int, dir string, privacy bool) error { // TODO: test
 	bar, err := newProgressBar("[Step 2 of 2] Writing JSONs", 1)
 	if err != nil {
 		return fmt.Errorf("could not create a progress bar: %w", err)
@@ -36,13 +60,20 @@ func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db databas
 			return &bytes.Buffer{}
 		},
 	}
-	var g errgroup.Group
+	ch := make(chan []string)
+	var consumers errgroup.Group
+	for range maxDB {
+		consumers.Go(func() error {
+			return worker(ctx, db, batch, ch)
+		})
+	}
+	var producers errgroup.Group
 	for _, pth := range pths {
 		if !strings.HasPrefix(pth.Name(), src.prefix) {
 			continue
 		}
 		p := pth
-		g.Go(func() error {
+		producers.Go(func() error {
 			pth := filepath.Join(dir, p.Name())
 			a, err := zip.OpenReader(pth)
 			if err != nil {
@@ -53,9 +84,9 @@ func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db databas
 					slog.Warn("could not close %s reader", "path", pth, "error", err)
 				}
 			}()
-			var sg errgroup.Group
+			var g errgroup.Group
 			for _, z := range a.File {
-				sg.Go(func() error {
+				g.Go(func() error {
 					bar.AddMax64(int64(z.UncompressedSize64))
 					st := z.FileInfo()
 					if st.IsDir() {
@@ -73,7 +104,6 @@ func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db databas
 					b := countReader{f, 0}
 					r := csv.NewReader(charmap.ISO8859_15.NewDecoder().Reader(&b))
 					r.Comma = src.sep
-					var batch [][]string
 					var prev int64
 					for {
 						select {
@@ -83,11 +113,7 @@ func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db databas
 							row, err := r.Read()
 							if err != nil {
 								if errors.Is(err, io.EOF) {
-									if len(batch) > 0 {
-										if err := db.CreateCompanies(batch); err != nil {
-											return fmt.Errorf("could not save batch: %w", err)
-										}
-									}
+									return nil
 								}
 								return fmt.Errorf("error reading %s: %w", pth, err)
 							}
@@ -108,13 +134,7 @@ func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db databas
 							if err != nil {
 								return err
 							}
-							batch = append(batch, []string{c.CNPJ, j})
-							if len(batch) > 1<<13 {
-								if err := db.CreateCompanies(batch); err != nil {
-									return fmt.Errorf("could not save batch: %w", err)
-								}
-								batch = [][]string{}
-							}
+							ch <- []string{c.CNPJ, j}
 							s := b.read - prev
 							if s > 0 {
 								if err := bar.Add64(s); err != nil {
@@ -126,8 +146,20 @@ func writeJSONs(ctx context.Context, srcs map[string]*source, kv *kv, db databas
 					}
 				})
 			}
-			return sg.Wait()
+			return g.Wait()
 		})
 	}
-	return g.Wait()
+	err1 := producers.Wait()
+	close(ch)
+	err2 := consumers.Wait()
+	if err1 != nil && err2 != nil {
+		return fmt.Errorf("errors writing json: (producer error) %w, (connsumer error) %w", err1, err2)
+	}
+	if err1 != nil {
+		return err1
+	}
+	if err2 != nil {
+		return err2
+	}
+	return nil
 }

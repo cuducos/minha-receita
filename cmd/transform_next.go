@@ -16,7 +16,7 @@ var transformNextCmd = &cobra.Command{
 			return fmt.Errorf("could not find database: %w", err)
 		}
 		defer db.Close()
-		return transformnext.Transform(dir, db, batchSize, !noPrivacy)
+		return transformnext.Transform(dir, db, batchSize, maxParallelDBQueries, !noPrivacy)
 	},
 }
 
@@ -29,6 +29,13 @@ var cleanupTempCmd = &cobra.Command{
 }
 
 func transformNextCLI() *cobra.Command {
+	transformNextCmd.Flags().IntVarP(
+		&maxParallelDBQueries,
+		"max-parallel-db-queries",
+		"m",
+		transformnext.MaxParallelDBQueries,
+		"maximum parallel database queries",
+	)
 	transformNextCmd.Flags().IntVarP(&batchSize, "batch-size", "b", transformnext.BatchSize, "size of the batch to save to the database")
 	transformNextCmd.Flags().BoolVarP(&noPrivacy, "no-privacy", "p", noPrivacy, "include email addresses, CPF and other PII in the JSON data")
 	return transformNextCmd
