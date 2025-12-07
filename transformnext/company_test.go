@@ -85,6 +85,11 @@ func TestNewCompany(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error creatinh kv, got %s", err)
 	}
+	defer func() {
+		if err := kv.db.Close(); err != nil {
+			t.Errorf("expected no error closing badger, got %s", err)
+		}
+	}()
 	srcs := sources()
 	ctx := context.Background()
 	for key, src := range srcs {
@@ -284,6 +289,11 @@ func TestNewCompanyWithPrivacy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error creating kv, got %s", err)
 	}
+	defer func() {
+		if err := kv.db.Close(); err != nil {
+			t.Errorf("expected no error closing badger, got %s", err)
+		}
+	}()
 	srcs := sources()
 	ctx := context.Background()
 	for key, src := range srcs {
