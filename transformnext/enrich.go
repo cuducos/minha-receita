@@ -350,7 +350,7 @@ func (c *Company) descricaoSituacaoCadastral() error {
 
 func (c *Company) porte() error {
 	if c.CodigoPorte == nil {
-		return fmt.Errorf("company %s missing CodigoPorte", c.CNPJ)
+		return nil
 	}
 	var p string
 	switch *c.CodigoPorte {
