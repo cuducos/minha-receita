@@ -22,7 +22,7 @@ jobs:
         with:
           postgres-version: 16
       - uses: ankane/setup-mongodb@v1
-      - uses: WillAbides/setup-go-faster@v1.14.0
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - run: go test ./...
