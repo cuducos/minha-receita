@@ -24,4 +24,4 @@ Sobre contribuições e [_vibe coding_](https://pt.wikipedia.org/wiki/Vibe_codin
 * Você pode usar LLMs para ajudar a gerar código, desde que você leia e entenda o código que foi gerado.
 * O código enviado deve ser algo que você testou, compreende e é capaz de discutir sobre a implementação, abstrações e testes sugeridos.
 
-Contribuições que não se encaixem nesses critérios serão simplesmente descartadas. Se você não se importou em escrever teu código, não espera que alguém vá se importar em lê-lo.
+Contribuições que não se encaixem nesses critérios serão simplesmente descartadas. Se você não se importou em escrever teu código, não espere que alguém vá se importar em lê-lo.
