@@ -24,12 +24,15 @@ func stringsFromKV(srcs map[string]*source, kv *kv, prefix string, id string) ([
 }
 
 func stringFromKV(srcs map[string]*source, kv *kv, prefix string, id string, idx uint) (*string, error) {
+	if id == "" {
+		return nil, nil
+	}
 	v, err := stringsFromKV(srcs, kv, prefix, id)
 	if err != nil {
 		return nil, err
 	}
 	if len(v) <= int(idx) {
-		return nil, fmt.Errorf("value for %s %s has %d items, cannot load index %d: %v", id, prefix, len(v), idx, v)
+		return nil, fmt.Errorf("value for id=%s prefix=%s has %d items, cannot load index %d: %v", id, prefix, len(v), idx, v)
 	}
 	return &v[idx], nil
 }
@@ -43,8 +46,11 @@ func (c *Company) base(srcs map[string]*source, kv *kv) error {
 		}
 		return err
 	}
+	if row == nil {
+		return nil
+	}
 	if len(row) != 6 {
-		return fmt.Errorf("expected exactly 6 columns for base data, got %d", len(row))
+		return fmt.Errorf("expected exactly 6 columns for base data, got %d: %v", len(row), row)
 	}
 	c.RazaoSocial = row[0]
 	c.CodigoNaturezaJuridica, err = toInt(row[1])
@@ -83,8 +89,11 @@ func (c *Company) simples(srcs map[string]*source, kv *kv) error {
 		}
 		return err
 	}
-	if len(row) != 4 {
-		return fmt.Errorf("expected exactly 4 columns for simples data, got %d", len(row))
+	if row == nil {
+		return nil
+	}
+	if len(row) != 6 {
+		return fmt.Errorf("expected exactly 6 columns for simples data, got %d: %v", len(row), row)
 	}
 	c.OpcaoPeloSimples = toBool(row[0])
 	c.DataOpcaoPeloSimples, err = toDate(row[1])
@@ -117,7 +126,10 @@ func (c *Company) cnaes(srcs map[string]*source, kv *kv, codes string) error {
 			if err != nil {
 				return err
 			}
-			n, err := toInt(*d)
+			if d == nil {
+				return nil
+			}
+			n, err := toInt(code)
 			if err != nil {
 				return fmt.Errorf("could not parse CNAESecundarios for %s: %w", c.CNPJ, err)
 			}
@@ -142,7 +154,7 @@ func (c *Company) partners(srcs map[string]*source, kv *kv) error {
 	if !ok {
 		return errors.New("could not find lookup soc")
 	}
-	k := src.keyFor(c.CNPJ[:8])
+	k := src.keyPrefixFor(c.CNPJ[:8])
 	rows, err := kv.getPrefix(k)
 	if err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -233,6 +245,9 @@ func (c *Company) partners(srcs map[string]*source, kv *kv) error {
 		for p := range ch {
 			c.QuadroSocietario = append(c.QuadroSocietario, p)
 		}
+		sort.Slice(c.QuadroSocietario, func(i, j int) bool {
+			return c.QuadroSocietario[i].NomeSocio < c.QuadroSocietario[j].NomeSocio
+		})
 		done <- struct{}{}
 	}()
 	err = g.Wait()
@@ -251,7 +266,7 @@ func (c *Company) taxes(srcs map[string]*source, kv *kv) error {
 			if !ok {
 				return fmt.Errorf("could not find lookup %s", p)
 			}
-			k := src.keyFor(c.CNPJ[:8])
+			k := src.keyPrefixFor(c.CNPJ[:8])
 			rows, err := kv.getPrefix(k)
 			if err != nil {
 				if errors.Is(err, badger.ErrKeyNotFound) {

@@ -30,6 +30,6 @@ func AssertArraysHaveSameItems(t *testing.T, a1, a2 []string) {
 	}
 
 	for k := range diff {
-		t.Errorf("%q appears %d in the first array, but %d in the second array", k, c1[k], c2[k])
+		t.Errorf("%q appears %d in the first array, but %d in the second array\nFirst array: %#v\nSecond array:%#v", k, c1[k], c2[k], c1, c2)
 	}
 }

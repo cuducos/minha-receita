@@ -35,6 +35,37 @@ var extraIndexes = [...]string{
 	"uf",
 }
 
+// In Oct. 2025 the Federal Revenue started using the country code 367. which is
+// not present in Paises.zip. The issue was officially reported to them via
+// Fala.BR. They replied but did not seem to care about updating the dataset.
+//
+// It seems safe to assume this is England:
+// 1. Other official documents from the institution uses 367 for England, eg.:
+// https://balanca.economia.gov.br/balanca/bd/tabelas/PAIS.csv or
+// https://www.cenofisco.com.br/arquivos/BDFlash/IR_IN_RFB_1076.pdf
+// 2. Paises.zip contains a CSV ordered by country name and “Inglaterra” would
+// match this ordering
+//
+// The same logic was used to other unmatched country codes:
+var extraCounties = map[int]string{
+	15:  "Aland, Ilhas",
+	150: "Canal, Ilhas do (Guernsey)",
+	151: "Canárias, Ilhas",
+	200: "Curaçao",
+	321: "Guernsey",
+	359: "Ilha de Man",
+	367: "Inglaterra",
+	393: "Jersey",
+	449: "Macedônia",
+	452: "Madeira, Ilha da",
+	498: "Montenegro",
+	578: "Palestina",
+	678: "Saint Kitts e Nevis",
+	699: "Sint Maarten",
+	737: "Sérvia",
+	994: "A Designar",
+}
+
 type database interface {
 	PreLoad() error
 	CreateCompanies([][]string) error
@@ -72,10 +103,11 @@ func newProgressBar(label string, srcs int) (*progressbar.ProgressBar, error) {
 		srcs, // it has a bug starting At zero, so we compensate for it later
 		progressbar.OptionFullWidth(),
 		progressbar.OptionSetDescription(label),
-		progressbar.OptionUseANSICodes(true),
 		progressbar.OptionShowBytes(true),
 		progressbar.OptionShowCount(),
+		progressbar.OptionShowElapsedTimeOnFinish(),
 		progressbar.OptionShowTotalBytes(true),
+		progressbar.OptionUseANSICodes(true),
 	)
 	return bar, bar.RenderBlank()
 }
@@ -136,9 +168,14 @@ func Transform(dir string, db database, batch, maxDB int, privacy bool) error {
 	defer cancel()
 	var g errgroup.Group
 	for _, src := range srcs {
-		src := src
+		s := src
 		g.Go(func() error {
-			return loadCSVs(ctx, dir, src, bar, kv)
+			return loadCSVs(ctx, dir, s, bar, kv)
+		})
+	}
+	for k, v := range extraCounties {
+		g.Go(func() error {
+			return kv.put(srcs["pai"], fmt.Sprintf("%d", k), []string{v})
 		})
 	}
 	if err := g.Wait(); err != nil {

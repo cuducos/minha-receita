@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json/v2"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -112,7 +113,7 @@ type Company struct {
 func (c *Company) withPrivacy() {
 	c.NomeFantasia = strings.TrimSpace(maskCPF(c.NomeFantasia))
 	c.Email = nil
-	if c.CodigoNaturezaJuridica != nil && strings.Contains(strings.ToLower(*c.NaturezaJuridica), "individual") {
+	if c.CodigoNaturezaJuridica != nil && c.NaturezaJuridica != nil && strings.Contains(strings.ToLower(*c.NaturezaJuridica), "individual") {
 		c.DescricaoTipoDeLogradouro = ""
 		c.Logradouro = ""
 		c.Numero = ""
@@ -167,7 +168,7 @@ func newCompany(srcs map[string]*source, kv *kv, row []string) (*Company, error)
 		var err error
 		c.DescricaoMotivoSituacaoCadastral, err = stringFromKV(srcs, kv, "mot", row[7], 0)
 		if err != nil {
-			return fmt.Errorf("could not parse DescricaoMotivoSituacaoCadastral for %s: %w", c.CNPJ, err)
+			slog.Warn("unknown MotivoSituacaoCadastral", "code", row[7], "cnpj", c.CNPJ)
 		}
 		return nil
 	})
@@ -180,7 +181,7 @@ func newCompany(srcs map[string]*source, kv *kv, row []string) (*Company, error)
 		var err error
 		c.Pais, err = stringFromKV(srcs, kv, "pai", row[9], 0)
 		if err != nil {
-			return fmt.Errorf("could not parse Pais for %s: %w", c.CNPJ, err)
+			slog.Warn("unknown CodigoPais", "code", row[9], "cnpj", c.CNPJ)
 		}
 		return nil
 	})
@@ -211,22 +212,26 @@ func newCompany(srcs map[string]*source, kv *kv, row []string) (*Company, error)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse CodigoMunicipio for %s: %w", c.CNPJ, err)
 	}
-	g.Go(func() error {
-		ibge, err := stringFromKV(srcs, kv, "tab", row[20], 3)
-		if err != nil {
-			return fmt.Errorf("could not parse CodigoMunicipioIBGE for %s: %w", c.CNPJ, err)
-		}
-		c.CodigoMunicipioIBGE, err = toInt(*ibge)
-		if err != nil {
-			return fmt.Errorf("could not parse CodigoMunicipioIBGE number for %s: %w", c.CNPJ, err)
-		}
-		return nil
-	})
+	if c.CodigoMunicipio != nil && *c.CodigoMunicipio != 9707 { // overseas city code
+		g.Go(func() error {
+			ibge, err := stringFromKV(srcs, kv, "tab", row[20], 3)
+			if err != nil {
+				slog.Debug("unknown CodigoMunicipioIBGE", "code", row[20], "cnpj", c.CNPJ)
+				return nil
+			}
+			c.CodigoMunicipioIBGE, err = toInt(*ibge)
+			if err != nil {
+				return fmt.Errorf("could not parse CodigoMunicipioIBGE number for %s: %w", c.CNPJ, err)
+			}
+			return nil
+		})
+	}
 	g.Go(func() error {
 		var err error
-		c.Municipio, err = stringFromKV(srcs, kv, "mun", row[20], 3)
+		c.Municipio, err = stringFromKV(srcs, kv, "mun", row[20], 0)
 		if err != nil {
-			return fmt.Errorf("could not parse Municipio for %s: %w", c.CNPJ, err)
+			slog.Warn("unknown Municipio", "code", row[20], "cnpj", c.CNPJ)
+			return nil
 		}
 		return nil
 	})
