@@ -12,58 +12,60 @@ import (
 	"github.com/dgraph-io/badger/v4"
 )
 
+// As of 2025-11 the longest sequence we've got was 257, so setting it to 512 to
+// have some room — maybe this could be set from a CLI flag to avoid recompiling
+// when source data changes and needs more space.
+const defaultPoolSize = 512
+
 type kv struct {
-	db    *badger.DB
-	buf   sync.Pool
-	bytes sync.Pool
+	db   *badger.DB
+	pool sync.Pool
 }
 
-func (kv *kv) serialize(row []string) ([]byte, error) {
-	buf := kv.buf.Get().(*bytes.Buffer)
-	defer func() {
-		buf.Reset()
-		kv.buf.Put(buf)
-	}()
+func (kv *kv) serialize(b []byte, row []string) ([]byte, error) {
+	var err error
 	for _, v := range row {
 		s := uint32(len(v)) // used to deserialize later on
-		if err := binary.Write(buf, binary.LittleEndian, s); err != nil {
+		b, err = binary.Append(b, binary.LittleEndian, s)
+		if err != nil {
 			return nil, err
 		}
-		if _, err := buf.Write([]byte(v)); err != nil {
-			return nil, err
-		}
+		b = append(b, v...)
 	}
-	return buf.Bytes(), nil
+	return b, nil
 }
 
-func (kv *kv) deserialize(b []byte) ([]string, error) {
-	if b == nil {
+func (kv *kv) deserialize(val []byte) ([]string, error) {
+	if val == nil {
 		return nil, nil
 	}
 	var out []string
-	r := bytes.NewReader(b)
+	r := bytes.NewReader(val)
 	for r.Len() > 0 {
-		var s uint32
-		if err := binary.Read(r, binary.LittleEndian, &s); err != nil {
-			return nil, fmt.Errorf("error reading size: %w", err)
-		}
-		raw := kv.bytes.Get().(*[]byte)
-		if cap(*raw) < int(s) {
-			return nil, fmt.Errorf("buffer from pool too small (%d): needs %d", cap(*raw), s)
-		} else {
-			*raw = (*raw)[:s]
-		}
-		n, err := io.ReadFull(r, *raw)
+		err := func() error {
+			var s uint32
+			if err := binary.Read(r, binary.LittleEndian, &s); err != nil {
+				return fmt.Errorf("error reading size: %w", err)
+			}
+			b := kv.pool.Get().(*[]byte)
+			*b = (*b)[:s]
+			defer kv.pool.Put(b)
+			if cap(*b) < int(s) {
+				return fmt.Errorf("buffer from pool too small (%d): needs %d", cap(*b), s)
+			}
+			n, err := io.ReadFull(r, *b)
+			if err != nil {
+				return fmt.Errorf("could not deserialize value: %w", err)
+			}
+			if n != int(s) {
+				return fmt.Errorf("expected to read %d bytes, got %d", s, n)
+			}
+			out = append(out, string(*b))
+			return nil
+		}()
 		if err != nil {
-			kv.bytes.Put(raw)
-			return nil, fmt.Errorf("could not deserialize value: %w", err)
+			return nil, err
 		}
-		if n != int(s) {
-			kv.bytes.Put(raw)
-			return nil, fmt.Errorf("expected to read %d bytes, got %d", s, n)
-		}
-		out = append(out, string(*raw))
-		kv.bytes.Put(raw)
 	}
 	return out, nil
 }
@@ -72,18 +74,23 @@ func (kv *kv) put(src *source, id string, row []string) error {
 	if len(row) == 0 {
 		return nil
 	}
-	k := src.keyFor(id)
-	v, err := kv.serialize(row)
+	key := src.keyFor(id)
+	b := kv.pool.Get().(*[]byte)
+	*b = (*b)[:0]
+	defer kv.pool.Put(b)
+	val, err := kv.serialize(*b, row)
 	if err != nil {
 		return fmt.Errorf("could not serialize row %v: %w", row, err)
 	}
 	return kv.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(k, v)
+		return txn.Set(key, val)
 	})
 }
 
 func (kv *kv) get(k []byte) ([]string, error) {
-	var b []byte
+	val := kv.pool.Get().(*[]byte)
+	*val = (*val)[:0]
+	defer kv.pool.Put(val)
 	err := kv.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(k)
 		if err != nil {
@@ -92,7 +99,7 @@ func (kv *kv) get(k []byte) ([]string, error) {
 			}
 			return fmt.Errorf("could not get key: %w", err)
 		}
-		b, err = item.ValueCopy(nil)
+		*val, err = item.ValueCopy(*val)
 		if err != nil {
 			return fmt.Errorf("could not read value: %w", err)
 		}
@@ -101,7 +108,7 @@ func (kv *kv) get(k []byte) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get key %s: %w", string(k), err)
 	}
-	return kv.deserialize(b)
+	return kv.deserialize(*val)
 }
 
 func (kv *kv) getPrefix(k []byte) ([][]string, error) {
@@ -141,27 +148,20 @@ func (*noLogger) Debugf(string, ...any)   {}
 func newBadger(dir string, ro bool) (*kv, error) {
 	opt := badger.DefaultOptions(dir).WithReadOnly(ro).WithBypassLockGuard(true).WithDetectConflicts(false)
 	slog.Debug("Creating temporary key-value storage", "path", dir)
-	if os.Getenv("DEBUG") == "" {
+	if os.Getenv("DEBUG") != "badger" { // TODO: remove that after moving transformnext into transform
 		opt = opt.WithLogger(&noLogger{})
 	}
 	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, fmt.Errorf("could not open badger at %s: %w", dir, err)
 	}
-	kv := &kv{db: db}
-	kv.buf = sync.Pool{
-		New: func() any {
-			return &bytes.Buffer{}
-		},
-	}
-	kv.bytes = sync.Pool{
-		New: func() any {
-			// as of 2025-11 the longest sequence we've got was 159, so setting
-			// it to 256 to have some room — but this could be set from a cli
-			// flag to avoid recompiling when source data changes and needs
-			// more space
-			b := make([]byte, 0, 256)
-			return &b
+	kv := &kv{
+		db: db,
+		pool: sync.Pool{
+			New: func() any {
+				b := make([]byte, defaultPoolSize)
+				return &b
+			},
 		},
 	}
 	return kv, nil

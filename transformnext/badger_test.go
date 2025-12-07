@@ -22,7 +22,8 @@ func TestSerializeDeserialize(t *testing.T) {
 		{"empty", []string{}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			s, err := kv.serialize(tc.row)
+			var b []byte
+			s, err := kv.serialize(b, tc.row)
 			if err != nil {
 				t.Errorf("expected no error serializing, got %s", err)
 			}
