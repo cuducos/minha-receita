@@ -16,3 +16,12 @@ $ go test --race ./...
 ```
 
 Os testes requerem uma instância de cada banco de dados implementado. Atualmente eles precisam ser configurados em `TEST_POSTGRES_URL` e `TEST_MONGODB_URL`, como no exemplo em `.env`, e podem ser [facilmente criados com o Docker Compose](docker.md).
+
+## Vibe coding
+
+Sobre contribuições e [_vibe coding_](https://pt.wikipedia.org/wiki/Vibe_coding):
+
+* Você pode usar LLMs para ajudar a gerar código, desde que você leia e entenda o código que foi gerado.
+* O código enviado deve ser algo que você testou, compreende e é capaz de discutir sobre a implementação, abstrações e testes sugeridos.
+
+Contribuições que não se encaixem nesses critérios serão simplesmente descartadas. Se você não se importou em escrever teu código, não espera que alguém vá se importar em lê-lo.
