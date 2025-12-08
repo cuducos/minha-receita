@@ -3,6 +3,7 @@ package transformnext
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -193,7 +194,7 @@ func (c *Company) partners(srcs map[string]*source, kv *kv) error {
 			}
 			p.Pais, err = stringFromKV(srcs, kv, "pai", row[5], 0)
 			if err != nil {
-				return fmt.Errorf("could not parse Pais for %s: %w", c.CNPJ, err)
+				slog.Warn("unknown Pais", "code", row[5], "cnpj", c.CNPJ)
 			}
 			p.CPFRepresentanteLegal = row[6]
 			p.NomeRepresentanteLegal = row[7]
